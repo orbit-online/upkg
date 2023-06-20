@@ -20,7 +20,7 @@ and global installation for user- or system-wide usage.
 wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.9.0/upkg.sh |\
 (
   src=$(cat)
-  [[ $(shasum -a 256 <<<"$src") = '3469b2b03f735bbfa4875569fd582aa6ac4a81206e3a4f731536cca8095e10b9  -' ]] || { echo 'shasum mismatch!'; exit 1; }
+  [[ $(shasum -a 256 <<<"$src") = '98f5487509716127fa62a7a802ad96ff2ba34606704d0a91de15b6b8955ac132  -' ]] || { echo 'shasum mismatch!'; exit 1; }
   bash -c "set - install -g https://github.com/orbit-online/upkg.git@v0.9.0; $src"
 )
 ```
