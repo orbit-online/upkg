@@ -14,15 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Check if the expected shasum matches the expected shasum
+    - name: Check if the shasum from the README.md matches the shasum of upkg.sh
       run: |
-        expected=$(grep 'shasum -a 256' README.md | sed 's/^.*\([a-f0-9]\{64\}\).*$/\1/')
-        actual=$(shasum -a 256 upkg.sh | cut -d' ' -f1)
-        printf "shasum comparison:\nExpected/Actual\n%s\n%s" "$expected" "$actual" >&2
-        if [[ $expected != "$actual" ]]; then
-          printf "ERROR: The expected and actual shasums of upkg.sh do not match\n" >&2
-          exit 1
-        else
-          printf "The expected and actual shasums of upkg.sh match\n" >&2
-          exit 0
-        fi
+        printf '%s  upkg.sh\n' "$(grep 'shasum -a 256' README.md | sed 's/^.*\([a-f0-9]\{64\}\).*$/\1/')" | shasum -a 256 -c -
