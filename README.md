@@ -17,11 +17,11 @@ and global installation for user- or system-wide usage.
 ## Installation
 
 ```
-wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.9.0/upkg.sh |\
+wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/master/upkg.sh |\
 (
   src=$(cat)
   [[ $(shasum -a 256 <<<"$src") = '98f5487509716127fa62a7a802ad96ff2ba34606704d0a91de15b6b8955ac132  -' ]] || { echo 'shasum mismatch!'; exit 1; }
-  bash -c "set - install -g https://github.com/orbit-online/upkg.git@v0.9.0; $src"
+  bash -c "set - install -g https://github.com/orbit-online/upkg.git@master; $src"
 )
 ```
 
