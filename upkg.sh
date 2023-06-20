@@ -24,8 +24,8 @@ Usage:
       # shellcheck disable=2064
       trap "rm -rf \"$tmppkgspath\"" EXIT
       if [[ $# -eq 3 && $2 = -g ]]; then
-        upkg_prepare_dep "$3" "$prefix/lib/upkg" "$prefix/bin" "$tmppkgspath"
-        upkg_install_dep "$3" "$prefix/lib/upkg" "$prefix/bin" "$tmppkgspath"
+        upkg_prepare_pkg "$3" "$prefix/lib/upkg" "$prefix/bin" "$tmppkgspath"
+        upkg_install_pkg "$3" "$prefix/lib/upkg" "$prefix/bin" "$tmppkgspath"
         printf "upkg: Installed %s\n" "$3" >&2
       elif [[ $# -eq 1 ]]; then
         pkgspath=$(upkg_root)
@@ -98,7 +98,7 @@ upkg_uninstall_dep() {
   fi
 }
 
-upkg_prepare_dep() {
+upkg_prepare_pkg() {
   local repospec=$1 pkgspath=$2 binpath=$3 tmppkgspath=$4 parsed_spec repourl pkgname pkgversion
   parsed_spec=$(upkg_parse_repospec "$repospec")
   read -r -d $'\n' repourl pkgname pkgversion <<<"$parsed_spec"
@@ -145,7 +145,7 @@ All files in 'files' and 'commands' must:
   upkg_prepare_deps "$pkgpath" "$tmppkgspath/.upkg" "$tmppkgpath/upkg.json"
 }
 
-upkg_install_dep() {
+upkg_install_pkg() {
   local repospec=$1 pkgspath=$2 binpath=$3 tmppkgspath=$4 parsed_spec _repourl pkgname _pkgversion
   parsed_spec=$(upkg_parse_repospec "$repospec")
   read -r -d $'\n' _repourl pkgname _pkgversion <<<"$parsed_spec"
@@ -177,7 +177,7 @@ upkg_prepare_deps() {
   local pkgpath=$1 tmppkgspath=$2 tmpkupkgpath=$3 deps dep
   deps=$(jq -r '(.dependencies // []) | to_entries[] | "\(.key)@\(.value)"' <"$tmpkupkgpath")
   while [[ -n $deps ]] && read -r -d $'\n' dep; do
-    upkg_prepare_dep "$dep" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgspath/.upkg" || fatal "upkg: Error while installing deps for '%s'" "$dep"
+    upkg_prepare_pkg "$dep" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgspath/.upkg" || fatal "upkg: Error while installing dependency '%s' for '%s'" "$dep"  "$pkgpath/upkg.json"
   done <<<"$deps"
 }
 
@@ -185,7 +185,7 @@ upkg_install_deps() {
   local pkgpath=$1 tmppkgspath=$2 deps dep
   deps=$(jq -r '(.dependencies // []) | to_entries[] | "\(.key)@\(.value)"' <"$pkgpath/upkg.json")
   while [[ -n $deps ]] && read -r -d $'\n' dep; do
-    upkg_install_dep "$dep" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgspath/.upkg" || fatal "upkg: Error while installing deps for '%s'" "$pkgpath/upkg.json"
+    upkg_install_pkg "$dep" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgspath/.upkg" || fatal "upkg: Error while installing dependency '%s' for '%s'" "$dep" "$pkgpath/upkg.json"
   done <<<"$deps"
 }
 
