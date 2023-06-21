@@ -71,10 +71,12 @@ and all its commands (see [commands](#commands)).
 You can run `upkg install` to upgrade all packages that have a moving version
 (i.e. a git branch). It is advisable to use commit hashes as versions
 when publishing something that other packages may rely on to avoid bumping past
-breaking changes. All packages that were installed using a git tag or
-commit hash as the version and are still referenced with the same version will
-be skipped during upgrade. This means a `upkg install` can almost become a no-op
-and be run automatically without sacrificing performance.
+breaking changes.
+
+All packages that were installed using a git tag or commit hash as the version
+and are still referenced with the same version will be skipped during upgrade.
+This means a `upkg install` can almost become a no-op and be run automatically
+without sacrificing performance.
 
 Note: μpkg performs quite a few pre-flight checks before installing or upgrading
 a package and its dependencies in order to avoid leaving packages in a broken
@@ -127,18 +129,20 @@ Dependencies will be installed under `.upkg` next to `upkg.json`.
 }
 ```
 
-### files
+### assets
 
-List of files the package consists of. An array of paths relative to the
-repository root. Only items listed here or in [commands](#commands) will be
-part of the final package installation. All listed paths _must_ exist.
+List of files and folders the package consists of. An array of paths relative to
+the repository root. Only items listed here and in [commands](#commands) will be
+part of the final package installation. All listed paths _must_ exist, folders
+_must_ have a trailing slash.
 
 ```
 {
   ...
-  "files": [
+  "assets": [
     "lib/common.sh",
-    "lib/commands.sh"
+    "lib/commands.sh",
+    "bin/"
   ],
   ...
 }

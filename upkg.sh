@@ -74,12 +74,12 @@ upkg_parse_repospec() {
 upkg_uninstall_dep() {
   local pkgname=$1 pkgspath=$2 binpath=$3
   local pkgpath="$pkgspath/$pkgname"
-  # When upgrading remove old files & commands first
-  local file command commands cmdpath
+  # When upgrading remove old assets & commands first
+  local asset command commands cmdpath
   [[ -e "$pkgpath/upkg.json" ]] || fatal "upkg: '%s' is not installed" "$pkgname"
   commands=$(jq -r '(.commands // {}) | to_entries[] | "\(.key)\n\(.value)"' <"$pkgpath/upkg.json")
   while [[ -n $commands ]] && read -r -d $'\n' command; do
-    read -r -d $'\n' file
+    read -r -d $'\n' asset
     cmdpath="$binpath/$command"
     [[ ! -e $cmdpath || $(realpath "$cmdpath") != $pkgpath/* ]] || rm "$cmdpath"
   done <<<"$commands"
@@ -111,24 +111,27 @@ upkg_prepare_pkg() {
     jq --arg version "$upkgversion" '.version = $version' <<<"$upkgjson" >"$tmppkgpath/upkg.json" || \
       fatal "upkg: The package '%s' does not contain a valid upkg.json" "$pkgname"
 
-    local file files command commands cmdpath
-    files=$(jq -r '((.files // []) + [(.commands // {})[]] | unique)[]' <"$tmppkgpath/upkg.json")
+    local asset assets command commands cmdpath
+    assets=$(jq -r '((.assets // []) + [(.commands // {})[]] | unique)[]' <"$tmppkgpath/upkg.json")
     commands=$(jq -r '(.commands // {}) | to_entries[] | "\(.key)\n\(.value)"' <"$tmppkgpath/upkg.json")
-    while [[ -n $files ]] && read -r -d $'\n' file; do
-      if [[ $file = /* || $file =~ /\.\.(/|$) || $file =~ // || $file =~ ^.upkg(/|$) || ! -f "$tmppkgpath/$file" ]]; then
-        fatal "upkg: Error on file '%s' in package %s@%s.
-  All files in 'files' and 'commands' must:
+    while [[ -n $assets ]] && read -r -d $'\n' asset; do
+      [[ ! -d "$tmppkgpath/$asset" || "$tmppkgpath/$asset" = */ ]] || \
+        fatal 'upkg: Error on asset '%s' in package %s@%s. Directories must have a trailing slash' \
+          "$asset" "$pkgname" "$pkgversion"
+      if [[ $asset = /* || $asset =~ /\.\.(/|$) || $asset =~ // || $asset =~ ^.upkg(/|$) || ! -e "$tmppkgpath/$asset" ]]; then
+        fatal "upkg: Error on asset '%s' in package %s@%s.
+  All assets in 'assets' and 'commands' must:
   * be relative
   * not contain parent dir parts ('../')
   * not reference the .upkg dir
-  * exist in the repository" "$file" "$pkgname" "$pkgversion"
+  * exist in the repository" "$asset" "$pkgname" "$pkgversion"
       fi
-    done <<<"$files"
+    done <<<"$assets"
     while [[ -n $commands ]] && read -r -d $'\n' command; do
-      read -r -d $'\n' file
-      [[ -x "$tmppkgpath/$file" ]] || \
+      read -r -d $'\n' asset
+      [[ -x "$tmppkgpath/$asset" && -f "$tmppkgpath/$asset" ]] || \
         fatal "upkg: Error on command '%s' in package %s@%s. The file '%s' does not exist or is not executable" \
-          "$command" "$file" "$pkgname" "$pkgversion"
+          "$command" "$asset" "$pkgname" "$pkgversion"
       [[ ! $command =~ (/| ) ]] || \
         fatal "upkg: Error on command '%s' in package %s@%s. The command may not contain spaces or slashes" \
           "$command" "$pkgname" "$pkgversion"
@@ -148,20 +151,20 @@ upkg_install_pkg() {
   local repospec=$1 pkgspath=$2 binpath=$3 tmppkgspath=$4 parsed_spec _repourl pkgname pkgversion
   parsed_spec=$(upkg_parse_repospec "$repospec")
   read -r -d $'\n' _repourl pkgname pkgversion <<<"$parsed_spec"
-  local pkgpath="$pkgspath/$pkgname" tmppkgpath=$tmppkgspath/$pkgname file files command commands
+  local pkgpath="$pkgspath/$pkgname" tmppkgpath=$tmppkgspath/$pkgname asset assets command commands
   if [[ -e $tmppkgpath/upkg.json ]]; then # if prepare_deps didn't clone, version is the same
     [[ ! -e $pkgpath ]] || upkg_uninstall_dep "$pkgname" "$pkgspath" "$binpath"
-    files=$(jq -r '(["upkg.json"] + (.files // []) + [(.commands // {})[]] | unique)[]' <"$tmppkgpath/upkg.json")
+    assets=$(jq -r '(["upkg.json"] + (.assets // []) + [(.commands // {})[]] | unique)[]' <"$tmppkgpath/upkg.json")
     commands=$(jq -r '(.commands // {}) | to_entries[] | "\(.key)\n\(.value)"' <"$tmppkgpath/upkg.json")
-    while [[ -n $files ]] && read -r -d $'\n' file; do
-      mkdir -p "$(dirname "$pkgpath/$file")"
-      cp -a "$tmppkgpath/$file" "$pkgpath/$file"
-    done <<<"$files"
+    while [[ -n $assets ]] && read -r -d $'\n' asset; do
+      mkdir -p "$(dirname "$pkgpath/$asset")"
+      cp -ar "$tmppkgpath/$asset" "$pkgpath/$asset"
+    done <<<"$assets"
     if [[ -n $commands ]]; then
       mkdir -p "$binpath"
       while [[ -n $commands ]] && read -r -d $'\n' command; do
-        read -r -d $'\n' file
-        ln -s "$pkgpath/$file" "$binpath/$command"
+        read -r -d $'\n' asset
+        ln -s "$pkgpath/$asset" "$binpath/$command"
       done <<<"$commands"
     fi
   fi
