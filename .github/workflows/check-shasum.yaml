@@ -14,6 +14,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Check if the shasum from the README.md matches the shasum of upkg.sh
+      with:
+        depth: 0
+    - name: Checkout the ref referenced in README.md
+      run: |
+        git checkout "$(grep 'wget -qO- https' README.md | sed 's#^.*orbit-online/upkg/\([^/]\+\)/upkg\.sh.*$#\1#')"
+    - name: Check if the shasum from README.md matches the shasum of upkg.sh
       run: |
         printf '%s  upkg.sh\n' "$(grep 'shasum -a 256' README.md | sed 's/^.*\([a-f0-9]\{64\}\).*$/\1/')" | shasum -a 256 -c -
