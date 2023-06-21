@@ -5,9 +5,7 @@ shopt -s inherit_errexit
 
 upkg() {
   [[ ! $(bash --version | head -n1) =~ version\ [34]\.[0-3] ]] || fatal "upkg: upkg requires bash >= v4.4\n"
-  if ! type jq >/dev/null 2>&1 || ! type git >/dev/null 2>&1; then
-    fatal "upkg: Unable to find dependencies 'jq' and 'git'.\n"
-  fi
+  { type jq >/dev/null 2>&1 && type git >/dev/null 2>&1; } || fatal "upkg: Unable to find dependencies 'jq' and 'git'.\n"
   DOC="μpkg - A minimalist package manager
 Usage:
   upkg install
@@ -54,13 +52,10 @@ Usage:
 
 upkg_root() (
   local sourcing_file=$1
-  if [[ -n $sourcing_file ]]; then
-    cd "$(dirname "$(realpath "${sourcing_file}")")"
-  fi
+  [[ -z $sourcing_file ]] || cd "$(dirname "$(realpath "${sourcing_file}")")"
   until [[ -e $PWD/upkg.json ]]; do
-    if [[ $PWD = '/' ]]; then
+    [[ $PWD != '/' ]] || \
       fatal 'upkg root: Unable to find package root (no upkg.json found in this or any parent directory)'
-    fi
     cd ..
   done
   printf "%s\n" "$PWD"
@@ -81,40 +76,33 @@ upkg_uninstall_dep() {
   local pkgpath="$pkgspath/$pkgname"
   # When upgrading remove old files & commands first
   local file command commands cmdpath
-  if [[ ! -e "$pkgpath/upkg.json" ]]; then
-    fatal "upkg: '%s' is not installed" "$pkgname"
-  fi
+  [[ -e "$pkgpath/upkg.json" ]] || fatal "upkg: '%s' is not installed" "$pkgname"
   commands=$(jq -r '(.commands // {}) | to_entries[] | "\(.key)\n\(.value)"' <"$pkgpath/upkg.json")
   while [[ -n $commands ]] && read -r -d $'\n' command; do
     read -r -d $'\n' file
     cmdpath="$binpath/$command"
-    if [[ -e $cmdpath && $(realpath "$cmdpath") = $pkgpath/* ]]; then
-      rm "$cmdpath"
-    fi
+    [[ ! -e $cmdpath || $(realpath "$cmdpath") != $pkgpath/* ]] || rm "$cmdpath"
   done <<<"$commands"
   rm -rf "$pkgpath"
-  if [[ -z $(find "$(dirname "$pkgpath")" -mindepth 1 -maxdepth 1) ]]; then
-    rm -rf "$(dirname "$pkgpath")"
-  fi
+  [[ -n $(find "$(dirname "$pkgpath")" -mindepth 1 -maxdepth 1) ]] || rm -rf "$(dirname "$pkgpath")"
 }
 
 upkg_prepare_pkg() {
   local repospec=$1 pkgspath=$2 binpath=$3 tmppkgspath=$4 parsed_spec repourl pkgname pkgversion
   parsed_spec=$(upkg_parse_repospec "$repospec")
   read -r -d $'\n' repourl pkgname pkgversion <<<"$parsed_spec"
-  local pkgpath="$pkgspath/$pkgname" tmppkgpath=$tmppkgspath/$pkgname
-  if [[ -n "$pkgversion" ]]; then
-    if ! out=$(git clone -q --depth=1 --branch="$pkgversion" "$repourl" "$tmppkgpath" 2>&1); then
-      fatal "upkg: Unable to clone. Error:\n%s" "$out"
-    fi
-  else
-    if ! out=$(git clone -q --depth=1 "$repourl" "$tmppkgpath" 2>&1); then
-      fatal "upkg: Unable to clone. Error:\n%s" "$out"
-    fi
+  local pkgpath="$pkgspath/$pkgname" tmppkgpath=$tmppkgspath/$pkgname gitcheckout=true gitargs=()
+  set -x
+  if [[ -n "$pkgversion" && -n $(git ls-remote "$repourl" "$pkgversion") ]]; then
+    gitcheckout=false
+    gitargs=(--depth=1 "--branch=$pkgversion")  # version is a ref, we can make a shallow clone
   fi
-  if ! jq empty < "$tmppkgpath/upkg.json"; then
-    fatal "upkg: The package '%s' does not contain a valid upkg.json" "$pkgname"
-  fi
+  out=$(git clone -q "${gitargs[@]}" "$repourl" "$tmppkgpath" 2>&1) || \
+    fatal "upkg: Unable to clone '%s'. Error:\n%s" "$repospec" "$out"
+  ! $gitcheckout || out=$(git -C "$tmppkgpath" checkout -q "$pkgversion" -- 2>&1) || \
+    fatal "upkg: Unable to checkout '%s' from '%s'. Error:\n%s" "$pkgversion" "$repourl" "$out"
+  jq empty < "$tmppkgpath/upkg.json" || fatal "upkg: The package '%s' does not contain a valid upkg.json" "$pkgname"
+  set +x
 
   local file files command commands cmdpath
   files=$(jq -r '(["upkg.json"] + (.files // []) + [(.commands // {})[]] | unique)[]' <"$tmppkgpath/upkg.json")
@@ -130,15 +118,16 @@ All files in 'files' and 'commands' must:
   done <<<"$files"
   while [[ -n $commands ]] && read -r -d $'\n' command; do
     read -r -d $'\n' file
-    if [[ ! -x "$tmppkgpath/$file" ]]; then
-      fatal "upkg: Error on command '%s' in package %s@%s. The file '%s' does not exist or is not executable" "$command" "$file" "$pkgname" "$pkgversion"
-    fi
-    if [[ $command =~ (/| ) ]]; then
-      fatal "upkg: Error on command '%s' in package %s@%s. The command may not contain spaces or slashes" "$command" "$pkgname" "$pkgversion"
-    fi
+    [[ -x "$tmppkgpath/$file" ]] || \
+      fatal "upkg: Error on command '%s' in package %s@%s. The file '%s' does not exist or is not executable" \
+        "$command" "$file" "$pkgname" "$pkgversion"
+    [[ ! $command =~ (/| ) ]] || \
+      fatal "upkg: Error on command '%s' in package %s@%s. The command may not contain spaces or slashes" \
+        "$command" "$pkgname" "$pkgversion"
     cmdpath="$binpath/$command"
     if [[ -e $cmdpath && $(realpath "$cmdpath") != $pkgpath/* ]]; then
-      fatal "upkg: Error on command '%s' in package %s@%s. The symlink for it exists and does not point to the package" "$command" "$pkgname" "$pkgversion"
+      fatal "upkg: Error on command '%s' in package %s@%s. The symlink for it exists and does not point to the package" \
+        "$command" "$pkgname" "$pkgversion"
     fi
   done <<<"$commands"
 
@@ -177,7 +166,8 @@ upkg_prepare_deps() {
   local pkgpath=$1 tmppkgspath=$2 tmpkupkgpath=$3 deps dep
   deps=$(jq -r '(.dependencies // []) | to_entries[] | "\(.key)@\(.value)"' <"$tmpkupkgpath")
   while [[ -n $deps ]] && read -r -d $'\n' dep; do
-    upkg_prepare_pkg "$dep" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgspath/.upkg" || fatal "upkg: Error while installing dependency '%s' for '%s'" "$dep"  "$pkgpath/upkg.json"
+    upkg_prepare_pkg "$dep" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgspath/.upkg" || \
+      fatal "upkg: Error while installing dependency '%s' for '%s'" "$dep"  "$pkgpath/upkg.json"
   done <<<"$deps"
 }
 
@@ -185,7 +175,8 @@ upkg_install_deps() {
   local pkgpath=$1 tmppkgspath=$2 deps dep
   deps=$(jq -r '(.dependencies // []) | to_entries[] | "\(.key)@\(.value)"' <"$pkgpath/upkg.json")
   while [[ -n $deps ]] && read -r -d $'\n' dep; do
-    upkg_install_pkg "$dep" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgspath/.upkg" || fatal "upkg: Error while installing dependency '%s' for '%s'" "$dep" "$pkgpath/upkg.json"
+    upkg_install_pkg "$dep" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgspath/.upkg" || \
+      fatal "upkg: Error while installing dependency '%s' for '%s'" "$dep" "$pkgpath/upkg.json"
   done <<<"$deps"
 }
 
