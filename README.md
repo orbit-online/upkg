@@ -21,7 +21,7 @@ Replace `bash -c ...` with `sudo bash -c ...` to install system-wide.
 ```
 wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.9.1/upkg.sh | (
   IFS='' read -r -d $'\0' src; set -e
-  printf '%s' "$src" | shasum -a 256 -c <(printf '183dd93b7fc9abcab5b990f11df90ab35b9d4e7afda6a4e22b0e27ad5ca0f19c  -')
+  printf '%s' "$src" | shasum -a 256 -c <(printf '19aa0a31ebe10b90c9801f7f396196ce2b658d8043b4b18513ae9e99c008f393  -')
   bash -c "set - install -g https://github.com/orbit-online/upkg.git@v0.9.1; $src")
 ```
 

@@ -92,7 +92,6 @@ upkg_prepare_pkg() {
   parsed_spec=$(upkg_parse_repospec "$repospec")
   read -r -d $'\n' repourl pkgname pkgversion <<<"$parsed_spec"
   local pkgpath="$pkgspath/$pkgname" tmppkgpath=$tmppkgspath/$pkgname gitcheckout=true gitargs=()
-  set -x
   if [[ -n "$pkgversion" && -n $(git ls-remote "$repourl" "$pkgversion") ]]; then
     gitcheckout=false
     gitargs=(--depth=1 "--branch=$pkgversion")  # version is a ref, we can make a shallow clone
@@ -102,7 +101,6 @@ upkg_prepare_pkg() {
   ! $gitcheckout || out=$(git -C "$tmppkgpath" checkout -q "$pkgversion" -- 2>&1) || \
     fatal "upkg: Unable to checkout '%s' from '%s'. Error:\n%s" "$pkgversion" "$repourl" "$out"
   jq empty < "$tmppkgpath/upkg.json" || fatal "upkg: The package '%s' does not contain a valid upkg.json" "$pkgname"
-  set +x
 
   local file files command commands cmdpath
   files=$(jq -r '(["upkg.json"] + (.files // []) + [(.commands // {})[]] | unique)[]' <"$tmppkgpath/upkg.json")
