@@ -16,13 +16,13 @@ and global installation for user- or system-wide usage.
 
 ## Installation
 
+Replace `bash -c ...` with `sudo bash -c ...` to install globally.
+
 ```
-wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/master/upkg.sh |\
-(
-  src=$(cat)
-  [[ $(shasum -a 256 <<<"$src") = '98f5487509716127fa62a7a802ad96ff2ba34606704d0a91de15b6b8955ac132  -' ]] || { echo 'shasum mismatch!'; exit 1; }
-  bash -c "set - install -g https://github.com/orbit-online/upkg.git@master; $src"
-)
+wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/master/upkg.sh | (
+  IFS='' read -r -d $'\0' src; set -e
+  printf '%s' "$src" | shasum -a 256 -c <(printf '98f5487509716127fa62a7a802ad96ff2ba34606704d0a91de15b6b8955ac132  -')
+  bash -c "set - install -g https://github.com/orbit-online/upkg.git@master; $src")
 ```
 
 ## Usage
