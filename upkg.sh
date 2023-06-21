@@ -22,12 +22,12 @@ Usage:
       # shellcheck disable=2064
       trap "rm -rf \"$tmppkgspath\"" EXIT
       if [[ $# -eq 3 && $2 = -g ]]; then
-        upkg_prepare_pkg "$3" "$prefix/lib/upkg" "$prefix/bin" "$tmppkgspath"
+        upkg_prepare_pkg "$3" "$prefix/lib/upkg" "$prefix/bin" "$tmppkgspath" false
         upkg_install_pkg "$3" "$prefix/lib/upkg" "$prefix/bin" "$tmppkgspath"
         printf "upkg: Installed %s\n" "$3" >&2
       elif [[ $# -eq 1 ]]; then
         pkgspath=$(upkg_root)
-        upkg_prepare_deps "$pkgspath" "$tmppkgspath" "$pkgspath/upkg.json"
+        upkg_prepare_deps "$pkgspath" "$tmppkgspath" "$pkgspath/upkg.json" false
         upkg_install_deps "$pkgspath" "$tmppkgspath"
         printf "upkg: Installed all dependencies\n" >&2
       else
@@ -88,83 +88,91 @@ upkg_uninstall_dep() {
 }
 
 upkg_prepare_pkg() {
-  local repospec=$1 pkgspath=$2 binpath=$3 tmppkgspath=$4 parsed_spec repourl pkgname pkgversion
+  local repospec=$1 pkgspath=$2 binpath=$3 tmppkgspath=$4 ancestor_reinstall=$5 parsed_spec repourl pkgname pkgversion
   parsed_spec=$(upkg_parse_repospec "$repospec")
   read -r -d $'\n' repourl pkgname pkgversion <<<"$parsed_spec"
-  local pkgpath="$pkgspath/$pkgname" tmppkgpath=$tmppkgspath/$pkgname gitcheckout=true gitargs=()
-  if [[ -n "$pkgversion" && -n $(git ls-remote "$repourl" "$pkgversion") ]]; then
-    gitcheckout=false
-    gitargs=(--depth=1 "--branch=$pkgversion")  # version is a ref, we can make a shallow clone
+  local pkgpath="$pkgspath/$pkgname" tmppkgpath=$tmppkgspath/$pkgname \
+    ref_is_sym=false gitargs=() installed_version upkgversion upkgjson
+  [[ ! -e "$pkgpath/upkg.json" ]] || installed_version=$(jq -r '.version' <"$pkgpath/upkg.json")
+  if [[ $pkgversion != "${installed_version#'refs/heads/'}" || \
+        $installed_version = refs/heads/* || \
+        $ancestor_reinstall = true ]]; then
+    upkgversion=$(git ls-remote -q "$repourl" "$pkgversion" | cut -d$'\t' -f2 | head -n1)
+    if [[ -n "$pkgversion" && -n $upkgversion ]]; then
+      ref_is_sym=true
+      gitargs=(--depth=1 "--branch=$pkgversion")  # version is a ref, we can make a shallow clone
+    fi
+    [[ $upkgversion = refs/heads/* ]] || upkgversion=$pkgversion
+    out=$(git clone -q "${gitargs[@]}" "$repourl" "$tmppkgpath" 2>&1) || \
+      fatal "upkg: Unable to clone '%s'. Error:\n%s" "$repospec" "$out"
+    $ref_is_sym || out=$(git -C "$tmppkgpath" checkout -q "$pkgversion" -- 2>&1) || \
+        fatal "upkg: Unable to checkout '%s' from '%s'. Error:\n%s" "$pkgversion" "$repourl" "$out"
+    upkgjson=$(cat "$tmppkgpath/upkg.json")
+    jq --arg version "$upkgversion" '.version = $version' <<<"$upkgjson" >"$tmppkgpath/upkg.json" || \
+      fatal "upkg: The package '%s' does not contain a valid upkg.json" "$pkgname"
+
+    local file files command commands cmdpath
+    files=$(jq -r '((.files // []) + [(.commands // {})[]] | unique)[]' <"$tmppkgpath/upkg.json")
+    commands=$(jq -r '(.commands // {}) | to_entries[] | "\(.key)\n\(.value)"' <"$tmppkgpath/upkg.json")
+    while [[ -n $files ]] && read -r -d $'\n' file; do
+      if [[ $file = /* || $file =~ /\.\.(/|$) || $file =~ // || $file =~ ^.upkg(/|$) || ! -f "$tmppkgpath/$file" ]]; then
+        fatal "upkg: Error on file '%s' in package %s@%s.
+  All files in 'files' and 'commands' must:
+  * be relative
+  * not contain parent dir parts ('../')
+  * not reference the .upkg dir
+  * exist in the repository" "$file" "$pkgname" "$pkgversion"
+      fi
+    done <<<"$files"
+    while [[ -n $commands ]] && read -r -d $'\n' command; do
+      read -r -d $'\n' file
+      [[ -x "$tmppkgpath/$file" ]] || \
+        fatal "upkg: Error on command '%s' in package %s@%s. The file '%s' does not exist or is not executable" \
+          "$command" "$file" "$pkgname" "$pkgversion"
+      [[ ! $command =~ (/| ) ]] || \
+        fatal "upkg: Error on command '%s' in package %s@%s. The command may not contain spaces or slashes" \
+          "$command" "$pkgname" "$pkgversion"
+      cmdpath="$binpath/$command"
+      if [[ -e $cmdpath && $(realpath "$cmdpath") != $pkgpath/* ]]; then
+        fatal "upkg: Error on command '%s' in package %s@%s. The symlink for it exists and does not point to the package" \
+          "$command" "$pkgname" "$pkgversion"
+      fi
+    done <<<"$commands"
+    upkg_prepare_deps "$pkgpath" "$tmppkgpath/.upkg" "$tmppkgpath/upkg.json" true
+  else
+    upkg_prepare_deps "$pkgpath" "$tmppkgpath/.upkg" "$pkgpath/upkg.json" false # Stable package version
   fi
-  out=$(git clone -q "${gitargs[@]}" "$repourl" "$tmppkgpath" 2>&1) || \
-    fatal "upkg: Unable to clone '%s'. Error:\n%s" "$repospec" "$out"
-  ! $gitcheckout || out=$(git -C "$tmppkgpath" checkout -q "$pkgversion" -- 2>&1) || \
-    fatal "upkg: Unable to checkout '%s' from '%s'. Error:\n%s" "$pkgversion" "$repourl" "$out"
-  jq empty < "$tmppkgpath/upkg.json" || fatal "upkg: The package '%s' does not contain a valid upkg.json" "$pkgname"
-
-  local file files command commands cmdpath
-  files=$(jq -r '(["upkg.json"] + (.files // []) + [(.commands // {})[]] | unique)[]' <"$tmppkgpath/upkg.json")
-  commands=$(jq -r '(.commands // {}) | to_entries[] | "\(.key)\n\(.value)"' <"$tmppkgpath/upkg.json")
-  while [[ -n $files ]] && read -r -d $'\n' file; do
-    if [[ $file =~ ^/ || $file =~ /\.\.(/|$) || $file =~ // || ! -f "$tmppkgpath/$file" ]]; then
-      fatal "upkg: Error on file '%s' in package %s@%s.
-All files in 'files' and 'commands' must:
-* be relative
-* not contain parent dir parts ('../')
-* exist in the repository" "$file" "$pkgname" "$pkgversion"
-    fi
-  done <<<"$files"
-  while [[ -n $commands ]] && read -r -d $'\n' command; do
-    read -r -d $'\n' file
-    [[ -x "$tmppkgpath/$file" ]] || \
-      fatal "upkg: Error on command '%s' in package %s@%s. The file '%s' does not exist or is not executable" \
-        "$command" "$file" "$pkgname" "$pkgversion"
-    [[ ! $command =~ (/| ) ]] || \
-      fatal "upkg: Error on command '%s' in package %s@%s. The command may not contain spaces or slashes" \
-        "$command" "$pkgname" "$pkgversion"
-    cmdpath="$binpath/$command"
-    if [[ -e $cmdpath && $(realpath "$cmdpath") != $pkgpath/* ]]; then
-      fatal "upkg: Error on command '%s' in package %s@%s. The symlink for it exists and does not point to the package" \
-        "$command" "$pkgname" "$pkgversion"
-    fi
-  done <<<"$commands"
-
-  upkg_prepare_deps "$pkgpath" "$tmppkgspath/.upkg" "$tmppkgpath/upkg.json"
 }
 
 upkg_install_pkg() {
-  local repospec=$1 pkgspath=$2 binpath=$3 tmppkgspath=$4 parsed_spec _repourl pkgname _pkgversion
+  local repospec=$1 pkgspath=$2 binpath=$3 tmppkgspath=$4 parsed_spec _repourl pkgname pkgversion
   parsed_spec=$(upkg_parse_repospec "$repospec")
-  read -r -d $'\n' _repourl pkgname _pkgversion <<<"$parsed_spec"
-  local pkgpath="$pkgspath/$pkgname" tmppkgpath=$tmppkgspath/$pkgname
-
-  if [[ -e "$pkgpath" ]]; then
-    upkg_uninstall_dep "$pkgname" "$pkgspath" "$binpath"
+  read -r -d $'\n' _repourl pkgname pkgversion <<<"$parsed_spec"
+  local pkgpath="$pkgspath/$pkgname" tmppkgpath=$tmppkgspath/$pkgname file files command commands
+  if [[ -e $tmppkgpath/upkg.json ]]; then # if prepare_deps didn't clone, version is the same
+    [[ ! -e $pkgpath ]] || upkg_uninstall_dep "$pkgname" "$pkgspath" "$binpath"
+    files=$(jq -r '(["upkg.json"] + (.files // []) + [(.commands // {})[]] | unique)[]' <"$tmppkgpath/upkg.json")
+    commands=$(jq -r '(.commands // {}) | to_entries[] | "\(.key)\n\(.value)"' <"$tmppkgpath/upkg.json")
+    while [[ -n $files ]] && read -r -d $'\n' file; do
+      mkdir -p "$(dirname "$pkgpath/$file")"
+      cp -a "$tmppkgpath/$file" "$pkgpath/$file"
+    done <<<"$files"
+    if [[ -n $commands ]]; then
+      mkdir -p "$binpath"
+      while [[ -n $commands ]] && read -r -d $'\n' command; do
+        read -r -d $'\n' file
+        ln -s "$pkgpath/$file" "$binpath/$command"
+      done <<<"$commands"
+    fi
   fi
-
-  local file files command commands
-  files=$(jq -r '(["upkg.json"] + (.files // []) + [(.commands // {})[]] | unique)[]' <"$tmppkgpath/upkg.json")
-  commands=$(jq -r '(.commands // {}) | to_entries[] | "\(.key)\n\(.value)"' <"$tmppkgpath/upkg.json")
-  while [[ -n $files ]] && read -r -d $'\n' file; do
-    mkdir -p "$(dirname "$pkgpath/$file")"
-    cp -a "$tmppkgpath/$file" "$pkgpath/$file"
-  done <<<"$files"
-  if [[ -n $commands ]]; then
-    mkdir -p "$binpath"
-    while [[ -n $commands ]] && read -r -d $'\n' command; do
-      read -r -d $'\n' file
-      ln -s "$pkgpath/$file" "$binpath/$command"
-    done <<<"$commands"
-  fi
-
-  upkg_install_deps "$pkgpath" "$tmppkgspath/.upkg"
+  upkg_install_deps "$pkgpath" "$tmppkgpath/.upkg"
 }
 
 upkg_prepare_deps() {
-  local pkgpath=$1 tmppkgspath=$2 tmpkupkgpath=$3 deps dep
+  local pkgpath=$1 tmppkgspath=$2 tmpkupkgpath=$3 ancestor_reinstall=$4 deps dep
   deps=$(jq -r '(.dependencies // []) | to_entries[] | "\(.key)@\(.value)"' <"$tmpkupkgpath")
   while [[ -n $deps ]] && read -r -d $'\n' dep; do
-    upkg_prepare_pkg "$dep" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgspath/.upkg" || \
+    upkg_prepare_pkg "$dep" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgspath" "$ancestor_reinstall" || \
       fatal "upkg: Error while installing dependency '%s' for '%s'" "$dep"  "$pkgpath/upkg.json"
   done <<<"$deps"
 }
@@ -173,7 +181,7 @@ upkg_install_deps() {
   local pkgpath=$1 tmppkgspath=$2 deps dep
   deps=$(jq -r '(.dependencies // []) | to_entries[] | "\(.key)@\(.value)"' <"$pkgpath/upkg.json")
   while [[ -n $deps ]] && read -r -d $'\n' dep; do
-    upkg_install_pkg "$dep" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgspath/.upkg" || \
+    upkg_install_pkg "$dep" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgspath" || \
       fatal "upkg: Error while installing dependency '%s' for '%s'" "$dep" "$pkgpath/upkg.json"
   done <<<"$deps"
 }

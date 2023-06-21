@@ -8,7 +8,23 @@ logging functions or commands that shouldn't be tracked with those scripts.
 μpkg supports installation to a local project with a `upkg.json` in its root,
 and global installation for user- or system-wide usage.
 
-## Dependencies
+## Contents
+
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Upgrading packages](#upgrading-packages)
+- [Including dependencies](#including-dependencies)
+- [upkg.json](#upkg-json)
+  - [dependencies](#dependencies)
+  - [files](#files)
+  - [commands](#commands)
+  - [version](#version)
+- [Things that μpkg does not and will not support](#things-that-μpkg-does-not-and-will-not-support)
+- [Things that μpkg _might_ support in the future](#things-that-μpkg-might-support-in-the-future)
+- [Alternatives](#alternatives)
+
+# Prerequisites
 
 - bash>=v4.4
 - git
@@ -19,10 +35,10 @@ and global installation for user- or system-wide usage.
 Replace `bash -c ...` with `sudo bash -c ...` to install system-wide.
 
 ```
-wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.9.2/upkg.sh | (
+wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/ft-pin-version/upkg.sh | (
   IFS='' read -r -d $'\0' src; set -e
-  printf '%s' "$src" | shasum -a 256 -c <(printf '19aa0a31ebe10b90c9801f7f396196ce2b658d8043b4b18513ae9e99c008f393  -')
-  bash -c "set - install -g https://github.com/orbit-online/upkg.git@v0.9.2; $src")
+  printf '%s' "$src" | shasum -a 256 -c <(printf '5c14fe52824acbc0d5af386707df97268b0ff805fcda68bef3cdfc24f19387d1  -')
+  bash -c "set - install -g https://github.com/orbit-online/upkg.git@ft-pin-version; $src")
 ```
 
 ## Usage
@@ -52,11 +68,13 @@ and all its commands (see [commands](#commands)).
 
 ## Upgrading packages
 
-When installing a package, μpkg first uninstalls the previous install if it
-exists. This means you can simply run `upkg install` to upgrade all packages
-that have a moving version (like a branchname). Note that it is advisable to
-use commit hashes as versions when publishing something that other packages may
-rely on to avoid bumping past breaking changes.
+You can run `upkg install` to upgrade all packages that have a moving version
+(i.e. a git branch). It is advisable to use commit hashes as versions
+when publishing something that other packages may rely on to avoid bumping past
+breaking changes. All packages that were installed using a git tag or
+commit hash as the version and are still referenced with the same version will
+be skipped during upgrade. This means a `upkg install` can almost become a no-op
+and be run automatically without sacrificing performance.
 
 Note: μpkg performs quite a few pre-flight checks before installing or upgrading
 a package and its dependencies in order to avoid leaving packages in a broken
@@ -87,8 +105,8 @@ my_fn "$@"
 
 ## upkg.json
 
-The upkg.json has no version, package name, or description.
-There are 3 optional config keys in total:
+The upkg.json has no package name or description.
+There are 3 config keys you can specify (none are mandatory).
 
 ### dependencies
 
@@ -99,6 +117,7 @@ Dependencies will be installed under `.upkg` next to `upkg.json`.
 
 ```
 {
+  ...
   "dependencies": {
     "orbit-online/records.sh": "v0.9.2",
     "andsens/docopt.sh": "v1.0.0-upkg",
@@ -148,13 +167,27 @@ When installing globally, the listed commands will be installed as symlinks to
 `upkg uninstall -g` uninstalls those symlinks (provided they still point at the
 package).
 
-When installing locally, the listed commands will be installed to `/.upkg/.bin`.
+When installing locally, the listed commands will be installed to `.upkg/.bin`.
+
+### version
+
+This field will be populated by upkg with the version specified in the global
+install command or the dependency specification. It is used to determine whether
+an install command should overwrite or skip the package.
+
+```
+{
+  ...
+  "version": "v0.9.2",
+  ...
+}
+```
 
 ## Things that μpkg does not and will not support
 
 - `upkg run command`
 - `upkg add/remove usr/package@version`
-- `~`, `^` or other version specifiers
+- `~`, `^` or other version specifiers (use branches for that)
 - Package version locking
 - Package aliases (i.e. non user namespaced package names)
 
