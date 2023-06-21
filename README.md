@@ -16,7 +16,7 @@ and global installation for user- or system-wide usage.
 
 ## Installation
 
-Replace `bash -c ...` with `sudo bash -c ...` to install globally.
+Replace `bash -c ...` with `sudo bash -c ...` to install system-wide.
 
 ```
 wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.9.1/upkg.sh | (
