@@ -25,9 +25,9 @@ Usage:
         upkg_install "$3" "$prefix/lib/upkg" "$prefix/bin" "$tmppkgspath"
         printf "upkg: Installed %s\n" "$3" >&2
       elif [[ $# -eq 1 ]]; then
-        pkgspath=$(upkg_root)
-        deps=$(jq -r '(.dependencies // []) | to_entries[] | "\(.key)@\(.value)"' <"$pkgspath/upkg.json")
-        upkg_install "$deps" "$pkgspath/.upkg" "$pkgspath/.upkg/.bin" "$tmppkgspath"
+        pkgpath=$(upkg_root)
+        deps=$(jq -r '(.dependencies // []) | to_entries[] | "\(.key)@\(.value)"' <"$pkgpath/upkg.json")
+        upkg_install "$deps" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgspath"
         printf "upkg: Installed all dependencies\n" >&2
       else
         fatal "$DOC"
