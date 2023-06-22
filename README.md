@@ -108,7 +108,8 @@ my_fn "$@"
 ## upkg.json
 
 The upkg.json has no package name or description.
-There are 3 config keys you can specify (none are mandatory).
+There are 3 config keys you can specify (none are mandatory, but at least one
+key _must_ be specified).
 
 ### dependencies
 
