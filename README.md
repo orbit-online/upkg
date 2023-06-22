@@ -109,7 +109,7 @@ my_fn "$@"
 
 The upkg.json has no package name or description.
 There are 3 config keys you can specify (none are mandatory, but at least one
-key _must_ be specified).
+key _must_ be present).
 
 ### dependencies
 
@@ -176,9 +176,10 @@ When installing locally, the listed commands will be installed to `.upkg/.bin`.
 
 ### version
 
-This field will be populated by upkg with the version specified in the global
+This field will be populated by μpkg with the version specified in the global
 install command or the dependency specification. It is used to determine whether
-an install command should overwrite or skip the package.
+an install command should overwrite or skip the package. You need not and should
+not specify it.
 
 ```
 {

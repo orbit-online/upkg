@@ -50,7 +50,7 @@ Usage:
 }
 
 upkg_install() {
-  local repospecs=$1 pkgspath=$2 binpath=$3 tmppkgspath=$4 reinstall=${5:-false} repospec deps
+  local repospecs=$1 pkgspath=${2:?} binpath=${3:?} tmppkgspath=${4:?} reinstall=${5:-false} repospec deps
   while [[ -n $repospecs ]] && read -r -d $'\n' repospec; do
     if [[ $repospec =~ ^([^@/: ]+/[^@/: ]+)(@([^@ ]+))$ ]]; then
       local repourl="https://github.com/${BASH_REMATCH[1]}.git"
@@ -132,7 +132,7 @@ All assets in 'assets' and 'commands' must:
 }
 
 upkg_uninstall() {
-  local pkgname=$1 pkgspath=$2 binpath=$3
+  local pkgname=${1:?} pkgspath=${2:?} binpath=${3:?}
   local pkgpath="$pkgspath/$pkgname"
   # When upgrading remove old assets & commands first
   local asset command commands cmdpath
