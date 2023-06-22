@@ -165,11 +165,11 @@ upkg_uninstall() {
 }
 
 upkg_list() {
-  local pkgspath=${1:-} recursive=${2:?} indent=${3:-''} pkgpath pkgpaths pkgname
+  local pkgspath=${1:-} recursive=${2:?} indent=${3:-''} pkgpath pkgpaths pkgname pkgversion
   pkgpaths=$(find "$pkgspath" -mindepth 2 -maxdepth 2)
   while [[ -n $pkgpaths ]] && read -r -d $'\n' pkgpath; do
-    pkgname=${pkgpath#"$pkgspath/"}
-    printf "%s%s@%s\n" "$indent" "$pkgname" "$(jq -r .version <"$pkgpath/upkg.json")"
+    pkgname=${pkgpath#"$pkgspath/"} pkgversion="$(jq -r .version <"$pkgpath/upkg.json")"
+    printf "%s%s@%s\n" "$indent" "$pkgname" "${pkgversion#refs/heads/}"
     if $recursive && [[ -e "$pkgpath/.upkg" ]]; then
       upkg_list "$pkgpath/.upkg" "$recursive" "$indent  "
     fi
