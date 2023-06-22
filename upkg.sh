@@ -12,9 +12,7 @@ Usage:
   upkg install -g [remoteurl]user/pkg@<version>
   upkg uninstall -g user/pkg
   upkg list [-g]
-  upkg root \${BASH_SOURCE[0]}
-"
-  [[ -n $1 ]] || fatal "$DOC"
+  upkg root \${BASH_SOURCE[0]}"
   local prefix=$HOME/.local pkgspath tmppkgspath
   [[ $EUID != 0 ]] || prefix=/usr/local
   case "$1" in
@@ -23,25 +21,22 @@ Usage:
       # shellcheck disable=2064
       trap "rm -rf \"$tmppkgspath\"" EXIT
       if [[ $# -eq 3 && $2 = -g ]]; then
-        upkg_install "$3" "$prefix/lib/upkg" "$prefix/bin" "$tmppkgspath"
+        upkg_install "$3" "$prefix/lib/upkg" "$prefix/bin" "$tmppkgspath" >/dev/null
         printf "upkg: Installed %s\n" "$3" >&2
       elif [[ $# -eq 1 ]]; then
         pkgpath=$(upkg_root)
         deps=$(jq -r '(.dependencies // []) | to_entries[] | "\(.key)@\(.value)"' <"$pkgpath/upkg.json")
-        upkg_install "$deps" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgspath"
+        upkg_install "$deps" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgspath" >/dev/null
         printf "upkg: Installed all dependencies\n" >&2
       else
         fatal "$DOC"
       fi
       ;;
     uninstall)
-      if [[ $# -eq 3 && $2 = -g ]]; then
-        [[ $3 =~ ^([^@/: ]+/[^@/: ]+)$ ]] || fatal "upkg: Expected packagename ('user/pkg') not '%s'" "$3"
-        upkg_uninstall "$3" "$prefix/lib/upkg" "$prefix/bin"
-        printf "upkg: Uninstalled %s\n" "$3" >&2
-      else
-        fatal "$DOC"
-      fi
+      [[ $# -eq 3 && $2 = -g ]] || fatal "$DOC"
+      [[ $3 =~ ^([^@/: ]+/[^@/: ]+)$ ]] || fatal "upkg: Expected packagename ('user/pkg') not '%s'" "$3"
+      upkg_uninstall "$3" "$prefix/lib/upkg" "$prefix/bin"
+      printf "upkg: Uninstalled %s\n" "$3" >&2
       ;;
     list)
       if [[ $# -eq 2 && $2 = -g ]]; then
@@ -61,7 +56,7 @@ Usage:
 }
 
 upkg_install() {
-  local repospecs=$1 pkgspath=${2:?} binpath=${3:?} tmppkgspath=${4:?} reinstall=${5:-false} repospec deps
+  local repospecs=$1 pkgspath=${2:?} binpath=${3:?} tmppkgspath=${4:?} repospec deps
   while [[ -n $repospecs ]] && read -r -d $'\n' repospec; do
     if [[ $repospec =~ ^([^@/: ]+/[^@/: ]+)(@([^@ ]+))$ ]]; then
       local repourl="https://github.com/${BASH_REMATCH[1]}.git"
@@ -70,11 +65,11 @@ upkg_install() {
     else
       fatal "upkg: Unable to parse repospec '%s'. Expected a git cloneable URL followed by @version" "$repospec"
     fi
-    local pkgname="${BASH_REMATCH[1]}" pkgversion="${BASH_REMATCH[3]}"
+    local pkgname="${BASH_REMATCH[1]%\.git}" pkgversion="${BASH_REMATCH[3]}"
     local pkgpath="$pkgspath/$pkgname" tmppkgpath=$tmppkgspath/$pkgname curversion deps
     [[ ! -e "$pkgpath/upkg.json" ]] || curversion=$(jq -r '.version' <"$pkgpath/upkg.json")
-    if [[ $pkgversion != "${curversion#'refs/heads/'}" || $curversion = refs/heads/* || $reinstall = true ]]; then
-      local ref_is_sym=false gitargs=() upkgjson upkgversion asset assets command commands cmdpath
+    if [[ $pkgversion != "${curversion#'refs/heads/'}" || $curversion = refs/heads/* ]]; then
+      local ref_is_sym=false gitargs=() upkgjson upkgversion asset assets command commands cmdpath installed_deps
       upkgversion=$(git ls-remote -q "$repourl" "$pkgversion" | cut -d$'\t' -f2 | head -n1)
       if [[ -n "$pkgversion" && -n $upkgversion ]]; then
         ref_is_sym=true
@@ -120,9 +115,14 @@ All assets in 'assets' and 'commands' must:
         fi
       done <<<"$commands"
       deps=$(jq -r '(.dependencies // []) | to_entries[] | "\(.key)@\(.value)"' <<<"$upkgjson")
-      upkg_install "$deps" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgpath/.upkg" true
+      installed_deps=$(upkg_install "$deps" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgpath/.upkg")
 
-      [[ ! -e $pkgpath/upkg.json ]] || upkg_uninstall "$pkgname" "$pkgspath" "$binpath"
+      if [[ -e $pkgpath/upkg.json ]]; then
+        removed_pkgs=$(comm -13 <(sort <<<"$installed_deps") <(find "$pkgpath/.upkg" -mindepth 2 -maxdepth 2 \
+          -not -path "$pkgpath/.upkg/.bin/*" | rev | cut -d/ -f-2 | rev | sort))
+        [[ -n $removed_pkgs ]] || removed_pkgs='-'
+        upkg_uninstall "$pkgname" "$pkgspath" "$binpath" "$removed_pkgs"
+      fi
       while [[ -n $assets ]] && read -r -d $'\n' asset; do
         mkdir -p "$(dirname "$pkgpath/$asset")"
         cp -ar "$tmppkgpath/$asset" "$pkgpath/$asset"
@@ -137,16 +137,15 @@ All assets in 'assets' and 'commands' must:
       printf "%s\n" "$upkgjson" >"$pkgpath/upkg.json"
     else
       deps=$(jq -r '(.dependencies // []) | to_entries[] | "\(.key)@\(.value)"' <"$pkgpath/upkg.json")
-      upkg_install "$deps" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgpath/.upkg" false
+      upkg_install "$deps" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgpath/.upkg" >/dev/null
     fi
+    printf "%s\n" "$pkgname"
   done <<<"$repospecs"
 }
 
 upkg_uninstall() {
-  local pkgname=${1:?} pkgspath=${2:?} binpath=${3:?}
-  local pkgpath="$pkgspath/$pkgname"
-  # When upgrading remove old assets & commands first
-  local asset command commands cmdpath
+  local pkgname=${1:?} pkgspath=${2:?} binpath=${3:?} deps_to_remove=$4 dep
+  local pkgpath="$pkgspath/$pkgname" asset command commands cmdpath
   [[ -e "$pkgpath/upkg.json" ]] || fatal "upkg: '%s' is not installed" "$pkgname"
   commands=$(jq -r '(.commands // {}) | to_entries[] | "\(.key)\n\(.value)"' <"$pkgpath/upkg.json")
   while [[ -n $commands ]] && read -r -d $'\n' command; do
@@ -154,8 +153,15 @@ upkg_uninstall() {
     cmdpath="$binpath/$command"
     [[ ! -e $cmdpath || $(realpath "$cmdpath") != $pkgpath/* ]] || rm "$cmdpath"
   done <<<"$commands"
-  rm -rf "$pkgpath"
-  [[ -n $(find "$(dirname "$pkgpath")" -mindepth 1 -maxdepth 1) ]] || rm -rf "$(dirname "$pkgpath")"
+  if [[ -n $deps_to_remove ]]; then
+    find "$pkgpath" -mindepth 1 -maxdepth 1 -path "$pkgpath/.upkg" -prune -o -exec rm -rf \{\} \;
+    while [[ $deps_to_remove != '-' ]] && read -r -d $'\n' dep; do
+      upkg_uninstall "$dep" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin"
+    done <<<"$deps_to_remove"
+  else
+    rm -rf "$pkgpath"
+    [[ -n $(find "$(dirname "$pkgpath")" -mindepth 1 -maxdepth 1) ]] || rm -rf "$(dirname "$pkgpath")"
+  fi
 }
 
 upkg_list() {

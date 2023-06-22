@@ -35,10 +35,10 @@ and global installation for user- or system-wide usage.
 Replace `bash -c ...` with `sudo bash -c ...` to install system-wide.
 
 ```
-wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.9.3/upkg.sh | (
+wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.9.4/upkg.sh | (
   IFS='' read -r -d $'\0' src; set -e
-  printf '%s' "$src" | shasum -a 256 -c <(printf 'ab63b9d76d252cdde84ef4e19249c9a3ed0e4e621d39872e50d4c288f304ea79  -')
-  bash -c "set - install -g https://github.com/orbit-online/upkg.git@v0.9.3; $src")
+  printf '%s' "$src" | shasum -a 256 -c <(printf '67bec3ee87907b4e9586004099476c0dd4b256899e09ec5b091e911ffc87149b  -')
+  bash -c "set - install -g orbit-online/upkg@v0.9.4; $src")
 ```
 
 ## Usage
