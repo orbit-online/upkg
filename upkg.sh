@@ -36,7 +36,7 @@ Usage:
     uninstall)
       if [[ $# -eq 3 && $2 = -g ]]; then
         [[ $3 =~ ^([^@/: ]+/[^@/: ]+)$ ]] || fatal "upkg: Expected packagename ('user/pkg') not '%s'" "$3"
-        upkg_uninstall_dep "$3" "$prefix/lib/upkg" "$prefix/bin"
+        upkg_uninstall "$3" "$prefix/lib/upkg" "$prefix/bin"
         printf "upkg: Uninstalled %s\n" "$3" >&2
       else
         fatal "$DOC"
@@ -111,7 +111,7 @@ All assets in 'assets' and 'commands' must:
       deps=$(jq -r '(.dependencies // []) | to_entries[] | "\(.key)@\(.value)"' <<<"$upkgjson")
       upkg_install "$deps" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgpath/.upkg" true
 
-      [[ ! -e $pkgpath/upkg.json ]] || upkg_uninstall_dep "$pkgname" "$pkgspath" "$binpath"
+      [[ ! -e $pkgpath/upkg.json ]] || upkg_uninstall "$pkgname" "$pkgspath" "$binpath"
       while [[ -n $assets ]] && read -r -d $'\n' asset; do
         mkdir -p "$(dirname "$pkgpath/$asset")"
         cp -ar "$tmppkgpath/$asset" "$pkgpath/$asset"
@@ -131,7 +131,7 @@ All assets in 'assets' and 'commands' must:
   done <<<"$repospecs"
 }
 
-upkg_uninstall_dep() {
+upkg_uninstall() {
   local pkgname=$1 pkgspath=$2 binpath=$3
   local pkgpath="$pkgspath/$pkgname"
   # When upgrading remove old assets & commands first
