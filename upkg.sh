@@ -11,6 +11,7 @@ Usage:
   upkg install
   upkg install -g [remoteurl]user/pkg@<version>
   upkg uninstall -g user/pkg
+  upkg list [-g]
   upkg root \${BASH_SOURCE[0]}
 "
   [[ -n $1 ]] || fatal "$DOC"
@@ -38,6 +39,16 @@ Usage:
         [[ $3 =~ ^([^@/: ]+/[^@/: ]+)$ ]] || fatal "upkg: Expected packagename ('user/pkg') not '%s'" "$3"
         upkg_uninstall "$3" "$prefix/lib/upkg" "$prefix/bin"
         printf "upkg: Uninstalled %s\n" "$3" >&2
+      else
+        fatal "$DOC"
+      fi
+      ;;
+    list)
+      if [[ $# -eq 2 && $2 = -g ]]; then
+        upkg_list "$prefix/lib/upkg" false
+      elif [[ $# -eq 1 ]]; then
+        pkgpath=$(upkg_root)
+        upkg_list "$pkgpath/.upkg" true
       else
         fatal "$DOC"
       fi
@@ -145,6 +156,18 @@ upkg_uninstall() {
   done <<<"$commands"
   rm -rf "$pkgpath"
   [[ -n $(find "$(dirname "$pkgpath")" -mindepth 1 -maxdepth 1) ]] || rm -rf "$(dirname "$pkgpath")"
+}
+
+upkg_list() {
+  local pkgspath=${1:-} recursive=${2:?} indent=${3:-''} pkgpath pkgpaths pkgname
+  pkgpaths=$(find "$pkgspath" -mindepth 2 -maxdepth 2)
+  while [[ -n $pkgpaths ]] && read -r -d $'\n' pkgpath; do
+    pkgname=${pkgpath#"$pkgspath/"}
+    printf "%s%s@%s\n" "$indent" "$pkgname" "$(jq -r .version <"$pkgpath/upkg.json")"
+    if $recursive && [[ -e "$pkgpath/.upkg" ]]; then
+      upkg_list "$pkgpath/.upkg" "$recursive" "$indent  "
+    fi
+  done <<<"$pkgpaths"
 }
 
 upkg_root() (

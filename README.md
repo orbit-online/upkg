@@ -49,6 +49,7 @@ Usage:
   upkg install
   upkg install -g [remoteurl]user/pkg@<version>
   upkg uninstall -g user/pkg
+  upkg list [-g]
   upkg root ${BASH_SOURCE[0]}
 ```
 
@@ -62,6 +63,9 @@ or `$HOME/.local` (when not).
 
 `upkg uninstall -g` uninstalls a globally installed package (must be shorthand)
 and all its commands (see [commands](#commands)).
+
+`upkg list` shows the installed packages. When using `-g` for "global", package
+dependencies are not listed.
 
 `upkg root` is a utility function for scripts in order to build `source` paths
 (see [Including dependencies](#including-dependencies)).
