@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e -o pipefail
+set -eo pipefail
 shopt -s inherit_errexit
 
 upkg() {
@@ -56,12 +56,12 @@ Usage:
 }
 
 upkg_install() {
-  local repospecs=$1 pkgspath=${2:?} binpath=${3:?} tmppkgspath=${4:?} repospec deps
+  local repospecs=$1 pkgspath=${2:?} binpath=${3:?} tmppkgspath=${4:?} repospec deps repourl
   while [[ -n $repospecs ]] && read -r -d $'\n' repospec; do
     if [[ $repospec =~ ^([^@/: ]+/[^@/: ]+)(@([^@ ]+))$ ]]; then
-      local repourl="https://github.com/${BASH_REMATCH[1]}.git"
+      repourl="https://github.com/${BASH_REMATCH[1]}.git"
     elif [[ $repospec =~ ([^@/: ]+/[^@/ ]+)(@([^@ ]+))$ ]]; then
-      local repourl=${repospec%@*}
+      repourl=${repospec%@*}
     else
       fatal "upkg: Unable to parse repospec '%s'. Expected a git cloneable URL followed by @version" "$repospec"
     fi
@@ -72,8 +72,7 @@ upkg_install() {
       local ref_is_sym=false gitargs=() upkgjson upkgversion asset assets command commands cmdpath installed_deps
       upkgversion=$(git ls-remote -q "$repourl" "$pkgversion" | cut -d$'\t' -f2 | head -n1)
       if [[ -n "$pkgversion" && -n $upkgversion ]]; then
-        ref_is_sym=true
-        gitargs=(--depth=1 "--branch=$pkgversion")  # version is a ref, we can make a shallow clone
+        ref_is_sym=true gitargs=(--depth=1 "--branch=$pkgversion")  # version is a ref, we can make a shallow clone
       fi
       [[ $upkgversion = refs/heads/* ]] || upkgversion=$pkgversion
       out=$(git clone -q "${gitargs[@]}" "$repourl" "$tmppkgpath" 2>&1) || \
@@ -91,12 +90,9 @@ upkg_install() {
           fatal 'upkg: Error on asset '%s' in package %s@%s. Directories must have a trailing slash' \
             "$asset" "$pkgname" "$pkgversion"
         if [[ $asset = /* || $asset =~ /\.\.(/|$) || $asset =~ // || $asset =~ ^.upkg(/|$) || ! -e "$tmppkgpath/$asset" ]]; then
-          fatal "upkg: Error on asset '%s' in package %s@%s.
-All assets in 'assets' and 'commands' must:
-* be relative
-* not contain parent dir parts ('../')
-* not reference the .upkg dir
-* exist in the repository" "$asset" "$pkgname" "$pkgversion"
+          fatal "upkg: Error on asset '%s' in package %s@%s.\nAll assets in 'assets' and 'commands' must:
+* be relative\n* not contain parent dir parts ('../')\n* not reference the .upkg dir\n* exist in the repository" \
+            "$asset" "$pkgname" "$pkgversion"
         fi
       done <<<"$assets"
       commands=$(jq -r '(.commands // {}) | to_entries[] | "\(.key)\n\(.value)"' <<<"$upkgjson")
@@ -117,7 +113,7 @@ All assets in 'assets' and 'commands' must:
       deps=$(jq -r '(.dependencies // []) | to_entries[] | "\(.key)@\(.value)"' <<<"$upkgjson")
       installed_deps=$(upkg_install "$deps" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgpath/.upkg")
 
-      if [[ -e $pkgpath/upkg.json ]]; then
+      if [[ -e $pkgpath/upkg.json ]]; then # Remove package before reinstalling
         removed_pkgs=$(comm -13 <(sort <<<"$installed_deps") <(find "$pkgpath/.upkg" -mindepth 2 -maxdepth 2 \
           -not -path "$pkgpath/.upkg/.bin/*" | rev | cut -d/ -f-2 | rev | sort))
         [[ -n $removed_pkgs ]] || removed_pkgs='-'
