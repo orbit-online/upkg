@@ -105,7 +105,7 @@ upkg_install() {
           fatal "Error on command '%s' in package %s@%s. The command may not contain spaces or slashes" \
             "$command" "$pkgname" "$pkgversion"
         cmdpath="$binpath/$command"
-        if [[ -e $cmdpath && $(realpath "$cmdpath") != $pkgpath/* ]]; then
+        if [[ -e $cmdpath || -L $cmdpath ]] && [[ $(realpath "$cmdpath") != $pkgpath/* ]]; then
           fatal "Error on command '%s' in package %s@%s. The symlink for it exists and does not point to the package" \
             "$command" "$pkgname" "$pkgversion"
         fi
