@@ -114,8 +114,8 @@ upkg_install() {
       installed_deps=$(upkg_install "$deps" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgpath/.upkg")
 
       if [[ -e $pkgpath/upkg.json ]]; then # Remove package before reinstalling
-        removed_pkgs=$(comm -13 <(sort <<<"$installed_deps") <(find "$pkgpath/.upkg" -mindepth 2 -maxdepth 2 \
-          -not -path "$pkgpath/.upkg/.bin/*" | rev | cut -d/ -f-2 | rev | sort))
+        [[ ! -e "$pkgpath/.upkg" ]] || removed_pkgs=$(comm -13 <(sort <<<"$installed_deps") <(find "$pkgpath/.upkg" \
+          -mindepth 2 -maxdepth 2 -not -path "$pkgpath/.upkg/.bin/*" | rev | cut -d/ -f-2 | rev | sort))
         [[ -n $removed_pkgs ]] || removed_pkgs='-'
         upkg_uninstall "$pkgname" "$pkgspath" "$binpath" "$removed_pkgs"
       fi
