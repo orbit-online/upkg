@@ -13,6 +13,7 @@ and global installation for user- or system-wide usage.
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Usage](#usage)
+  - [Silent operation](#silent-operation)
 - [Upgrading packages](#upgrading-packages)
 - [Including dependencies](#including-dependencies)
 - [upkg.json](#upkg-json)
@@ -69,6 +70,14 @@ dependencies are not listed.
 
 `upkg root` is a utility function for scripts in order to build `source` paths
 (see [Including dependencies](#including-dependencies)).
+
+### Silent operation
+
+You can suppress processing output by setting `UPKG_SILENT=true`.
+When stderr is not a TTY, μpkg switches to outputting a line for each processing
+step instead of overwriting the same line.
+Errors will always be output and cannot be silenced (use `2>/dev/null` to do
+that).
 
 ## Upgrading packages
 
