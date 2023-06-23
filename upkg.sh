@@ -100,7 +100,7 @@ upkg_install() {
         read -r -d $'\n' asset
         [[ -x "$tmppkgpath/$asset" && -f "$tmppkgpath/$asset" ]] || \
           fatal "Error on command '%s' in package %s@%s. The file '%s' does not exist or is not executable" \
-            "$command" "$asset" "$pkgname" "$pkgversion"
+            "$command" "$pkgname" "$pkgversion" "$asset"
         [[ ! $command =~ (/| ) ]] || \
           fatal "Error on command '%s' in package %s@%s. The command may not contain spaces or slashes" \
             "$command" "$pkgname" "$pkgversion"
