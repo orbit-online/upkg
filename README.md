@@ -140,7 +140,7 @@ Dependencies will be installed under `.upkg` next to `upkg.json`.
   "dependencies": {
     "orbit-online/records.sh": "v0.9.2",
     "andsens/docopt.sh": "v1.0.0-upkg",
-		"git@github.com:secoya/bitwarden-tools": "master"
+		"orbit-online/bitwarden-tools": "master"
   },
   ...
 }
