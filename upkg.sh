@@ -21,12 +21,12 @@ Usage:
       trap "rm -rf \"$tmppkgspath\"" EXIT
       if [[ $# -eq 3 && $2 = -g ]]; then
         upkg_install "$3" "$prefix/lib/upkg" "$prefix/bin" "$tmppkgspath" >/dev/null
-        processing 'Installed %s' "$3" && { [[ ! -t 2 ]] || printf "\n"; }
+        processing 'Installed %s' "$3" && { [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";} }
       elif [[ $# -eq 1 ]]; then
         pkgpath=$(upkg_root)
         deps=$(jq -r '(.dependencies // []) | to_entries[] | "\(.key)@\(.value)"' <"$pkgpath/upkg.json")
         upkg_install "$deps" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgspath" >/dev/null
-        processing 'Installed all dependencies' && { [[ ! -t 2 ]] || printf "\n"; }
+        processing 'Installed all dependencies' && { [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";} }
       else
         fatal "$DOC"
       fi
@@ -35,7 +35,7 @@ Usage:
       [[ $# -eq 3 && $2 = -g ]] || fatal "$DOC"
       [[ $3 =~ ^([^@/: ]+/[^@/: ]+)$ ]] || fatal "Expected packagename ('user/pkg') not '%s'" "$3"
       upkg_uninstall "$3" "$prefix/lib/upkg" "$prefix/bin"
-      processing 'Uninstalled %s' "$3" && { [[ ! -t 2 ]] || printf "\n"; }
+      processing 'Uninstalled %s' "$3" && { [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";} }
       ;;
     list)
       if [[ $# -eq 2 && $2 = -g ]]; then
