@@ -27,10 +27,7 @@ Usage:
         deps=$(jq -r '(.dependencies // []) | to_entries[] | "\(.key)@\(.value)"' <"$pkgpath/upkg.json")
         upkg_install "$deps" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgspath" >/dev/null
         processing 'Installed all dependencies' && { [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";} }
-      else
-        fatal "$DOC"
-      fi
-      ;;
+      else fatal "$DOC"; fi ;;
     uninstall)
       [[ $# -eq 3 && $2 = -g ]] || fatal "$DOC"
       [[ $3 =~ ^([^@/: ]+/[^@/: ]+)$ ]] || fatal "Expected packagename ('user/pkg') not '%s'" "$3"
@@ -43,10 +40,7 @@ Usage:
       elif [[ $# -eq 1 ]]; then
         pkgpath=$(upkg_root)
         upkg_list "$pkgpath/.upkg" true
-      else
-        fatal "$DOC"
-      fi
-      ;;
+      else fatal "$DOC"; fi ;;
     root)
       [[ -n $2 ]] || fatal "$DOC"
       upkg_root "$2" ;;
@@ -55,8 +49,8 @@ Usage:
 }
 
 upkg_install() {
-  local repospecs=$1 pkgspath=${2:?} binpath=${3:?} tmppkgspath=${4:?} repospec deps repourl
-  while [[ -n $repospecs ]] && read -r -d $'\n' repospec; do
+  local repospecs=$1 pkgspath=${2:?} binpath=${3:?} tmppkgspath=${4:?} repospec deps repourl ret=0
+  while [[ -n $repospecs ]] && read -r -d $'\n' repospec; do (
     if [[ $repospec =~ ^([^@/: ]+/[^@/: ]+)(@([^@ ]+))$ ]]; then
       repourl="https://github.com/${BASH_REMATCH[1]}.git"
     elif [[ $repospec =~ ([^@/: ]+/[^@/ ]+)(@([^@ ]+))$ ]]; then
@@ -137,7 +131,9 @@ upkg_install() {
       upkg_install "$deps" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgpath/.upkg" >/dev/null
     fi
     printf "%s\n" "$pkgname"
-  done <<<"$repospecs"
+  )& done <<<"$repospecs"
+  while (($(jobs -p | wc -l) > 0)); do wait -n || ret=$?; done
+  return $ret
 }
 
 upkg_uninstall() {
