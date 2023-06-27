@@ -33,8 +33,7 @@ Usage:
       [[ $# -eq 3 && $2 = -g ]] || fatal "$DOC"
       [[ $3 =~ ^([^@/: ]+/[^@/: ]+)$ ]] || fatal "Expected packagename ('user/pkg') not '%s'" "$3"
       upkg_uninstall "$3" "$prefix/lib/upkg" "$prefix/bin"
-      processing 'Uninstalled %s' "$3" && { [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";} }
-      ;;
+      processing 'Uninstalled %s' "$3" && { [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";} } ;;
     list)
       if [[ $# -eq 2 && $2 = -g ]]; then
         upkg_list "$prefix/lib/upkg" false
@@ -84,7 +83,7 @@ upkg_install() {
         [[ ! -d "$tmppkgpath/$asset" || "$tmppkgpath/$asset" = */ ]] || \
           fatal 'Error on asset '%s' in package %s@%s. Directories must have a trailing slash' \
             "$asset" "$pkgname" "$pkgversion"
-        if [[ $asset = /* || $asset =~ /\.\.(/|$) || $asset =~ // || $asset =~ ^.upkg(/|$) || ! -e "$tmppkgpath/$asset" ]]; then
+        if [[ $asset = /* || $asset =~ /\.\.(/|$)|//|^.upkg(/|$) || ! -e "$tmppkgpath/$asset" ]]; then
           fatal "Error on asset '%s' in package %s@%s.\nAll assets in 'assets' and 'commands' must:
 * be relative\n* not contain parent dir parts ('../')\n* not reference the .upkg dir\n* exist in the repository" \
             "$asset" "$pkgname" "$pkgversion"
@@ -122,7 +121,11 @@ upkg_install() {
         mkdir -p "$binpath"
         while [[ -n $commands ]] && read -r -d $'\n' command; do
           read -r -d $'\n' asset
-          ln -sf "../$pkgname/$asset" "$binpath/$command" # Overwrite to support unclean uninstalls
+          if [[ $pkgspath = */lib/upkg ]]; then
+            ln -sf "../lib/upkg/$pkgname/$asset" "$binpath/$command" # Overwrite to support unclean uninstalls
+          else
+            ln -sf "../$pkgname/$asset" "$binpath/$command"
+          fi
         done <<<"$commands"
       fi
       printf "%s\n" "$upkgjson" >"$pkgpath/upkg.json"
