@@ -122,7 +122,7 @@ upkg_install() {
         mkdir -p "$binpath"
         while [[ -n $commands ]] && read -r -d $'\n' command; do
           read -r -d $'\n' asset
-          ln -s "$pkgpath/$asset" "$binpath/$command"
+          ln -s "../$pkgname/$asset" "$binpath/$command"
         done <<<"$commands"
       fi
       printf "%s\n" "$upkgjson" >"$pkgpath/upkg.json"
