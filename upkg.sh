@@ -60,7 +60,7 @@ upkg_install() {
       fatal "Unable to parse repospec '%s'. Expected a git cloneable URL followed by @version" "$repospec"
     fi
     local pkgname="${BASH_REMATCH[1]%\.git}" pkgversion="${BASH_REMATCH[3]}"
-    local pkgpath="$pkgspath/$pkgname" tmppkgpath=$tmppkgspath/$pkgname curversion deps
+    local pkgpath="$pkgspath/$pkgname" tmppkgpath=$tmppkgspath/$pkgname curversion deps out
     [[ ! -e "$pkgpath/upkg.json" ]] || curversion=$(jq -r '.version' <"$pkgpath/upkg.json")
     if [[ $pkgversion != "${curversion#'refs/heads/'}" || $curversion = refs/heads/* ]]; then
       processing 'Installing %s@%s' "$pkgname" "$pkgversion"
