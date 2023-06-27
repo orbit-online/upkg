@@ -122,7 +122,7 @@ upkg_install() {
         mkdir -p "$binpath"
         while [[ -n $commands ]] && read -r -d $'\n' command; do
           read -r -d $'\n' asset
-          ln -s "../$pkgname/$asset" "$binpath/$command"
+          ln -sf "../$pkgname/$asset" "$binpath/$command" # Overwrite to support unclean uninstalls
         done <<<"$commands"
       fi
       printf "%s\n" "$upkgjson" >"$pkgpath/upkg.json"
