@@ -14,6 +14,8 @@ and global installation for user- or system-wide usage.
 - [Installation](#installation)
 - [Usage](#usage)
   - [Silent operation](#silent-operation)
+- [Available packages](#available-packages)
+- [Publishing packages](#publishing-packages)
 - [Upgrading packages](#upgrading-packages)
 - [Including dependencies](#including-dependencies)
 - [upkg.json](#upkg-json)
@@ -79,6 +81,19 @@ step instead of overwriting the same line.
 Errors will always be output and cannot be silenced (use `2>/dev/null` to do
 that).
 
+## Available packages
+
+Check out [PACKAGES.md](PACKAGES.md) for a curated list of available packages.  
+You can also use the [`upkg` topic](https://github.com/topics/upkg) to
+look for other packages on GitHub.
+
+## Publishing packages
+
+When hosting a package on GitHub, add the `upkg` topic to make it discoverable
+via search.  
+Additionally you can send a PR that updates [PACKAGES.md](PACKAGES.md) with a
+link to your package.
+
 ## Upgrading packages
 
 You can run `upkg install` to upgrade all packages that have a moving version
@@ -93,10 +108,6 @@ This means a `upkg install` can almost become a no-op and be run automatically
 without sacrificing performance. Conversely branch versions will always be
 reinstalled, even when they are a dependency of a parent package that is version
 pinned via a tag or commit hash.
-
-Note: μpkg performs quite a few pre-flight checks before installing or upgrading
-a package and its dependencies in order to avoid leaving packages in a broken
-state. If it does happen, kindly report a reproduce as an issue.
 
 ## Including dependencies
 
