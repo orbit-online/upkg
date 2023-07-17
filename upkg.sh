@@ -5,7 +5,7 @@ shopt -s inherit_errexit
 
 upkg() {
   [[ ! $(bash --version | head -n1) =~ version\ [34]\.[0-3] ]] || fatal "upkg requires bash >= v4.4\n"
-  { type jq >/dev/null 2>&1 && type git >/dev/null 2>&1; } || fatal "Unable to find dependencies 'jq' and 'git'.\n"
+  { type jq >/dev/null 2>&1 && type git >/dev/null 2>&1; } || fatal "Unable to find dependencies 'jq' and/or 'git'.\n"
   export GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND=${GIT_SSH_COMMAND:-"ssh -oBatchMode=yes"}
   DOC="μpkg - A minimalist package manager
 Usage:
