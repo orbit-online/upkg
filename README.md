@@ -50,11 +50,10 @@ wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.9.10/upkg.sh | 
 ```
 μpkg - A minimalist package manager
 Usage:
-  upkg install
-  upkg install -g [remoteurl]user/pkg@<version>
+  upkg install [-g [remoteurl]user/pkg@<version>]
   upkg uninstall -g user/pkg
   upkg list [-g]
-  upkg root ${BASH_SOURCE[0]}
+  upkg root -g|${BASH_SOURCE[0]}
 ```
 
 `upkg install` looks for a `upkg.json` in the current directory and upwards and
@@ -132,6 +131,9 @@ my_fn() {
 
 my_fn "$@"
 ```
+
+Use `upkg root -g` to get the path to the system-wide installation instead of
+hardcoding `$HOME/.local/lib/upkg` or `/usr/local/lib/upkg`.
 
 ## upkg.json
 

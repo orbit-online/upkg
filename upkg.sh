@@ -9,11 +9,10 @@ upkg() {
   export GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND=${GIT_SSH_COMMAND:-"ssh -oBatchMode=yes"}
   DOC="μpkg - A minimalist package manager
 Usage:
-  upkg install
-  upkg install -g [remoteurl]user/pkg@<version>
+  upkg install [-g [remoteurl]user/pkg@<version>]
   upkg uninstall -g user/pkg
   upkg list [-g]
-  upkg root \${BASH_SOURCE[0]}"
+  upkg root -g|\${BASH_SOURCE[0]}"
   local prefix=$HOME/.local pkgspath tmppkgspath
   [[ $EUID != 0 ]] || prefix=/usr/local
   case "$1" in
@@ -42,8 +41,9 @@ Usage:
         upkg_list "$pkgpath/.upkg" true
       else fatal "$DOC"; fi ;;
     root)
-      [[ -n $2 ]] || fatal "$DOC"
-      upkg_root "$2" ;;
+      if [[ -z $2 ]]; then fatal "$DOC"
+      elif [[ $2 = '-g' ]]; then printf "%s/lib/upkg\n" "$prefix"
+      else upkg_root "$2"; fi ;;
     *) fatal "$DOC" ;;
   esac
 }
