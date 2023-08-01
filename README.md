@@ -35,12 +35,13 @@ and global installation for user- or system-wide usage.
 
 ## Installation
 
-Replace `bash -c ...` with `sudo bash -c ...` to install system-wide.
+Replace `bash -c ...` with `sudo bash -c ...` to install system-wide.  
+You can also paste this directly into a Dockerfile `RUN` command, no escaping needed.
 
 ```
-wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.9.10/upkg.sh | (
-  IFS='' read -r -d $'\0' src; set -e
-  printf '%s' "$src" | shasum -a 256 -c <(printf '640152acb45d1fc143d895c75f9fb2fb4e379e391c4d20452529d926fbd70453  -')
+wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.9.10/upkg.sh | (\
+  set +e; IFS='' read -r -d $'\0' src; set -e;\
+  printf '%s' "$src" | shasum -a 256 -c <(printf '640152acb45d1fc143d895c75f9fb2fb4e379e391c4d20452529d926fbd70453  -');\
   bash -c "set - install -g orbit-online/upkg@v0.9.10; $src")
 ```
 
