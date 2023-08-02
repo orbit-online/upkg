@@ -11,6 +11,7 @@ and global installation for user- or system-wide usage.
 
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
+  - [Upgrading](#upgrading)
 - [Usage](#usage)
   - [Silent operation](#silent-operation)
 - [Available packages](#available-packages)
@@ -156,7 +157,7 @@ hardcoding `$HOME/.local/lib/upkg` or `/usr/local/lib/upkg`.
 
 ## upkg.json
 
-The upkg.json has no package name or description.
+`upkg.json` has no package name, version or description.
 There are 3 config keys you can specify (none are mandatory, but at least one
 key _must_ be present).
 
@@ -172,8 +173,8 @@ Dependencies will be installed under `.upkg` next to `upkg.json`.
   ...
   "dependencies": {
     "orbit-online/records.sh": "v0.9.2",
-    "andsens/docopt.sh": "v1.0.0-upkg",
-		"orbit-online/bitwarden-tools": "master"
+    "git@github.com:andsens/docopt.sh": "v1.0.0-upkg",
+    "orbit-online/bitwarden-tools": "master"
   },
   ...
 }
@@ -183,8 +184,8 @@ Dependencies will be installed under `.upkg` next to `upkg.json`.
 
 List of files and folders the package consists of. An array of paths relative to
 the repository root. Only items listed here and in [commands](#commands) will be
-part of the final package installation. All listed paths _must_ exist, folders
-_must_ have a trailing slash.
+part of the final package installation. All listed paths _must_ exist and
+folders _must_ have a trailing slash.
 
 ```
 {
@@ -218,8 +219,8 @@ be marked as executable.
 
 When installing globally, the listed commands will be installed as symlinks to
 `/usr/local/bin` (when root) or `$HOME/.local/bin` (when not).  
-`upkg uninstall -g` uninstalls those symlinks (provided they still point at the
-package).
+When uninstalling a package these symlinks are removed as well (provided they
+still point at the package).
 
 When installing locally, the listed commands will be installed to `.upkg/.bin`.
 
@@ -227,8 +228,8 @@ When installing locally, the listed commands will be installed to `.upkg/.bin`.
 
 This field will be populated by μpkg with the version specified in the global
 install command or the dependency specification. It is used to determine whether
-an install command should overwrite or skip the package. You need not and should
-not specify it.
+an install command should overwrite or skip the package. You need _must not_
+specify it.
 
 ```
 {
