@@ -46,6 +46,17 @@ wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.9.11/upkg.sh | 
   bash -c "set - install -g orbit-online/upkg@v0.9.11; $src")
 ```
 
+### Upgrading
+
+You can upgrade μpkg with μpkg (prefix with `sudo` if installed system-wide):
+
+```
+upkg install -g orbit-online/upkg@<VERSION>
+```
+
+Use `stable` for `<VERSION>` if you don't care about the specific version number
+and would just like to upgrade to the latest stable version.
+
 ## Usage
 
 ```
@@ -140,7 +151,7 @@ my_fn() {
 my_fn "$@"
 ```
 
-Use `upkg root -g` to get the path to the system-wide installation instead of
+Use `upkg root -g` to get the path to the global installation instead of
 hardcoding `$HOME/.local/lib/upkg` or `/usr/local/lib/upkg`.
 
 ## upkg.json
