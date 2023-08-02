@@ -1,7 +1,6 @@
 # μpkg - A minimalist package manager
 
-μpkg is a package manager written in <200 lines of bash with just the bare
-minimum of features.  
+μpkg is a package manager written in bash with just the bare minimum of features.  
 Its primary focus is allowing bash scripts to source dependencies like small
 logging functions or commands that shouldn't be tracked with those scripts.
 
@@ -17,6 +16,7 @@ and global installation for user- or system-wide usage.
 - [Available packages](#available-packages)
 - [Publishing packages](#publishing-packages)
 - [Upgrading packages](#upgrading-packages)
+  - [Transactionality](#transactionality)
 - [Including dependencies](#including-dependencies)
 - [upkg.json](#upkg-json)
   - [dependencies](#dependencies)
@@ -32,6 +32,7 @@ and global installation for user- or system-wide usage.
 - bash>=v4.4
 - git
 - jq
+- flock
 
 ## Installation
 
@@ -39,10 +40,10 @@ Replace `bash -c ...` with `sudo bash -c ...` to install system-wide.
 You can also paste this directly into a Dockerfile `RUN` command, no escaping needed.
 
 ```
-wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.9.10/upkg.sh | (\
+wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.9.11/upkg.sh | (\
   set +e; IFS='' read -r -d $'\0' src; set -e;\
-  printf '%s' "$src" | shasum -a 256 -c <(printf '640152acb45d1fc143d895c75f9fb2fb4e379e391c4d20452529d926fbd70453  -');\
-  bash -c "set - install -g orbit-online/upkg@v0.9.10; $src")
+  printf '%s' "$src" | shasum -a 256 -c <(printf '2ce14fb5f7c1f6423789e23a16be70c4aac5a930a8638ae4e2e7663e0cce46df  -');\
+  bash -c "set - install -g orbit-online/upkg@v0.9.11; $src")
 ```
 
 ## Usage
@@ -108,6 +109,13 @@ This means a `upkg install` can almost become a no-op and be run automatically
 without sacrificing performance. Conversely branch versions will always be
 reinstalled, even when they are a dependency of a parent package that is version
 pinned via a tag or commit hash.
+
+### Transactionality
+
+With the help of `flock` μpkg tries very hard to ensure that either everything
+is installed/upgraded or nothing is. Unhandled violations include
+(and are limited to) broken permissions (e.g. inconsistent ownership of files),
+insufficient diskspace, or a sudden closure of stderr.
 
 ## Including dependencies
 
@@ -222,7 +230,7 @@ not specify it.
 ## Things that μpkg does not and will not support
 
 - `upkg run command`
-- `upkg add/remove usr/package@version`
+- `upkg add/remove usr/package@version` to `upkg.json``
 - `~`, `^` or other version specifiers (use branches for that)
 - Package version locking
 - Package aliases (i.e. non user namespaced package names)
@@ -232,7 +240,6 @@ not specify it.
 - Installing packages via e.g. raw.githubusercontent.com or the local filesystem
   to avoid the git dependency (would require `name` to be present in `upkg.json`)
 - Using something like `JSON.sh` to avoid the jq dependency
-- Some kind of index of public packages
 
 ## Alternatives
 
