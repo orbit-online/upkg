@@ -61,7 +61,7 @@ upkg_install() {
     local pkgname="${BASH_REMATCH[1]%\.git}" pkgversion="${BASH_REMATCH[3]}"
     local pkgpath="$pkgspath/$pkgname" tmppkgpath=$tmppkgspath/$pkgname curversion deps out
     [[ ! -e "$pkgpath/upkg.json" ]] || curversion=$(jq -r '.version' <"$pkgpath/upkg.json")
-    if [[ $pkgversion != "${curversion#'refs/heads/'}" || $curversion = refs/heads/* ]]; then
+    if [[ $curversion = refs/heads/* || $pkgversion != "$curversion" ]]; then
       processing 'Installing %s@%s' "$pkgname" "$pkgversion"
       local ref_is_sym=false gitargs=() upkgjson upkgversion asset assets command commands cmdpath installed_deps
       upkgversion=$(git ls-remote -q "$repourl" "$pkgversion" | cut -d$'\t' -f2 | head -n1)
