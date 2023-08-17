@@ -24,7 +24,14 @@ Usage:
       elif [[ $# -eq 1 ]]; then
         pkgpath=$(upkg_root)
         deps=$(jq -r '(.dependencies // []) | to_entries[] | "\(.key)@\(.value)"' <"$pkgpath/upkg.json")
-        upkg_install "$deps" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" >/dev/null
+        local installed_deps removed_pkgs dep
+        installed_deps=$(upkg_install "$deps" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin")
+        [[ ! -e "$pkgpath/.upkg" ]] || removed_pkgs=$(comm -13 <(sort <<<"$installed_deps") <(find "$pkgpath/.upkg" \
+          -mindepth 2 -maxdepth 2 -not -path "$pkgpath/.upkg/.bin/*" | rev | cut -d/ -f-2 | rev | sort))
+        while [[ -n $removed_pkgs ]] && read -r -d $'\n' dep; do
+          upkg_uninstall "$dep" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin"
+        done <<<"$removed_pkgs"
+        [[ -n $removed_pkgs ]] || removed_pkgs='-'
         processing 'Installed all dependencies' && { [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";} }
       else fatal "$DOC"; fi ;;
     uninstall)
@@ -86,7 +93,7 @@ upkg_install() {
     trap "rm -f \"$deps_sntl\" \"$INSTALL_LOCK\"" ERR
     if [[ $curversion = refs/heads/* || $pkgversion != "$curversion" ]]; then
       processing 'Fetching %s@%s' "$pkgname" "$pkgversion"
-      local ref_is_sym=false gitargs=() upkgjson upkgversion asset assets command commands cmdpath installed_deps
+      local ref_is_sym=false gitargs=() upkgjson upkgversion asset assets command commands cmdpath
       upkgversion=$(git ls-remote -q "$repourl" "$pkgversion" | cut -d$'\t' -f2 | head -n1)
       if [[ -n "$pkgversion" && -n $upkgversion ]]; then
         ref_is_sym=true gitargs=(--depth=1 "--branch=$pkgversion")  # version is a ref, we can make a shallow clone
@@ -128,6 +135,7 @@ and does not point to the package" "$command" "$pkgname" "$pkgversion"
         fi
       done <<<"$commands"
       deps=$(jq -r '(.dependencies // []) | to_entries[] | "\(.key)@\(.value)"' <<<"$upkgjson")
+      local installed_deps removed_pkgs
       installed_deps=$(upkg_install "$deps" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgpath/.upkg")
 
       exec 6<>"$INSTALL_LOCK"; flock -s 6; test -e "$INSTALL_LOCK" # Wait until we can install
