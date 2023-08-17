@@ -61,7 +61,7 @@ upkg_install() {
     until [[ -e "$parent_deps_sntl" ]]; do sleep .01; done
   fi
   local deps_lock=$tmppkgspath/.deps-lock # Local lock which is shared during preparation of all deps on this level
-  local locks_acq_sntl=$tmppkgspath/.locks-sntl # Local sentinel that exists until all per loop locks have been acquired
+  local locks_acq_sntl=$tmppkgspath/.locks-sntl # Per loop sentinel that exists until all locks have been acquired
   mkdir -p "$tmppkgspath"; touch "$deps_lock"
   while [[ -n $repospecs ]] && read -r -d $'\n' repospec; do
     if [[ $repospec =~ ^([^@/: ]+/[^@/: ]+)(@([^@ ]+))$ ]]; then
