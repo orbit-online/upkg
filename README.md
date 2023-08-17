@@ -11,6 +11,7 @@ and global installation for user- or system-wide usage.
 
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
+  - [GitHub action](#github-action)
   - [Upgrading](#upgrading)
 - [Usage](#usage)
   - [Silent operation](#silent-operation)
@@ -44,6 +45,19 @@ wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.9.11/upkg.sh | 
   set +e; IFS='' read -r -d $'\0' src; set -e;\
   printf '%s' "$src" | shasum -a 256 -c <(printf '2ce14fb5f7c1f6423789e23a16be70c4aac5a930a8638ae4e2e7663e0cce46df  -');\
   bash -c "set - install -g orbit-online/upkg@v0.9.11; $src")
+```
+
+### GitHub action
+
+In GitHub workflows you can install μpkg with an action. The action version
+also determines the μpkg version that will be installed.
+
+```
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: orbit-online/upkg@<VERSION>
 ```
 
 ### Upgrading

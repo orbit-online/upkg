@@ -1,0 +1,11 @@
+name: 'Install μpkg'
+description: 'Install μpkg'
+runs:
+  using: 'composite'
+  steps:
+  - name: Install μpkg
+    shell: bash
+    run: |
+      ref=$(basename "$GITHUB_ACTION_PATH")
+      src=$(wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/$ref/upkg.sh)
+      bash -c "set - install -g orbit-online/upkg@$ref; $src"
