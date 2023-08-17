@@ -33,7 +33,6 @@ and global installation for user- or system-wide usage.
 - bash>=v4.4
 - git
 - jq
-- flock
 
 ## Installation
 
@@ -124,10 +123,10 @@ pinned via a tag or commit hash.
 
 ### Transactionality
 
-With the help of `flock` μpkg tries very hard to ensure that either everything
-is installed/upgraded or nothing is. Unhandled violations include
-(and are limited to) broken permissions (e.g. inconsistent ownership of files),
-insufficient diskspace, or a sudden closure of stderr.
+μpkg tries very hard to ensure that either everything is installed/upgraded or
+nothing is. Unhandled violations include (and are limited to) broken permissions
+(e.g. inconsistent ownership of files), insufficient diskspace, or a sudden
+closure of stderr.
 
 ## Including dependencies
 
