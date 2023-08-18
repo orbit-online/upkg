@@ -55,7 +55,8 @@ Usage:
 }
 
 upkg_install() {
-  local repospecs=$1 pkgspath=${2:?} binpath=${3:?} tmppkgspath=$4 parent_deps_sntl repospec deps repourl ret=0
+  local repospecs=$1 pkgspath=${2:?} binpath=${3:?} tmppkgspath=$4 parent_deps_sntl repospec deps repourl ret=0 \
+    dep_pid dep_pids=()
   if [[ -z $4 ]]; then
     tmppkgspath=$(mktemp -d); trap "rm -rf \"$tmppkgspath\"" EXIT
     PREPARATION_LOCK=$tmppkgspath/.preparation-lock # Global lock which is shared until all preparation is done
@@ -168,6 +169,7 @@ and does not point to the package" "$command" "$pkgname" "$pkgversion"
       upkg_install "$deps" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgpath/.upkg" >/dev/null
     fi
     printf "%s\n" "$pkgname" )&
+    dep_pids+=($!)
     while [[ -e $locks_acq_sntl ]]; do sleep .01; done
   done <<<"$repospecs"
   exec 5<>"$deps_lock"; flock -x 5 # All pkgs and their deps in the above loop have been prepared
@@ -177,7 +179,7 @@ and does not point to the package" "$command" "$pkgname" "$pkgversion"
   else
     rm "$parent_deps_sntl" # Signal to the parent pkg that all deps are prepared
   fi
-  while (($(jobs -p | wc -l) > 0)); do wait -n || ret=$?; done
+  for dep_pid in "${dep_pids[@]}"; do wait "$dep_pid" || ret=$?; done
   return $ret
 }
 
