@@ -41,10 +41,10 @@ Replace `bash -c ...` with `sudo bash -c ...` to install system-wide.
 You can also paste this directly into a Dockerfile `RUN` command, no escaping needed.
 
 ```
-wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.9.11/upkg.sh | (\
+wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.10.0/upkg.sh | (\
   set +e; IFS='' read -r -d $'\0' src; set -e;\
-  printf '%s' "$src" | shasum -a 256 -c <(printf '2ce14fb5f7c1f6423789e23a16be70c4aac5a930a8638ae4e2e7663e0cce46df  -');\
-  bash -c "set - install -g orbit-online/upkg@v0.9.11; $src")
+  printf '%s' "$src" | shasum -a 256 -c <(printf '94dbb67fd17ccd3ecd5fd5e27102e3901acc4dc0de990c1347d90bdb3157d555  -');\
+  bash -c "set - install -g orbit-online/upkg@v0.10.0; $src")
 ```
 
 ### GitHub action

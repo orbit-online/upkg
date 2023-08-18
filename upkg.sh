@@ -91,14 +91,14 @@ upkg_install() {
     ( [[ ! -e "$pkgpath/upkg.json" ]] || curversion=$(jq -r '.version' <"$pkgpath/upkg.json")
     # Ensure deps sentinel is removed if we error out before calling upkg_install, also signal error to all other procs
     trap "rm -f \"$deps_sntl\" \"$INSTALL_LOCK\"" ERR
-    if [[ $curversion = refs/heads/* || $pkgversion != "$curversion" ]]; then
+    if [[ $curversion = refs/heads/* || $pkgversion != "${curversion#'refs/tags/'}" ]]; then
       processing 'Fetching %s@%s' "$pkgname" "$pkgversion"
       local ref_is_sym=false gitargs=() upkgjson upkgversion asset assets command commands cmdpath
       upkgversion=$(git ls-remote -q "$repourl" "$pkgversion" | cut -d$'\t' -f2 | head -n1)
       if [[ -n "$pkgversion" && -n $upkgversion ]]; then
         ref_is_sym=true gitargs=(--depth=1 "--branch=$pkgversion")  # version is a ref, we can make a shallow clone
       fi
-      [[ $upkgversion = refs/heads/* ]] || upkgversion=$pkgversion
+      [[ $upkgversion = refs/* ]] || upkgversion=$pkgversion
       out=$(git clone -q "${gitargs[@]}" "$repourl" "$tmppkgpath" 2>&1) || \
         fatal "Unable to clone '%s'. Error:\n%s" "$repospec" "$out"
       $ref_is_sym || out=$(git -C "$tmppkgpath" checkout -q "$pkgversion" -- 2>&1) || \
