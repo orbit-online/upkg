@@ -7,20 +7,26 @@ upkg() {
   [[ ! $(bash --version | head -n1) =~ version\ [34]\.[0-3] ]] || fatal "upkg requires bash >= v4.4"
   local dep; for dep in jq git; do type "$dep" >/dev/null 2>&1 || \
     fatal "Unable to find dependency '%s'." "$dep"; done
-  export GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND=${GIT_SSH_COMMAND:-"ssh -oBatchMode=yes"}
+  export GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND=${GIT_SSH_COMMAND:-"ssh -oBatchMode=yes"} DRY_RUN=false
   DOC="μpkg - A minimalist package manager
 Usage:
-  upkg install [-g [remoteurl]user/pkg@<version>]
+  upkg install [-n] [-g [remoteurl]user/pkg@<version>]
   upkg uninstall -g user/pkg
   upkg list [-g]
-  upkg root -g|\${BASH_SOURCE[0]}"
+  upkg root -g|\${BASH_SOURCE[0]}
+
+Options:
+  -g  Act globally
+  -n  Dry run, \$?=1 if install/upgrade is required"
   local prefix=$HOME/.local pkgspath tmppkgspath
   [[ $EUID != 0 ]] || prefix=/usr/local
   case "$1" in
     install)
+      [[ $2 != -n ]] || { DRY_RUN=true; shift; }
       if [[ $# -eq 3 && $2 = -g ]]; then
         upkg_install "$3" "$prefix/lib/upkg" "$prefix/bin" >/dev/null
-        processing 'Installed %s' "$3" && { [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";} }
+        if $DRY_RUN; then processing '%s is up-to-date' "$3"; else processing 'Installed %s' "$3"; fi
+        [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";}
       elif [[ $# -eq 1 ]]; then
         pkgpath=$(upkg_root)
         deps=$(jq -r '(.dependencies // []) | to_entries[] | "\(.key)@\(.value)"' <"$pkgpath/upkg.json")
@@ -31,8 +37,8 @@ Usage:
         while [[ -n $removed_pkgs ]] && read -r -d $'\n' dep; do
           upkg_uninstall "$dep" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin"
         done <<<"$removed_pkgs"
-        [[ -n $removed_pkgs ]] || removed_pkgs='-'
-        processing 'Installed all dependencies' && { [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";} }
+        if $DRY_RUN; then processing 'All dependencies up-to-date'; else processing 'Installed all dependencies'; fi
+        [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";}
       else fatal "$DOC"; fi ;;
     uninstall)
       [[ $# -eq 3 && $2 = -g ]] || fatal "$DOC"
@@ -89,10 +95,12 @@ upkg_install() {
       touch "$deps_sntl"
       rm "$locks_acq_sntl" # All locks acquired
       while [[ -e $deps_sntl ]]; do sleep .01; done )&
+    while [[ -e $locks_acq_sntl ]]; do sleep .01; done
     ( [[ ! -e "$pkgpath/upkg.json" ]] || curversion=$(jq -r '.version' <"$pkgpath/upkg.json")
     # Ensure deps sentinel is removed if we error out before calling upkg_install, also signal error to all other procs
     trap "rm -f \"$deps_sntl\" \"$INSTALL_LOCK\"" ERR
     if [[ $curversion = refs/heads/* || $pkgversion != "${curversion#'refs/tags/'}" ]]; then
+      ! $DRY_RUN || fatal "%s is not up-to-date" "$pkgname"
       processing 'Fetching %s@%s' "$pkgname" "$pkgversion"
       local ref_is_sym=false gitargs=() upkgjson upkgversion asset assets command commands cmdpath
       upkgversion=$(git ls-remote -q "$repourl" "$pkgversion" | cut -d$'\t' -f2 | head -n1)
@@ -164,13 +172,13 @@ and does not point to the package" "$command" "$pkgname" "$pkgversion"
       fi
       printf "%s\n" "$upkgjson" >"$pkgpath/upkg.json"
     else
-      processing 'Skipping %s@%s' "$pkgname" "$pkgversion"
+      if $DRY_RUN; then [[ -t 2 ]] || processing '%s@%s is up-to-date' "$pkgname" "$pkgversion"
+      else processing 'Skipping %s@%s' "$pkgname" "$pkgversion"; fi
       deps=$(jq -r '(.dependencies // []) | to_entries[] | "\(.key)@\(.value)"' <"$pkgpath/upkg.json")
       upkg_install "$deps" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgpath/.upkg" >/dev/null
     fi
     printf "%s\n" "$pkgname" )&
     dep_pids+=($!)
-    while [[ -e $locks_acq_sntl ]]; do sleep .01; done
   done <<<"$repospecs"
   exec 5<>"$deps_lock"; flock -x 5 # All pkgs and their deps in the above loop have been prepared
   if [[ -z $4 ]]; then

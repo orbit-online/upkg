@@ -41,10 +41,10 @@ Replace `bash -c ...` with `sudo bash -c ...` to install system-wide.
 You can also paste this directly into a Dockerfile `RUN` command, no escaping needed.
 
 ```
-wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.10.1/upkg.sh | (\
+wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.10.2/upkg.sh | (\
   set +e; IFS='' read -r -d $'\0' src; set -e;\
-  printf '%s' "$src" | shasum -a 256 -c <(printf '0ca050b8c2f002cd2a69cb2ab65904a3ab08b3bb112eae052a12088684400728  -');\
-  bash -c "set - install -g orbit-online/upkg@v0.10.1; $src")
+  printf '%s' "$src" | shasum -a 256 -c <(printf '9864c10139a1bf681e641f669191a39697fee7e8ab885ae11f8a1bd617c677ad  -');\
+  bash -c "set - install -g orbit-online/upkg@v0.10.2; $src")
 ```
 
 ### GitHub action
@@ -76,15 +76,21 @@ and would just like to upgrade to the latest stable version.
 ```
 μpkg - A minimalist package manager
 Usage:
-  upkg install [-g [remoteurl]user/pkg@<version>]
+  upkg install [-n] [-g [remoteurl]user/pkg@<version>]
   upkg uninstall -g user/pkg
   upkg list [-g]
   upkg root -g|${BASH_SOURCE[0]}
+
+Options:
+  -g  Act globally
+  -n  Dry run, $?=1 if install/upgrade is required
 ```
 
-`upkg install` looks for a `upkg.json` in the current directory and upwards and
+`upkg install` looks for a `upkg.json` upwards from the current directory and
 recursively installs the specified dependencies (see
-[dependencies](#dependencies)).
+[dependencies](#dependencies)). Use `-n` to check whether all dependencies are
+up-to-date without installing/upgrading anything, note that branch version are
+always considered out-of-date (see [Upgrading packages](#upgrading-packages)).
 
 `upkg install -g` installs the specified package and version (either a full git
 remote URL or a GitHub user/pkg shorthand) to `/usr/local/lib/upkg` (when root)
