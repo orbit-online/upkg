@@ -178,7 +178,9 @@ hardcoding `$HOME/.local/lib/upkg` or `/usr/local/lib/upkg`.
 
 `upkg.json` has no package name, version or description.
 There are 3 config keys you can specify (none are mandatory, but at least one
-key _must_ be present).
+key _must_ be present).  
+It is highly discouraged to specify non-standard keys for your own usage in this
+file.
 
 ### dependencies
 
@@ -247,13 +249,13 @@ When installing locally, the listed commands will be installed to `.upkg/.bin`.
 
 This field will be populated by μpkg with the version specified in the global
 install command or the dependency specification. It is used to determine whether
-an install command should overwrite or skip the package. You need _must not_
-specify it.
+an install command should overwrite or skip the package.  
+You _must not_ specify it.
 
 ```
 {
   ...
-  "version": "v0.9.2",
+  "version": "refs/tags/v0.9.2",
   ...
 }
 ```
