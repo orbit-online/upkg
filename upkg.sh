@@ -180,9 +180,9 @@ and does not point to the package" "$command" "$pkgname" "$pkgversion"
     printf "%s\n" "$pkgname" )&
     dep_pids+=($!)
   done <<<"$repospecs"
-  exec 5<>"$deps_lock"; flock -x 5 # All pkgs and their deps in the above loop have been prepared
+  exec 5<>"$deps_lock"; flock -x 5; rm "$deps_lock" # All pkgs and their deps in the above loop have been prepared
   if [[ -z $4 ]]; then
-    exec 4<>"$PREPARATION_LOCK"; flock -x 4 # Wait until all preparations are done
+    exec 4<>"$PREPARATION_LOCK"; flock -x 4; rm "$PREPARATION_LOCK" # Wait until all preparations are done
     flock -u 9 # All preparations are done, signal install can proceed (for some reason 'exec 9>&-' doesn't work)
   else
     rm "$parent_deps_sntl" # Signal to the parent pkg that all deps are prepared
