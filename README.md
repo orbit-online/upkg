@@ -262,9 +262,9 @@ You _must not_ specify it.
 
 ## Things that μpkg does not and will not support
 
-- `upkg run command`
-- `upkg add/remove usr/package@version` to `upkg.json``
-- `~`, `^` or other version specifiers (use branches for that)
+- `upkg run command` ([modify `$PATH` instead](#including-dependencies))
+- `upkg add/remove usr/package@version` to `upkg.json`
+- `~`, `^` or other version specifiers ([use branches for that](#upgrading-packages))
 - Package version locking
 - Package aliases (i.e. non user namespaced package names)
 
