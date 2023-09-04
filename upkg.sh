@@ -64,7 +64,7 @@ upkg_install() {
   local repospecs=$1 pkgspath=${2:?} binpath=${3:?} tmppkgspath=$4 parent_deps_sntl repospec deps repourl ret=0 \
     dep_pid dep_pids=()
   if [[ -z $4 ]]; then
-    tmppkgspath=$(mktemp -d); trap "rm -rf \"$tmppkgspath\"" EXIT
+    tmppkgspath=$(mktemp -d --suffix=-upkg); trap "rm -rf \"$tmppkgspath\"" EXIT
     PREPARATION_LOCK=$tmppkgspath/.preparation-lock # Global lock which is shared until all preparation is done
     INSTALL_LOCK=$tmppkgspath/.install-lock # Global lock which is held exclusively until all preparation is done
     touch "$INSTALL_LOCK" "$PREPARATION_LOCK"
