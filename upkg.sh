@@ -24,7 +24,7 @@ Options:
     install)
       [[ $2 != -n ]] || { DRY_RUN=true; shift; }
       if [[ $# -eq 3 && $2 = -g ]]; then
-        upkg_install "$3" "$prefix/lib/upkg" "$prefix/bin" >/dev/null
+        (upkg_install "$3" "$prefix/lib/upkg" "$prefix/bin" >/dev/null)
         if $DRY_RUN; then processing '%s is up-to-date' "$3"; else processing 'Installed %s' "$3"; fi
         [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";}
       elif [[ $# -eq 1 ]]; then
@@ -175,7 +175,7 @@ and does not point to the package" "$command" "$pkgname" "$pkgversion"
       if $DRY_RUN; then [[ -t 2 ]] || processing '%s@%s is up-to-date' "$pkgname" "$pkgversion"
       else processing 'Skipping %s@%s' "$pkgname" "$pkgversion"; fi
       deps=$(jq -r '(.dependencies // []) | to_entries[] | "\(.key)@\(.value)"' <"$pkgpath/upkg.json")
-      upkg_install "$deps" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgpath/.upkg" >/dev/null
+      (upkg_install "$deps" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgpath/.upkg" >/dev/null)
     fi
     printf "%s\n" "$pkgname" )&
     dep_pids+=($!)
