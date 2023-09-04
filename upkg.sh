@@ -94,7 +94,7 @@ upkg_install() {
       exec 7<>"$deps_lock"; flock -sn 7 # Automatically released once this subshell exits
       touch "$deps_sntl"
       rm "$locks_acq_sntl" # All locks acquired
-      while [[ -e $deps_sntl ]]; do sleep .01; done )&
+      while [[ -e $deps_sntl ]]; do sleep .01; done )& # Release locks once all deps have finished preparing
     while [[ -e $locks_acq_sntl ]]; do sleep .01; done
     ( [[ ! -e "$pkgpath/upkg.json" ]] || curversion=$(jq -r '.version' <"$pkgpath/upkg.json")
     # Ensure deps sentinel is removed if we error out before calling upkg_install, also signal error to all other procs
