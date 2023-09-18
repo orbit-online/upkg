@@ -138,7 +138,7 @@ upkg_install() {
           fatal "Error on command '%s' in package %s@%s. The command may not contain spaces or slashes" \
             "$command" "$pkgname" "$pkgversion"
         cmdpath="$binpath/$command"
-        if [[ -e $cmdpath || -L $cmdpath ]] && [[ $(realpath "$cmdpath" 2>/dev/null || true) != $pkgpath/* ]]; then
+        if [[ -e $cmdpath || -L $cmdpath ]] && [[ $(realpath -m "$cmdpath") != $pkgpath/* ]]; then
           fatal "Error on command '%s' in package %s@%s. The 'bin/' file/symlink exists \
 and does not point to the package" "$command" "$pkgname" "$pkgversion"
         fi
@@ -200,7 +200,7 @@ upkg_uninstall() {
   while [[ -n $commands ]] && read -r -d $'\n' command; do
     read -r -d $'\n' asset
     cmdpath="$binpath/$command"
-    [[ ! -e $cmdpath || $(realpath "$cmdpath") != $pkgpath/* ]] || rm "$cmdpath"
+    [[ ! -e $cmdpath || $(realpath -m "$cmdpath") != $pkgpath/* ]] || rm "$cmdpath"
   done <<<"$commands"
   if [[ -n $deps_to_remove ]]; then
     find "$pkgpath" -mindepth 1 -maxdepth 1 -path "$pkgpath/.upkg" -prune -o -exec rm -rf \{\} \;
@@ -229,7 +229,7 @@ upkg_list() {
 
 upkg_root() (
   local sourcing_file=$1
-  [[ -z $sourcing_file ]] || cd "$(dirname "$(realpath "${sourcing_file}")")"
+  [[ -z $sourcing_file ]] || cd "$(dirname "$(realpath -m "${sourcing_file}")")"
   until [[ -e $PWD/upkg.json ]]; do
     [[ $PWD != '/' ]] ||  fatal 'Unable to find package root (no upkg.json found in this or any parent directory)'
     cd ..
