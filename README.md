@@ -145,8 +145,8 @@ pinned via a tag or commit hash.
 
 μpkg tries very hard to ensure that either everything is installed/upgraded or
 nothing is. Unhandled violations include (and are limited to) broken permissions
-(e.g. inconsistent ownership of files), insufficient diskspace, or a sudden
-closure of stderr.
+(e.g. inconsistent ownership of files), insufficient diskspace, closure of
+stderr, or process termination.
 
 ## Including dependencies
 
