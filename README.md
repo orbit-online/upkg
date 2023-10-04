@@ -43,9 +43,9 @@ Replace `bash -c ...` with `sudo bash -c ...` to install system-wide.
 You can also paste this directly into a Dockerfile `RUN` command, no escaping needed.
 
 ```
-bash -ec 'src=$(wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.12.0/upkg.sh); \
-shasum -qa 256 -c <(printf "866d456f0dcfdb71d2aeab13f6202940083aacb06d471782cec3561c0ff074b0  -") <<<"$src"; \
-set - install -g orbit-online/upkg@v0.12.0; eval "$src"'
+bash -ec 'src=$(wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.12.1/upkg.sh); \
+shasum -a 256 -c <(printf "866d456f0dcfdb71d2aeab13f6202940083aacb06d471782cec3561c0ff074b0  -") <<<"$src"; \
+set - install -g orbit-online/upkg@v0.12.1; eval "$src"'
 ```
 
 Installation dependencies are `ca-certificates`, `wget`, and `shasum`.
@@ -144,8 +144,8 @@ With that in mind, you can modify the package name on the third line to install
 any package you like. For example:
 
 ```
-bash -ec 'src=$(wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.12.0/upkg.sh); \
-shasum -qa 256 -c <(printf "866d456f0dcfdb71d2aeab13f6202940083aacb06d471782cec3561c0ff074b0  -") <<<"$src"; \
+bash -ec 'src=$(wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.12.1/upkg.sh); \
+shasum -a 256 -c <(printf "866d456f0dcfdb71d2aeab13f6202940083aacb06d471782cec3561c0ff074b0  -") <<<"$src"; \
 set - install -g orbit-online/bitwarden-container@v2023.7.0-4; eval "$src"'
 ```
 
