@@ -101,6 +101,8 @@ upkg_install() {
     trap "rm -f \"$deps_sntl\" \"$INSTALL_LOCK\"" ERR
     if [[ $curversion = refs/heads/* || $pkgversion != "${curversion#'refs/tags/'}" ]]; then
       ! $DRY_RUN || fatal "%s is not up-to-date" "$pkgname"
+      [[ ! -e "$pkgpath" || -w "$pkgpath" ]] || \
+        fatal "The destination ('%s') for the package '%s' is not writable." "$pkgpath" "$pkgname"
       processing 'Fetching %s@%s' "$pkgname" "$pkgversion"
       local ref_is_sym=false gitargs=() upkgjson upkgversion asset assets command commands cmdpath
       upkgversion=$(git ls-remote -q "$repourl" "$pkgversion" | cut -d$'\t' -f2 | head -n1)
