@@ -9,27 +9,29 @@ and global installation for user- or system-wide usage.
 
 ## Contents
 
-- [Prerequisites](#prerequisites)
+- [Dependencies](#dependencies)
 - [Installation](#installation)
   - [GitHub action](#github-action)
   - [Upgrading](#upgrading)
 - [Usage](#usage)
   - [Silent operation](#silent-operation)
-- [Available packages](#available-packages)
-- [Publishing packages](#publishing-packages)
-- [Upgrading packages](#upgrading-packages)
-  - [Transactionality](#transactionality)
-- [Including dependencies](#including-dependencies)
-- [upkg.json](#upkg-json)
-  - [dependencies](#dependencies)
-  - [files](#files)
-  - [commands](#commands)
-  - [version](#version)
+  - [Available packages](#available-packages)
+  - [Installing packages without installing μpkg](#installing-packages-without-installing-μpkg)
+- [Authoring packages](#authoring-packages)
+  - [Publishing](#publishing)
+  - [Upgrading](#upgrading)
+    - [Transactionality](#transactionality)
+  - [Including dependencies](#including-dependencies)
+  - [upkg.json](#upkg-json)
+    - [dependencies](#dependencies)
+    - [files](#files)
+    - [commands](#commands)
+    - [version](#version)
 - [Things that μpkg does not and will not support](#things-that-μpkg-does-not-and-will-not-support)
 - [Things that μpkg _might_ support in the future](#things-that-μpkg-might-support-in-the-future)
 - [Alternatives](#alternatives)
 
-# Prerequisites
+## Dependencies
 
 - bash>=v4.4
 - git
@@ -41,11 +43,19 @@ Replace `bash -c ...` with `sudo bash -c ...` to install system-wide.
 You can also paste this directly into a Dockerfile `RUN` command, no escaping needed.
 
 ```
-wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.11.1/upkg.sh | (\
-  set +e; IFS='' read -r -d $'\0' src; set -e;\
-  printf '%s' "$src" | shasum -a 256 -c <(printf '43298eaec88ae0d116e2f49934de266b7a93f72c52929a8bd0edb4a3b4aacd36  -');\
-  bash -c "set - install -g orbit-online/upkg@v0.11.1; $src")
+bash -ec 'src=$(wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.12.0/upkg.sh); \
+shasum -qa 256 -c <(printf "866d456f0dcfdb71d2aeab13f6202940083aacb06d471782cec3561c0ff074b0  -") <<<"$src"; \
+set - install -g orbit-online/upkg@v0.12.0; eval "$src"'
 ```
+
+Installation dependencies are `ca-certificates`, `wget`, and `shasum`.
+
+For Debian based systems these dependencies are installable with
+`apt-get install -y ca-certificates` (`wget` and `shasum` are already installed).  
+For alpine docker images use `apk add --update ca-certificates bash perl-utils`
+(`wget` is already installed).  
+For Red Hat based systems use `dnf install -y ca-certificates bash perl-utils wget`
+(`shasum` is already installed).
 
 ### GitHub action
 
@@ -113,20 +123,42 @@ step instead of overwriting the same line.
 Errors will always be output and cannot be silenced (use `2>/dev/null` to do
 that).
 
-## Available packages
+### Available packages
 
 Check out [PACKAGES.md](PACKAGES.md) for a curated list of available packages.  
 You can also use the [`upkg` topic](https://github.com/topics/upkg) to
 look for other packages on GitHub.
 
-## Publishing packages
+### Installing packages without installing μpkg
+
+If you take a closer look at [how upkg is installed](#installation) you will
+notice that `upkg.sh` is the install script for μpkg itself. The three lines
+of code do the following:
+
+- Download `upkg.sh`
+- Compare the download against the hardcoded checksum
+- _Inject the installation parameters for `orbit-online/upkg` as if μpkg was called from the commandline_
+- Evaluate the download
+
+With that in mind, you can modify the package name on the third line to install
+any package you like. For example:
+
+```
+bash -ec 'src=$(wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.12.0/upkg.sh); \
+shasum -qa 256 -c <(printf "866d456f0dcfdb71d2aeab13f6202940083aacb06d471782cec3561c0ff074b0  -") <<<"$src"; \
+set - install -g orbit-online/bitwarden-container@v2023.7.0-4; eval "$src"'
+```
+
+## Authoring packages
+
+### Publishing
 
 When hosting a package on GitHub, add the `upkg` topic to make it discoverable
 via search.  
 Additionally you can send a PR that updates [PACKAGES.md](PACKAGES.md) with a
 link to your package.
 
-## Upgrading packages
+### Upgrading
 
 You can run `upkg install` to upgrade all packages that have a moving version
 (i.e. a git branch). It is advisable to use tags or commit hashes as versions
@@ -141,14 +173,14 @@ without sacrificing performance. Conversely branch versions will always be
 reinstalled, even when they are a dependency of a parent package that is version
 pinned via a tag or commit hash.
 
-### Transactionality
+#### Transactionality
 
 μpkg tries very hard to ensure that either everything is installed/upgraded or
 nothing is. Unhandled violations include (and are limited to) broken permissions
 (e.g. inconsistent ownership of files), insufficient diskspace, closure of
 stderr, or process termination.
 
-## Including dependencies
+### Including dependencies
 
 `upkg root` allows you to avoid the entire "where the heck is my script installed"
 detective work. Simply run `upkg root "${BASH_SOURCE[0]}"` to get the root
@@ -174,7 +206,7 @@ my_fn "$@"
 Use `upkg root -g` to get the path to the global installation instead of
 hardcoding `$HOME/.local/lib/upkg` or `/usr/local/lib/upkg`.
 
-## upkg.json
+### upkg.json
 
 `upkg.json` has no package name, version or description.
 There are 3 config keys you can specify (none are mandatory, but at least one
@@ -182,7 +214,7 @@ key _must_ be present).
 It is highly discouraged to specify non-standard keys for your own usage in this
 file.
 
-### dependencies
+#### dependencies
 
 Dependencies of a package. A dictionary of git cloneable URLs or
 GitHub shorthands as keys and git branches/tags/commits as values.
@@ -201,7 +233,7 @@ Dependencies will be installed under `.upkg` next to `upkg.json`.
 }
 ```
 
-### assets
+#### assets
 
 List of files and folders the package consists of. An array of paths relative to
 the repository root. Only items listed here and in [commands](#commands) will be
@@ -220,7 +252,7 @@ folders _must_ have a trailing slash.
 }
 ```
 
-### commands
+#### commands
 
 List of commands this package provides. A dictionary of command names as keys
 and paths relative to the repository root. Note that the specified files _must_
@@ -245,7 +277,7 @@ still point at the package).
 
 When installing locally, the listed commands will be installed to `.upkg/.bin`.
 
-### version
+#### version
 
 This field will be populated by μpkg with the version specified in the global
 install command or the dependency specification. It is used to determine whether
