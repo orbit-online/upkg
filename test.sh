@@ -19,7 +19,7 @@ EOR
 ENV SSH_AUTH_SOCK=/ssh_auth
 EOD
 )
-  docker run --rm -ti -v"$PKGROOT:/usr/local/lib/upkg/orbit-online/upkg" -v"${SSH_AUTH_SOCK}:/ssh_auth" "$sha"
+  docker run --rm -ti -v"$PKGROOT:/usr/local/lib/upkg/orbit-online/upkg:ro" -v"${SSH_AUTH_SOCK}:/ssh_auth" "$sha"
 }
 
 main "$@"
