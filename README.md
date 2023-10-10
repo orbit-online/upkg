@@ -149,6 +149,9 @@ shasum -a 256 -c <(printf "866d456f0dcfdb71d2aeab13f6202940083aacb06d471782cec35
 set - install -g orbit-online/bitwarden-container@v2023.7.0-4; eval "$src"'
 ```
 
+_Do note that if the package or any of its dependencies use `upkg root`, things
+will break. So the usefulness of this trick might be rather limited._
+
 ## Authoring packages
 
 ### Publishing
