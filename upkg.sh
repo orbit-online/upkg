@@ -159,7 +159,7 @@ and does not point to the package" "$command" "$pkgname" "$pkgversion"
       fi
       while [[ -n $assets ]] && read -r -d $'\n' asset; do
         mkdir -p "$(dirname "$pkgpath/$asset")"
-        cp -ar "$tmppkgpath/$asset" "$pkgpath/$asset"
+        cp -a "$tmppkgpath/$asset" "$pkgpath/$asset"
       done <<<"$assets"
       if [[ -n $commands ]]; then
         mkdir -p "$binpath"
