@@ -191,16 +191,18 @@ install path of your package. You can use this both for sourcing dependencies
 but also executing them:
 
 ```
+#!/usr/bin/env bash
+# shellcheck source-path=../
+set -eo pipefail; shopt -s inherit_errexit
+PKGROOT=$(upkg root "${BASH_SOURCE[0]}")
+source "$PKGROOT/.upkg/orbit-online/records.sh/records.sh"
+
 my_fn() {
-  set -e
-  local pkgroot
-  pkgroot=$(upkg root "${BASH_SOURCE[0]}")
-
-  # shellcheck source=.upkg/orbit-online/records.sh/records.sh
-  source "$pkgroot/.upkg/orbit-online/records.sh/records.sh"
-
-  PATH="$pkgroot/.upkg/.bin:$PATH"
-  command-from-dep "$1"
+  PATH="$PKGROOT/.upkg/.bin:$PATH"
+  if ! do_something "$1"; then
+    warning "Failed to do something do_something, trying something else"
+    do_something_else "$1"
+  fi
 }
 
 my_fn "$@"
