@@ -22,6 +22,7 @@ and global installation for user- or system-wide usage.
   - [Upgrading](#upgrading)
     - [Transactionality](#transactionality)
   - [Including dependencies](#including-dependencies)
+  - [Checking dependencies](#checking-dependencies)
   - [upkg.json](#upkg-json)
     - [dependencies](#dependencies)
     - [files](#files)
@@ -185,10 +186,10 @@ stderr, or process termination.
 
 ### Including dependencies
 
-`upkg root` allows you to avoid the entire "where the heck is my script installed"
-detective work. Simply run `upkg root "${BASH_SOURCE[0]}"` to get the root
-install path of your package. You can use this both for sourcing dependencies
-but also executing them:
+`upkg root` allows you to avoid the entire "where the heck is my script
+installed?" detective work. Simply run `upkg root "${BASH_SOURCE[0]}"` to get
+the root install path of your package. You can use this both for sourcing
+dependencies and executing them:
 
 ```
 #!/usr/bin/env bash
@@ -210,6 +211,20 @@ my_fn "$@"
 
 Use `upkg root -g` to get the path to the global installation instead of
 hardcoding `$HOME/.local/lib/upkg` or `/usr/local/lib/upkg`.
+
+### Checking dependencies
+
+For scripts that you don't install via μpkg, checking whether dependencies are
+up to date can be done with the `-n` dry-run switch:
+
+```
+#!/usr/bin/env bash
+PKGROOT=$(upkg root "${BASH_SOURCE[0]}")
+(cd "$PKGROOT/core"; UPKG_SILENT=true upkg install -n || {
+  printf "my-script.sh: Dependencies are out of date. Run \`upkg install\` in \`%s\`\n" "$PKGROOT" >&2
+  return 1
+})
+```
 
 ### upkg.json
 
