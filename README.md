@@ -44,9 +44,9 @@ Replace `bash -c ...` with `sudo bash -c ...` to install system-wide.
 You can also paste this directly into a Dockerfile `RUN` command, no escaping needed.
 
 ```
-bash -ec 'src=$(wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.12.1/upkg.sh); \
-shasum -a 256 -c <(printf "866d456f0dcfdb71d2aeab13f6202940083aacb06d471782cec3561c0ff074b0  -") <<<"$src"; \
-set - install -g orbit-online/upkg@v0.12.1; eval "$src"'
+bash -ec 'src=$(wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.12.2/upkg.sh); \
+shasum -a 256 -c <(printf "49f54e5b53109270b71c20f124b9cfd8517bbfbd00c3569b854bc7d4c74d4b94  -") <<<"$src"; \
+set - install -g orbit-online/upkg@v0.12.2; eval "$src"'
 ```
 
 Installation dependencies are `ca-certificates`, `wget`, and `shasum`.
