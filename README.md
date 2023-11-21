@@ -23,6 +23,7 @@ and global installation for user- or system-wide usage.
     - [Transactionality](#transactionality)
   - [Including dependencies](#including-dependencies)
   - [Checking dependencies](#checking-dependencies)
+  - [Additional tips for scripting](#additional-tips-for-scripting)
   - [upkg.json](#upkg-json)
     - [dependencies](#dependencies)
     - [files](#files)
@@ -209,9 +210,6 @@ my_fn() {
 my_fn "$@"
 ```
 
-Use `upkg root -g` to get the path to the global installation instead of
-hardcoding `$HOME/.local/lib/upkg` or `/usr/local/lib/upkg`.
-
 ### Checking dependencies
 
 For scripts that you don't install via μpkg, checking whether dependencies are
@@ -225,6 +223,24 @@ PKGROOT=$(upkg root "${BASH_SOURCE[0]}")
   return 1
 })
 ```
+
+### Additional tips for scripting
+
+When creating scripts not installed via μpkg, use `upkg root -g` to get the path
+to the global installation instead of hardcoding `$HOME/.local/lib/upkg` or
+`/usr/local/lib/upkg`.
+
+Use `local pkgroot; pkgroot=$(upkg root "${BASH_SOURCE[0]}")` inside your function
+if you are building a library (as opposed to a command) to avoid `$PKGROOT`
+being overwritten by external code.
+
+You only need to specify `# shellcheck source-path=` if your script is not
+located in `$pkgroot` (`source-path` is `./` by default).
+
+If you are calling scripts from the same package consider using
+[path-tools](https://github.com/orbit-online/path-tools) to avoid prepending
+the same `.upkg/bin` PATH multiple times (i.e. use
+`PATH=$("$pkgroot/.upkg/.bin/path_prepend" "$pkgroot/.upkg/.bin")` instead).
 
 ### upkg.json
 
