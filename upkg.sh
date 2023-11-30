@@ -197,7 +197,7 @@ upkg_uninstall() {
   local pkgname=${1:?} pkgspath=${2:?} binpath=${3:?} deps_to_remove=$4 dep
   processing 'Uninstalling %s' "$pkgname"
   local pkgpath="$pkgspath/$pkgname" asset command commands cmdpath
-  [[ -e "$pkgpath/upkg.json" ]] || fatal "'%s' is not installed" "$pkgname"
+  [[ -e "$pkgpath/upkg.json" ]] || { processing "'%s' is not installed" "$pkgname"; return 0; }
   commands=$(jq -r '(.commands // {}) | to_entries[] | "\(.key)\n\(.value)"' <"$pkgpath/upkg.json")
   while [[ -n $commands ]] && read -r -d $'\n' command; do
     read -r -d $'\n' asset
