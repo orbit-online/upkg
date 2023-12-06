@@ -8,7 +8,7 @@ for additional packages beyond the ones listed here.
 | ----------------------------------------------------------------------------------------------- | ---------------------------------------------- |
 | [orbit-online/upkg](https://github.com/orbit-online/upkg)                                       | μpkg itself                                    |
 | [andsens/docopt.sh](https://github.com/andsens/docopt.sh)                                       | Bash argument parser, use the v1.0.0-upkg tag  |
-| [orbit-online/bitwarden-container](https://github.com/orbit-online/bitwarden-container)         | Containerized version of Bitwarden             |
+| [orbit-online/bitwarden-container](https://github.com/orbit-online/bitwarden-container)         | Containerized Bitwarden (_archived_)           |
 | [orbit-online/bitwarden-tools](https://github.com/orbit-online/bitwarden-tools)                 | Toolset for integrating with the bitwarden cli |
 | [orbit-online/checkdeps](https://github.com/orbit-online/checkdeps)                             | Tooling to check dependencies                  |
 | [orbit-online/cli-tools](https://github.com/orbit-online/cli-tools)                             | A muddle of useful CLI tools                   |
