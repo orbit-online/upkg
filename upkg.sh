@@ -202,7 +202,7 @@ upkg_uninstall() {
   while [[ -n $commands ]] && read -r -d $'\n' command; do
     read -r -d $'\n' asset
     cmdpath="$binpath/$command"
-    [[ ! -e $cmdpath || $(realpath -m "$cmdpath") != $pkgpath/* ]] || rm "$cmdpath"
+    [[ ! -e $cmdpath || $(realpath "$cmdpath") != $pkgpath/* ]] || rm "$cmdpath"
   done <<<"$commands"
   if [[ -n $deps_to_remove ]]; then
     find "$pkgpath" -mindepth 1 -maxdepth 1 -path "$pkgpath/.upkg" -prune -o -exec rm -rf \{\} \;
@@ -231,7 +231,7 @@ upkg_list() {
 
 upkg_root() (
   local sourcing_file=$1
-  [[ -z $sourcing_file ]] || cd "$(dirname "$(realpath -m "${sourcing_file}")")"
+  [[ -z $sourcing_file ]] || cd "$(dirname "$(realpath "${sourcing_file}")")"
   until [[ -e $PWD/upkg.json ]]; do
     [[ $PWD != '/' ]] ||  fatal 'Unable to find package root (no upkg.json found in this or any parent directory)'
     cd ..
