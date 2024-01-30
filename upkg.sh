@@ -13,12 +13,12 @@ Usage:
   upkg install [-n] [-g [remoteurl]user/pkg@<version>]
   upkg uninstall -g user/pkg
   upkg list [-g]
-  upkg root -g|\${BASH_SOURCE[0]}
 
 Options:
   -g  Act globally
   -n  Dry run, \$?=1 if install/upgrade is required"
-  local prefix=$HOME/.local pkgspath tmppkgspath
+  local prefix=$HOME/.local pkgspath pkgpath tmppkgspath
+  pkgpath=$(realpath "$PWD")
   [[ $EUID != 0 ]] || prefix=/usr/local
   case "$1" in
     install)
@@ -28,7 +28,6 @@ Options:
         if $DRY_RUN; then processing '%s is up-to-date' "$3"; else processing 'Installed %s' "$3"; fi
         [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";}
       elif [[ $# -eq 1 ]]; then
-        pkgpath=$(upkg_root)
         deps=$(jq -r '(.dependencies // []) | to_entries[] | "\(.key)@\(.value)"' <"$pkgpath/upkg.json")
         local installed_deps removed_pkgs dep
         installed_deps=$(upkg_install "$deps" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin")
@@ -49,13 +48,8 @@ Options:
       if [[ $# -eq 2 && $2 = -g ]]; then
         upkg_list "$prefix/lib/upkg" false
       elif [[ $# -eq 1 ]]; then
-        pkgpath=$(upkg_root)
         upkg_list "$pkgpath/.upkg" true
       else fatal "$DOC"; fi ;;
-    root)
-      if [[ -z $2 ]]; then fatal "$DOC"
-      elif [[ $2 = '-g' ]]; then printf "%s/lib/upkg\n" "$prefix"
-      else upkg_root "$2"; fi ;;
     *) fatal "$DOC" ;;
   esac
 }
@@ -228,16 +222,6 @@ upkg_list() {
     fi
   done <<<"$pkgpaths"
 }
-
-upkg_root() (
-  local sourcing_file=$1
-  [[ -z $sourcing_file ]] || cd "$(dirname "$(realpath "${sourcing_file}")")"
-  until [[ -e $PWD/upkg.json ]]; do
-    [[ $PWD != '/' ]] ||  fatal 'Unable to find package root (no upkg.json found in this or any parent directory)'
-    cd ..
-  done
-  printf "%s\n" "$PWD"
-)
 
 processing() {
   ! ${UPKG_SILENT:-false} || return 0

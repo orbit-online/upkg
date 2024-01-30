@@ -45,9 +45,9 @@ Replace `bash -c ...` with `sudo bash -c ...` to install system-wide.
 You can also paste this directly into a Dockerfile `RUN` command, no escaping needed.
 
 ```
-bash -ec 'src=$(wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.13.0/upkg.sh); \
-shasum -a 256 -c <(printf "43c20cf96f96fb40337cdd587088d465bdddfaa26c6e088b8090c519082193da  -") <<<"$src"; \
-set - install -g orbit-online/upkg@v0.13.0; eval "$src"'
+bash -ec 'src=$(wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.14.0/upkg.sh); \
+shasum -a 256 -c <(printf "8312d0fa0e47ff22387086021c8b096b899ff9344ca8622d80cc0d1d579dccff  -") <<<"$src"; \
+set - install -g orbit-online/upkg@v0.14.0; eval "$src"'
 ```
 
 Installation dependencies are `ca-certificates`, `wget`, and `shasum`.
@@ -91,7 +91,6 @@ Usage:
   upkg install [-n] [-g [remoteurl]user/pkg@<version>]
   upkg uninstall -g user/pkg
   upkg list [-g]
-  upkg root -g|${BASH_SOURCE[0]}
 
 Options:
   -g  Act globally
@@ -113,9 +112,6 @@ and all its commands (see [commands](#commands)).
 
 `upkg list` shows the installed packages. When using `-g` for "global", package
 dependencies are not listed.
-
-`upkg root` is a utility function for scripts in order to build `source` paths
-(see [Including dependencies](#including-dependencies)).
 
 ### Silent operation
 
@@ -151,9 +147,6 @@ shasum -a 256 -c <(printf "866d456f0dcfdb71d2aeab13f6202940083aacb06d471782cec35
 set - install -g orbit-online/bitwarden-container@v2023.7.0-4; eval "$src"'
 ```
 
-_Do note that if the package or any of its dependencies use `upkg root`, things
-will break. So the usefulness of this trick might be rather limited._
-
 ## Authoring packages
 
 ### Publishing
@@ -187,20 +180,31 @@ stderr, or process termination.
 
 ### Including dependencies
 
-`upkg root` allows you to avoid the entire "where the heck is my script
-installed?" detective work. Simply run `upkg root "${BASH_SOURCE[0]}"` to get
-the root install path of your package. You can use this both for sourcing
-dependencies and executing them:
+To determine the package root path use `${BASH_SOURCE[0]}`.  
+Use `realpath` to ensure that symlinks are resolved.
+
+```
+PKGROOT=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
+```
+
+Alternatively you can use a short `until` loop to find the ancestor directory that contains `upkg.json`.  
+This way you can move the script around without having to adjust the relative path:
+
+```
+until [[ -e $PKGROOT/upkg.json || $PKGROOT = '/' ]]; do PKGROOT=$(dirname "${PKGROOT:-${BASH_SOURCE[0]}}"); done
+```
+
+Here's an example of a short script with a useful preamble:
 
 ```
 #!/usr/bin/env bash
 # shellcheck source-path=../
 set -eo pipefail; shopt -s inherit_errexit
-PKGROOT=$(upkg root "${BASH_SOURCE[0]}")
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
+PATH=$("$PKGROOT/.upkg/.bin/path_prepend" "$PKGROOT/.upkg/.bin")
 source "$PKGROOT/.upkg/orbit-online/records.sh/records.sh"
 
 my_fn() {
-  PATH="$PKGROOT/.upkg/.bin:$PATH"
   if ! do_something "$1"; then
     warning "Failed to do something do_something, trying something else"
     do_something_else "$1"
@@ -210,6 +214,16 @@ my_fn() {
 my_fn "$@"
 ```
 
+The following things are happening here (line-by-line):
+
+1. Bash shebang
+2. Inform shellcheck about the package root so it can follow `source` calls
+3. Setup bash to fail on `$? != 0`, even when piping. Make sure that subshells inherit `set -e`.
+4. Determine the package root (the second `realpath` is to resolve the `/..`)
+5. Use [path-tools](https://github.com/orbit-online/path-tools) to prepend `.upkg/.bin` (like `PATH=...:$PATH` but if the path already exists it is _moved_ to the front)
+6. Include [records.sh](https://github.com/orbit-online/records.sh) for log tooling
+7. Rest: Define the function (and call it afterwards)
+
 ### Checking dependencies
 
 For scripts that you don't install via μpkg, checking whether dependencies are
@@ -217,7 +231,7 @@ up to date can be done with the `-n` dry-run switch:
 
 ```
 #!/usr/bin/env bash
-PKGROOT=$(upkg root "${BASH_SOURCE[0]}")
+PKGROOT=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
 (cd "$PKGROOT/core"; UPKG_SILENT=true upkg install -n || {
   printf "my-script.sh: Dependencies are out of date. Run \`upkg install\` in \`%s\`\n" "$PKGROOT" >&2
   return 1
@@ -226,13 +240,13 @@ PKGROOT=$(upkg root "${BASH_SOURCE[0]}")
 
 ### Additional tips for scripting
 
-When creating scripts not installed via μpkg, use `upkg root -g` to get the path
-to the global installation instead of hardcoding `$HOME/.local/lib/upkg` or
-`/usr/local/lib/upkg`.
+When creating scripts not installed via μpkg, use
+`PKGROOT=$HOME/.local/lib/upkg; [[ $EUID != 0 ]] || PKGROOT=/usr/local/lib/upkg`
+to get the path to the global installation.
 
-Use `local pkgroot; pkgroot=$(upkg root "${BASH_SOURCE[0]}")` inside your function
-if you are building a library (as opposed to a command) to avoid `$PKGROOT`
-being overwritten by external code.
+Use `local pkgroot; pkgroot=$(dirname "$(realpath "${BASH_SOURCE[0]}")")`
+inside your function if you are building a library (as opposed to a command)
+to avoid `$PKGROOT` being overwritten by external code.
 
 You only need to specify `# shellcheck source-path=` if your script is not
 located in `$pkgroot` (`source-path` is `./` by default).

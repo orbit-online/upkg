@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
-set -eo pipefail
-shopt -s inherit_errexit
-PKGROOT=$(cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"; echo "$PWD")
+set -eo pipefail; shopt -s inherit_errexit
+PKGROOT=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
 
 main() {
   sha=$(docker buildx build -q . --file - <<EOD
