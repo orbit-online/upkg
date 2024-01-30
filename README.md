@@ -133,18 +133,29 @@ If you take a closer look at [how upkg is installed](#installation) you will
 notice that `upkg.sh` is the install script for μpkg itself. The three lines
 of code do the following:
 
-- Download `upkg.sh`
-- Compare the download against the hardcoded checksum
-- _Inject the installation parameters for `orbit-online/upkg` as if μpkg was called from the commandline_
-- Evaluate the download
+1. Download `upkg.sh`
+2. Compare the download against the hardcoded checksum
+3. _Inject the installation parameters for `orbit-online/upkg` as if μpkg was called from the commandline_
+4. Evaluate the download
 
-With that in mind, you can modify the package name on the third line to install
-any package you like. For example:
+With that in mind, you can modify the package name from point #3 and on the
+third line to install any package you like. For example:
 
 ```
-bash -ec 'src=$(wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.12.1/upkg.sh); \
-shasum -a 256 -c <(printf "866d456f0dcfdb71d2aeab13f6202940083aacb06d471782cec3561c0ff074b0  -") <<<"$src"; \
-set - install -g orbit-online/bitwarden-container@v2023.7.0-4; eval "$src"'
+bash -ec 'src=$(wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.14.0/upkg.sh); \
+shasum -a 256 -c <(printf "8312d0fa0e47ff22387086021c8b096b899ff9344ca8622d80cc0d1d579dccff  -") <<<"$src"; \
+set - install -g orbit-online/bitwarden-tools@v1.4.9; eval "$src"'
+```
+
+You can also install dependencies for a script with an accompanying `upkg.json`
+that you copied into e.g. a docker image like this:
+
+```
+COPY upkg.json /service
+COPY --chmod=0755 my-script.sh /service
+bash -ec 'src=$(wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.14.0/upkg.sh); \
+shasum -a 256 -c <(printf "8312d0fa0e47ff22387086021c8b096b899ff9344ca8622d80cc0d1d579dccff  -") <<<"$src"; \
+set - install; eval "$src"'
 ```
 
 ## Authoring packages
