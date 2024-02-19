@@ -192,7 +192,7 @@ stderr, or process termination.
 ### Including dependencies
 
 To determine the package root path use `${BASH_SOURCE[0]}`.  
-Use `realpath` to ensure that symlinks are resolved.
+Use `realpath` to ensure that symlinks and relative paths are resolved.
 
 ```
 PKGROOT=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
@@ -202,7 +202,7 @@ Alternatively you can use a short `until` loop to find the ancestor directory th
 This way you can move the script around without having to adjust the relative path:
 
 ```
-until [[ -e $PKGROOT/upkg.json || $PKGROOT = '/' ]]; do PKGROOT=$(dirname "${PKGROOT:-${BASH_SOURCE[0]}}"); done
+until [[ -e $PKGROOT/upkg.json || $PKGROOT = '/' ]]; do PKGROOT=$(dirname "${PKGROOT:-$(realpath "${BASH_SOURCE[0]}")}"); done
 ```
 
 Here's an example of a short script with a useful preamble:
