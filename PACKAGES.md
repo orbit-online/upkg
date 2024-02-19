@@ -17,6 +17,7 @@ for additional packages beyond the ones listed here.
 | [orbit-online/collections.sh](https://github.com/orbit-online/collections.sh)                   | Functions for handling bash arrays             |
 | [orbit-online/git-release](https://github.com/orbit-online/git-release)                         | Tool for releasing versions using git tags     |
 | [orbit-online/image-version](https://github.com/orbit-online/image-version)                     | Get container image version based on a git ref |
+| [orbit-online/program-version](https://github.com/orbit-online/program-version)                 | Get program version based on a git ref         |
 | [orbit-online/lock-screen](https://github.com/orbit-online/lock-screen)                         | A tool to lock the screen unless a key is held |
 | [orbit-online/path-tools](https://github.com/orbit-online/path-tools)                           | Tools for modifying `$PATH`                    |
 | [orbit-online/pinentry-wrapper](https://github.com/orbit-online/pinentry-wrapper)               | Pinentry wrapper with a CLI interface          |
