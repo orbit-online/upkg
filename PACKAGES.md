@@ -24,5 +24,6 @@ for additional packages beyond the ones listed here.
 | [orbit-online/records.sh](https://github.com/orbit-online/records.sh)                           | A small logging library for bash.              |
 | [orbit-online/sign-s3](https://github.com/orbit-online/sign-s3)                                 | Sign S3 URLs                                   |
 | [orbit-online/socket-credential-cache](https://github.com/orbit-online/socket-credential-cache) | Credentials caching tool                       |
+| [orbit-online/ssh-sudo.sh](https://github.com/orbit-online/ssh-sudo.sh)                         | Library for sudo'ing via ssh with tty intact   |
 | [orbit-online/smallstep-wrapper](https://github.com/orbit-online/smallstep-wrapper)             | Wrapper for step-cli with YubiKey integration  |
 | [orbit-online/trap.sh](https://github.com/orbit-online/trap.sh)                                 | Library for managing bash signal traps         |
