@@ -5,18 +5,26 @@ shopt -s inherit_errexit
 
 upkg() {
   [[ ! $(bash --version | head -n1) =~ version\ [34]\.[0-3] ]] || fatal "upkg requires bash >= v4.4"
-  local dep; for dep in jq git; do type "$dep" >/dev/null 2>&1 || \
+  WGET_FORUND=false CURL_FOUND=false
+  type wget &>/dev/null && WGET_FORUND=true
+  type curl &>/dev/null && CURL_FOUND=true
+  $WGET_FORUND || $CURL_FOUND || fatal 'Unable to find http fetch depency, neither wget nor curl was found.'
+
+  local dep; for dep in jq git shasum tar; do type "$dep" >/dev/null 2>&1 || \
     fatal "Unable to find dependency '%s'." "$dep"; done
   export GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND=${GIT_SSH_COMMAND:-"ssh -oBatchMode=yes"} DRY_RUN=false
   DOC="μpkg - A minimalist package manager
 Usage:
-  upkg install [-n] [-g [remoteurl]user/pkg@<version>]
+  upkg install [-n] [-g [giturl]user/pkg@<version>]
+  upkg install [-n] [-g tarballurl@<sha256sum>]
   upkg uninstall -g user/pkg
   upkg list [-g]
+  upkg -h
 
 Options:
   -g  Act globally
-  -n  Dry run, \$?=1 if install/upgrade is required"
+  -n  Dry run, \$?=1 if install/upgrade is required
+  -h  Shows extended help message with examples and specifications"
   local prefix=$HOME/.local pkgspath pkgpath tmppkgspath
   pkgpath=$(realpath "$PWD")
   [[ $EUID != 0 ]] || prefix=/usr/local
@@ -50,6 +58,42 @@ Options:
       elif [[ $# -eq 1 ]]; then
         upkg_list "$pkgpath/.upkg" true
       else fatal "$DOC"; fi ;;
+    help|--help|-h)
+      fatal "$DOC
+
+Examples:
+  Installing from git repo using github shorthand:
+    upkg install -g orbit-online/records.sh@v0.9.5
+
+  Installing from git repo with giturl:
+    upkg install -g https://github.com/orbit-online/records.sh.git@v0.9.5
+
+  Installing from tarballurl:
+    upkg install -g https://organization.s3.amazonaws.com/optional/namespace/pkgname-v0.3.1.tar.gz@69ac88324957d3efaa2616855c657be2de48e840b023282367b41c2f5f73ebcd
+
+Specifications:
+  tarballurl:
+    <protocol>://[subdomain.]*domain.tld/[pathname/]*<pkgname>-v<pkgversion>.tar[.compression-extension][?GET-params...]@<sha256sum>
+
+    For <protocol> http and https is supported, it comes down to what wget/curl supports
+    Compression extensions supported comes down to what \`tar xf\` can auto detect, e.g. .gz, .bz2, .xz etc.
+
+    <pkgversion> is only a symbolic notion used when listing packages, and must be prefixed with a \`v\`
+
+    The filesystem location and effective pkgname is calculated from the tarballurl in the following manner.
+      .upkg/lib/[subdomain.]domain.tld/[pathname.replace('/','.').]<pkgname>/bin/*
+
+      Considering https://organization.s3.amazonaws.com/optional/namespace/pkgname-v0.3.1.tar.gz
+      with tarball content of \`bin/cli-tool\` the filesystem layout will effectively be:
+
+        .upkg/lib/organization.s3.amazonaws.com/optional.namespace.pkgname/bin/cli-tool
+        .upkg/.bin/cli-tool -> ../lib/organization.s3.amazonaws.com/optional.namespace.pkgname/bin/cli-tool
+
+      Considering https://raw.githubusercontent.com/pkgname-v0.3.1.tar.gz
+      with tarball content of \`bin/cli-tool\` the filesystem layout will effectively be:
+
+        .upkg/lib/raw.githubusercontent.com/pkgname/bin/cli-tool
+        .upkg/.bin/cli-tool -> ../lib/raw.githubusercontent.com/pkgname/bin/cli-tool" ;;
     *) fatal "$DOC" ;;
   esac
 }
@@ -74,10 +118,13 @@ upkg_install() {
   while [[ -n $repospecs ]] && read -r -d $'\n' repospec; do
     if [[ $repospec =~ ^([^@/: ]+/[^@/: ]+)(@([^@ ]+))$ ]]; then
       repourl="https://github.com/${BASH_REMATCH[1]}.git"
-    elif [[ $repospec =~ ([^@/: ]+/[^@/ ]+)(@([^@ ]+))$ ]]; then
+    elif [[ $repospec = https://github.com/* ]]; then
       repourl=${repospec%@*}
+    elif [[ $repospec =~ ([^@/: ]+/[^@/ ]+)(@([0-9a-f]{64}))$ ]]; then
+      upkg_install_tar "${repospec%@*}" "${BASH_REMATCH[3]}" "$pkgspath" "$binpath" "$tmppkgspath"
+      continue
     else
-      fatal "Unable to parse repospec '%s'. Expected a git cloneable URL followed by @version" "$repospec"
+      fatal "Unable to parse repospec '%s'. Expected a git cloneable URL followed by @version or tarball URL followed by @version (sha256sum)" "$repospec"
     fi
     local pkgname="${BASH_REMATCH[1]%\.git}" pkgversion="${BASH_REMATCH[3]}"
     local pkgpath="$pkgspath/$pkgname" tmppkgpath=$tmppkgspath/$pkgname curversion deps out
@@ -185,6 +232,68 @@ and does not point to the package" "$command" "$pkgname" "$pkgversion"
   fi
   for dep_pid in "${dep_pids[@]}"; do wait "$dep_pid" || ret=$?; done
   return $ret
+}
+
+upkg_fetch() {
+  local url="$1" dst="$2" out
+  if $WGET_FORUND; then
+    out=$(wget --server-response -qO "$dst" "$url" 2>&1) || fatal 'Could not download depency %s\n\n%s' "$url" "$out"
+  elif $CURL_FOUND; then
+    curl -fsLo "$dst" "$url" || fatal 'Could not download depency %s' "$url"
+  else
+    fatal 'Invalid invariant, no http fetch engine found.'
+  fi
+}
+
+upkg_install_tar() {
+  local url=$1 sha256sum=$2 pkgspath=${3:?} binpath=${4:?} tmppkgspath=$5 \
+        baseurl dirname domain filename pathname protocol \
+        pkgfsname pkgname pkgpath pkgversion
+
+  baseurl="${url%'?'*}"                     # https://orbit-binaries.s3.eu-west-1.amazonaws.com/secoya/orbit-cli-v0.1.0.tar.gz
+  protocol="${baseurl%%'//'*}//"            # https://
+  domain="${baseurl#"$protocol"}"           # *intermediate* removing protocol from baseurl
+  domain="${domain%%'/'*}"                  # orbit-binaries.s3.eu-west-1.amazonaws.com
+  pathname="${baseurl#"$protocol$domain/"}" # secoya/orbit-cli-v0.1.0.tar.gz
+  dirname="$(dirname "$pathname")"          # secoya
+  filename="$(basename "$pathname")"        # orbit-cli-v0.1.0.tar.gz
+  pkgname="${filename%'-v'*}"               # orbit-cli
+  pkgversion="${filename#"${pkgname}-"}"    # *intermediate* removing pkgname and dash from filename
+  pkgversion="${pkgversion%.tar*}"          # v0.1.0
+
+  [[ $pkgversion != v* ]] && fatal 'Could not determine pkgversion for %s, found %s' "$url" "$pkgversion"
+  [[ $dirname == '.' ]] && pkgfsname="$domain/$pkgname" || pkgfsname="$domain/${dirname//\//.}.$pkgname"
+
+  local pkgpath="$pkgspath/$pkgfsname" tmppkgpath=$tmppkgspath/$pkgfsname
+  mkdir -p "$(dirname "$tmppkgpath")"
+
+  processing 'Fetching %s@%s' "$pkgfsname" "$pkgversion"
+  upkg_fetch "$url" "$tmppkgpath" || return $?
+
+  local out
+  out="$(echo "$sha256sum  $tmppkgpath" | shasum -a 256 -c -)" || fatal "sha256sum mismatch: %s, did not match %s" "$url" "$sha256sum"
+  tar -tf "$tmppkgpath" | grep -qE '^bin/' || fatal "Invalid upkg tarball, top-level bin/ directory wasn't found, got:\n%s" "$(tar -tf "$tmppkgpath")"
+
+  processing 'Installing %s@%s' "$pkgfsname" "$pkgversion"
+  mkdir -p "$pkgpath" "$binpath"
+  (cd "$pkgpath" && tar -xf "$tmppkgpath") || return $?
+
+  local command
+  for command in "$pkgpath/bin"/*; do
+    if test -x "$command"; then
+      command="$(basename "$command")"
+      if [[ $pkgspath = */lib/upkg ]]; then
+        ln -sf "../lib/upkg/$pkgfsname/bin/$command" "$binpath/$command" # Overwrite to support unclean uninstalls
+      else
+        ln -sf "../$pkgfsname/bin/$command" "$binpath/$command"
+      fi
+    fi
+  done
+
+  jq --null-input --arg version "$pkgversion" --arg sha256sum "$sha256sum" '{"version": $version, "sha256sum": $sha256sum}' >"$pkgpath/upkg.json"
+  printf -- '%s\n' "$pkgfsname" # report the package is installed.
+
+  return 0
 }
 
 upkg_uninstall() {

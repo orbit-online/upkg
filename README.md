@@ -9,35 +9,41 @@ and global installation for user- or system-wide usage.
 
 ## Contents
 
-- [Dependencies](#dependencies)
-- [Installation](#installation)
-  - [GitHub action](#github-action)
-  - [Upgrading](#upgrading)
-- [Usage](#usage)
-  - [Silent operation](#silent-operation)
-  - [Available packages](#available-packages)
-  - [Installing packages without installing μpkg](#installing-packages-without-installing-μpkg)
-- [Authoring packages](#authoring-packages)
-  - [Publishing](#publishing)
-  - [Upgrading](#upgrading)
-    - [Transactionality](#transactionality)
-  - [Including dependencies](#including-dependencies)
-  - [Checking dependencies](#checking-dependencies)
-  - [Additional tips for scripting](#additional-tips-for-scripting)
-  - [upkg.json](#upkg-json)
-    - [dependencies](#dependencies)
-    - [files](#files)
-    - [commands](#commands)
-    - [version](#version)
-- [Things that μpkg does not and will not support](#things-that-μpkg-does-not-and-will-not-support)
-- [Things that μpkg _might_ support in the future](#things-that-μpkg-might-support-in-the-future)
-- [Alternatives](#alternatives)
+- [μpkg - A minimalist package manager](#μpkg---a-minimalist-package-manager)
+  - [Contents](#contents)
+  - [Dependencies](#dependencies)
+  - [Installation](#installation)
+    - [GitHub action](#github-action)
+    - [Upgrading](#upgrading)
+  - [Usage](#usage)
+    - [Silent operation](#silent-operation)
+    - [Available packages](#available-packages)
+    - [Installing packages without installing μpkg](#installing-packages-without-installing-μpkg)
+  - [Authoring packages](#authoring-packages)
+    - [Publishing](#publishing)
+    - [Upgrading](#upgrading-1)
+      - [Transactionality](#transactionality)
+    - [Including dependencies](#including-dependencies)
+    - [Checking dependencies](#checking-dependencies)
+    - [Additional tips for scripting](#additional-tips-for-scripting)
+    - [upkg.json](#upkgjson)
+      - [dependencies](#dependencies-1)
+      - [assets](#assets)
+      - [commands](#commands)
+      - [version](#version)
+    - [tarballs](#tarballs)
+  - [Things that μpkg does not and will not support](#things-that-μpkg-does-not-and-will-not-support)
+  - [Things that μpkg _might_ support in the future](#things-that-μpkg-might-support-in-the-future)
+  - [Alternatives](#alternatives)
 
 ## Dependencies
 
 - bash>=v4.4
 - git
 - jq
+- shasum
+- tar
+- wget or curl
 
 ## Installation
 
@@ -88,13 +94,16 @@ and would just like to upgrade to the latest stable version.
 ```
 μpkg - A minimalist package manager
 Usage:
-  upkg install [-n] [-g [remoteurl]user/pkg@<version>]
+  upkg install [-n] [-g [giturl]user/pkg@<version>]
+  upkg install [-n] [-g tarballurl@<sha256sum>]
   upkg uninstall -g user/pkg
   upkg list [-g]
+  upkg (help|-h|--help)
 
 Options:
   -g  Act globally
-  -n  Dry run, $?=1 if install/upgrade is required
+  -n  Dry run, \$?=1 if install/upgrade is required
+  -h  Show extended help message with examples and specifications
 ```
 
 `upkg install` looks for a `upkg.json` upwards from the current directory and
@@ -269,6 +278,8 @@ the same `.upkg/bin` PATH multiple times (i.e. use
 
 ### upkg.json
 
+*NB!* Only git repos should contain a `upkg.json` file, it will disregarded in tarball packages.
+
 `upkg.json` has no package name, version or description.
 There are 3 config keys you can specify (none are mandatory, but at least one
 key _must_ be present).  
@@ -277,8 +288,8 @@ file.
 
 #### dependencies
 
-Dependencies of a package. A dictionary of git cloneable URLs or
-GitHub shorthands as keys and git branches/tags/commits as values.
+Dependencies of a package. A dictionary of git cloneable URLs,
+GitHub shorthands as keys and git branches/tags/commits as values or tarball URLs.
 
 Dependencies will be installed under `.upkg` next to `upkg.json`.
 
@@ -288,7 +299,8 @@ Dependencies will be installed under `.upkg` next to `upkg.json`.
   "dependencies": {
     "orbit-online/records.sh": "v0.9.2",
     "git@github.com:andsens/docopt.sh": "v1.0.0-upkg",
-    "orbit-online/bitwarden-tools": "master"
+    "orbit-online/bitwarden-tools": "master",
+    "https://orbit-binaries.s3.eu-west-1.amazonaws.com/orbit-cli-v0.1.0.tar.gz": "69ac88324957d3efaa2616855c657be2de48e840b023282367b41c2f5f73ebcd"
   },
   ...
 }
@@ -351,6 +363,43 @@ You _must not_ specify it.
   "version": "refs/tags/v0.9.2",
   ...
 }
+```
+
+### tarballs
+
+Currently only tarballs with binaries living inside a `bin/` folder at top-level are supported.
+The urls must follow the follow scheme:
+
+```
+<protocol>://[subdomain.]*domain.tld/[pathname/]*<pkgname>-v<pkgversion>.tar[.compression-extension][?GET-params...]@<sha256sum>
+```
+
+The `<protocol>` part only http and https is supported, it comes down to what wget/curl supports
+
+`.compression-extension` supports what \`tar xf\` can auto detect, e.g. .gz, .bz2, .xz etc.
+
+`<pkgversion>` is only a symbolic notion used when listing packages and uninstalling global packages, and must be prefixed with a \`v\`
+
+The filesystem location and effective pkgname is calculated from the tarballurl in the following manner.
+
+```
+.upkg/lib/[subdomain.]domain.tld/[pathname.replace('/','.').]<pkgname>/bin/*`
+```
+
+Considering `https://organization.s3.amazonaws.com/optional/namespace/pkgname-v0.3.1.tar.gz`
+with tarball content of `bin/cli-tool` the filesystem layout will effectively be:
+
+```
+.upkg/lib/organization.s3.amazonaws.com/optional.namespace.pkgname/bin/cli-tool
+.upkg/.bin/cli-tool -> ../lib/organization.s3.amazonaws.com/optional.namespace.pkgname/bin/cli-tool
+```
+
+Considering `https://organization.s3.amazonaws.com/pkgname-v0.3.1.tar.gz`
+with tarball content of `bin/cli-tool` the filesystem layout will effectively be:
+
+```
+.upkg/lib/organization.s3.amazonaws.com/pkgname/bin/cli-tool
+.upkg/.bin/cli-tool -> ../lib/organization.s3.amazonaws.com/pkgname/bin/cli-tool
 ```
 
 ## Things that μpkg does not and will not support
