@@ -1,0 +1,50 @@
+upkg: μpkg - A minimalist package manager
+Usage:
+  upkg install [-n] [-g [giturl]user/pkg@<version>]
+  upkg install [-n] [-g tarballurl@<sha256sum>]
+  upkg uninstall -g user/pkg
+  upkg list [-g]
+  upkg -h
+
+Options:
+  -g  Act globally
+  -n  Dry run, $?=1 if install/upgrade is required
+  -h  Shows extended help message with examples and specifications
+
+Examples:
+  Installing from git repo using github shorthand:
+    upkg install -g orbit-online/records.sh@v0.9.5
+
+  Installing from git repo with giturl:
+    upkg install -g https://github.com/orbit-online/records.sh.git@v0.9.5
+
+  Installing from tarballurl:
+    upkg install -g https://organization.s3.amazonaws.com/optional/namespace/pkgname-v0.3.1.tar.gz#@69ac88324957d3efaa2616855c657be2de48e840b023282367b41c2f5f73ebcd
+
+Specifications:
+  tarballurl:
+    <protocol>://[subdomain.]*domain.tld/[pathname/]*<pkgname>-v<pkgversion>.tar[.ext][?GET-params...]@<sha256sum>
+    <protocol>://[subdomain.]*domain.tld/path-to-package.tar[.ext][?GET-params...]#name=<pkgname>&version=v<pkgversion>@<sha256sum>
+
+    For <protocol> http and https is supported, it comes down to what wget/curl supports
+    Compression extensions supported comes down to what `tar xf` can auto detect, e.g. .gz, .bz2, .xz etc.
+
+    <pkgversion> is only a symbolic notion used when listing packages, and must be prefixed with a `v`
+
+    If the package name / package version part of the URL doesn't fit the usecase
+    the metadata `#name=<pkgname>&version=v<pkgversion>` fields can be used to control the location on the file system.
+
+    The filesystem location and effective pkgname is calculated from the tarballurl in the following manner.
+      .upkg/lib/[subdomain.]domain.tld/[pathname.replace('/','.').]<pkgname>/bin/*
+
+      Considering https://s3.amazonaws.com/bucket/pkgname-v0.3.1.tar.gz
+      with tarball content of `bin/cli-tool` the filesystem layout will effectively be:
+
+        .upkg/lib/bucket/pkgname/bin/cli-tool
+        .upkg/.bin/cli-tool -> ../lib/bucket/pkgname/bin/cli-tool
+
+      Considering https://raw.githubusercontent.com/pkgname.tar.gz#name=org/pkg&version=v1.2.0
+      with tarball content of `bin/cli-tool` the filesystem layout will effectively be:
+
+        .upkg/lib/org/pkg/bin/cli-tool
+        .upkg/.bin/cli-tool -> ../lib/org/pkg/bin/cli-tool

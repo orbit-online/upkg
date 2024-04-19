@@ -1,0 +1,12 @@
+upkg: μpkg - A minimalist package manager
+Usage:
+  upkg install [-n] [-g [giturl]user/pkg@<version>]
+  upkg install [-n] [-g tarballurl@<sha256sum>]
+  upkg uninstall -g user/pkg
+  upkg list [-g]
+  upkg -h
+
+Options:
+  -g  Act globally
+  -n  Dry run, $?=1 if install/upgrade is required
+  -h  Shows extended help message with examples and specifications
