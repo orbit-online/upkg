@@ -118,10 +118,10 @@ upkg_install() {
   while [[ -n $repospecs ]] && read -r -d $'\n' repospec; do
     if [[ $repospec =~ ^([^@/: ]+/[^@/: ]+)(@([^@ ]+))$ ]]; then
       repourl="https://github.com/${BASH_REMATCH[1]}.git"
-    elif [[ $repospec = https://github.com/* ]]; then
+    elif [[ $repospec =~ ^https://github.com/([^@/: ]+/[^@/: ]+)(@([^@ ]+))$ ]]; then
       repourl=${repospec%@*}
-    elif [[ $repospec =~ ([^@/: ]+/[^@/ ]+)(@([0-9a-f]{64}))$ ]]; then
-      upkg_install_tar "${repospec%@*}" "${BASH_REMATCH[3]}" "$pkgspath" "$binpath" "$tmppkgspath"
+    elif [[ $repospec =~ ([^@/: ]+/[^@/ ]+@([0-9a-f]{64})(#.*)?)$ ]]; then
+      upkg_install_tar "$repospec" "$pkgspath" "$binpath" "$tmppkgspath"
       continue
     else
       fatal "Unable to parse repospec '%s'. Expected a git cloneable URL followed by @version or tarball URL followed by @version (sha256sum)" "$repospec"
