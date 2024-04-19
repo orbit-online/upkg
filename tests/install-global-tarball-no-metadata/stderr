@@ -1,0 +1,4 @@
+upkg: No checksum given for 'http://localhost:8080/acme-empty-v1.0.2.tar.gz', determining now
+upkg: Downloading http://localhost:8080/acme-empty-v1.0.2.tar.gz
+upkg: Linking 'empty'
+upkg: Added 'http://localhost:8080/acme-empty-v1.0.2.tar.gz'

@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "http://localhost:8080/acme-empty-v1.0.2.tar.gz": "eecec7bbeb5cc024a00293888b8abc0166449462c33e040a0be74a30b964e8e8"
+  }
+}
