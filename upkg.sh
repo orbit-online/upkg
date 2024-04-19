@@ -69,31 +69,35 @@ Examples:
     upkg install -g https://github.com/orbit-online/records.sh.git@v0.9.5
 
   Installing from tarballurl:
-    upkg install -g https://organization.s3.amazonaws.com/optional/namespace/pkgname-v0.3.1.tar.gz@69ac88324957d3efaa2616855c657be2de48e840b023282367b41c2f5f73ebcd
+    upkg install -g https://organization.s3.amazonaws.com/optional/namespace/pkgname-v0.3.1.tar.gz#@69ac88324957d3efaa2616855c657be2de48e840b023282367b41c2f5f73ebcd
 
 Specifications:
   tarballurl:
-    <protocol>://[subdomain.]*domain.tld/[pathname/]*<pkgname>-v<pkgversion>.tar[.compression-extension][?GET-params...]@<sha256sum>
+    <protocol>://[subdomain.]*domain.tld/[pathname/]*<pkgname>-v<pkgversion>.tar[.ext][?GET-params...]@<sha256sum>
+    <protocol>://[subdomain.]*domain.tld/path-to-package.tar[.ext][?GET-params...]#name=<pkgname>&version=v<pkgversion>@<sha256sum>
 
     For <protocol> http and https is supported, it comes down to what wget/curl supports
     Compression extensions supported comes down to what \`tar xf\` can auto detect, e.g. .gz, .bz2, .xz etc.
 
     <pkgversion> is only a symbolic notion used when listing packages, and must be prefixed with a \`v\`
 
+    If the package name / package version part of the URL doesn't fit the usecase
+    the metadata \`#name=<pkgname>&version=v<pkgversion>\` fields can be used to control the location on the file system.
+
     The filesystem location and effective pkgname is calculated from the tarballurl in the following manner.
       .upkg/lib/[subdomain.]domain.tld/[pathname.replace('/','.').]<pkgname>/bin/*
 
-      Considering https://organization.s3.amazonaws.com/optional/namespace/pkgname-v0.3.1.tar.gz
+      Considering https://s3.amazonaws.com/bucket/pkgname-v0.3.1.tar.gz
       with tarball content of \`bin/cli-tool\` the filesystem layout will effectively be:
 
-        .upkg/lib/organization.s3.amazonaws.com/optional.namespace.pkgname/bin/cli-tool
-        .upkg/.bin/cli-tool -> ../lib/organization.s3.amazonaws.com/optional.namespace.pkgname/bin/cli-tool
+        .upkg/lib/bucket/pkgname/bin/cli-tool
+        .upkg/.bin/cli-tool -> ../lib/bucket/pkgname/bin/cli-tool
 
-      Considering https://raw.githubusercontent.com/pkgname-v0.3.1.tar.gz
+      Considering https://raw.githubusercontent.com/pkgname.tar.gz#name=org/pkg&version=v1.2.0
       with tarball content of \`bin/cli-tool\` the filesystem layout will effectively be:
 
-        .upkg/lib/raw.githubusercontent.com/pkgname/bin/cli-tool
-        .upkg/.bin/cli-tool -> ../lib/raw.githubusercontent.com/pkgname/bin/cli-tool" ;;
+        .upkg/lib/org/pkg/bin/cli-tool
+        .upkg/.bin/cli-tool -> ../lib/org/pkg/bin/cli-tool" ;;
     *) fatal "$DOC" ;;
   esac
 }
@@ -246,35 +250,66 @@ upkg_fetch() {
 }
 
 upkg_install_tar() {
-  local url=$1 sha256sum=$2 pkgspath=${3:?} binpath=${4:?} tmppkgspath=$5 \
-        baseurl dirname domain filename pathname protocol \
-        pkgfsname pkgname pkgpath pkgversion
+  local rawurl=$1 pkgspath=${2:?} binpath=${3:?} tmppkgspath=$4 \
+        url sha256sum baseurl namespace domain filename pathname protocol \
+        metadata pkgname pkgpath pkgversion
+  # rawurl = https://s3.eu-west-1.amazonaws.com/orbit-binaries/orbit-cli-v0.1.0.tar.gz#name=secoya/orbit-cli&version=v1.0.3@d45fa23fa4cecfec0fc93e25d8aa2518990af365d66064e53d7dc7236ad4a634
+  sha256sum="${rawurl%'@'*}"                  # *intermediate* https://s3.eu-west-1.amazonaws.com/orbit-binaries/orbit-cli-v0.1.0.tar.gz#name=secoya/orbit-cli&version=v1.0.3
+  metadata="${sha256sum%'#'*}"                # *intermediate* https://s3.eu-west-1.amazonaws.com/orbit-binaries/orbit-cli-v0.1.0.tar.gz@d45fa23fa4cecfec0fc93e25d8aa2518990af365d66064e53d7dc7236ad4a634
+  url="$metadata"                             # *final*        https://s3.eu-west-1.amazonaws.com/orbit-binaries/orbit-cli-v0.1.0.tar.gz
+  metadata="${sha256sum#"$metadata"}"         # *intermediate* #name=secoya/orbit-cli&version=v1.0.3
+  metadata="${metadata:1}"                    # *final*        name=secoya/orbit-cli&version=v1.0.3
+  sha256sum="${rawurl#"$sha256sum"}"          # *intermediate* @d45fa23fa4cecfec0fc93e25d8aa2518990af365d66064e53d7dc7236ad4a634
+  sha256sum="${sha256sum:1}"                  # *final*        d45fa23fa4cecfec0fc93e25d8aa2518990af365d66064e53d7dc7236ad4a634
 
-  baseurl="${url%'?'*}"                     # https://orbit-binaries.s3.eu-west-1.amazonaws.com/secoya/orbit-cli-v0.1.0.tar.gz
-  protocol="${baseurl%%'//'*}//"            # https://
-  domain="${baseurl#"$protocol"}"           # *intermediate* removing protocol from baseurl
-  domain="${domain%%'/'*}"                  # orbit-binaries.s3.eu-west-1.amazonaws.com
-  pathname="${baseurl#"$protocol$domain/"}" # secoya/orbit-cli-v0.1.0.tar.gz
-  dirname="$(dirname "$pathname")"          # secoya
-  filename="$(basename "$pathname")"        # orbit-cli-v0.1.0.tar.gz
-  pkgname="${filename%'-v'*}"               # orbit-cli
-  pkgversion="${filename#"${pkgname}-"}"    # *intermediate* removing pkgname and dash from filename
-  pkgversion="${pkgversion%.tar*}"          # v0.1.0
+  if [[ -n "$metadata" ]]; then
+    local pairs pair k v
+    IFS='&' read -ra pairs <<<"$metadata"
+    for pair in "${pairs[@]}"; do
+      while IFS='=' read -r k v; do
+        case $k in
+          name)
+            slashes="${v//[^/]}"; ((${#slashes} != 1)) || fatal 'Metadata package name must be of form <namespace>/<pkgname>, got: %s' "$v"
+            pkgname=$v;;                      # *final* secoya/orbit-cli
+          version) pkgversion=$v;;            # *final* v1.0.3
+          *) fatal 'Unsupported metadata key "%s"' "$k"
+        esac
+      done <<<"$pair"
+    done
+  fi
 
-  [[ $pkgversion != v* ]] && fatal 'Could not determine pkgversion for %s, found %s' "$url" "$pkgversion"
-  [[ $dirname == '.' ]] && pkgfsname="$domain/$pkgname" || pkgfsname="$domain/${dirname//\//.}.$pkgname"
+  baseurl="${url%'?'*}"                                          # https://s3.eu-west-1.amazonaws.com/orbit-binaries/orbit-cli-v0.1.0.tar.gz
+  protocol="${baseurl%%'//'*}//"                                 # https://
+  domain="${baseurl#"$protocol"}"                                # *intermediate* removing protocol from baseurl
+  domain="${domain%%'/'*}"                                       # s3.eu-west-1.amazonaws.com
+  pathname="${baseurl#"$protocol$domain/"}"                      # orbit-binaries/orbit-cli-v0.1.0.tar.gz
+  namespace="$(basename "$(dirname "$pathname")")"               # orbit-binaries
+  filename="$(basename "$pathname")"                             # orbit-cli-v0.1.0.tar.gz
+  [[ -n $pkgname ]] || pkgname="${filename%'-v'*}"               # orbit-cli
+  if [[ -z $pkgversion ]]; then
+    pkgversion="v${filename#*'-v'}"                               # *intermediate* removing pkgname and dash from filename
+    pkgversion="${pkgversion%.tar*}"                             # v0.1.0
+  fi
 
-  local pkgpath="$pkgspath/$pkgfsname" tmppkgpath=$tmppkgspath/$pkgfsname
+  [[ -n $sha256sum ]] || (echo "sha256sum not found" >&2; return 1)
+  [[ ${#sha256sum} == 64 ]] || (printf -- 'invalid sha256sum %s\n' "$sha256sum" >&2; return 1)
+  [[ $namespace == '.' ]] && namespace=
+  [[ $pkgname == *'/'* && -n $namespace ]] || pkgname="$namespace/$pkgname"
+
+  [[ $pkgversion == v* ]] || fatal 'Could not determine pkgversion for %s, found %s' "$url" "$pkgversion"
+  [[ $pkgname == *'/'* ]] || fatal 'Package name must contain a namespace followed by a slash, then a package name, got: %s' "$pkgname"
+
+  local pkgpath="$pkgspath/$pkgname" tmppkgpath=$tmppkgspath/$pkgname
   mkdir -p "$(dirname "$tmppkgpath")"
 
-  processing 'Fetching %s@%s' "$pkgfsname" "$pkgversion"
+  processing 'Fetching %s@%s' "$pkgname" "$pkgversion"
   upkg_fetch "$url" "$tmppkgpath" || return $?
 
   local out
   out="$(echo "$sha256sum  $tmppkgpath" | shasum -a 256 -c -)" || fatal "sha256sum mismatch: %s, did not match %s" "$url" "$sha256sum"
   tar -tf "$tmppkgpath" | grep -qE '^bin/' || fatal "Invalid upkg tarball, top-level bin/ directory wasn't found, got:\n%s" "$(tar -tf "$tmppkgpath")"
 
-  processing 'Installing %s@%s' "$pkgfsname" "$pkgversion"
+  processing 'Installing %s@%s' "$pkgname" "$pkgversion"
   mkdir -p "$pkgpath" "$binpath"
   (cd "$pkgpath" && tar -xf "$tmppkgpath") || return $?
 
@@ -283,15 +318,15 @@ upkg_install_tar() {
     if test -x "$command"; then
       command="$(basename "$command")"
       if [[ $pkgspath = */lib/upkg ]]; then
-        ln -sf "../lib/upkg/$pkgfsname/bin/$command" "$binpath/$command" # Overwrite to support unclean uninstalls
+        ln -sf "../lib/upkg/$pkgname/bin/$command" "$binpath/$command" # Overwrite to support unclean uninstalls
       else
-        ln -sf "../$pkgfsname/bin/$command" "$binpath/$command"
+        ln -sf "../$pkgname/bin/$command" "$binpath/$command"
       fi
     fi
   done
 
   jq --null-input --arg version "$pkgversion" --arg sha256sum "$sha256sum" '{"version": $version, "sha256sum": $sha256sum}' >"$pkgpath/upkg.json"
-  printf -- '%s\n' "$pkgfsname" # report the package is installed.
+  printf -- '%s\n' "$pkgname" # report the package is installed.
 
   return 0
 }
