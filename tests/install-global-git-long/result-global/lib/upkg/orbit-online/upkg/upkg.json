@@ -1,6 +1,0 @@
-{
-  "commands": {
-    "upkg": "upkg.sh"
-  },
-  "version": "refs/tags/v0.14.0"
-}

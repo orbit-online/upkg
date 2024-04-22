@@ -12,6 +12,13 @@ ERRORED=false
 DIR="$(cd -P "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 OLDHOME=$HOME
 UPDATE_SNAPSHOTS=false
+export UPKG_SEQUENTIAL=true
+
+serve_file() {
+  local file
+  file="$(realpath "$1")"
+  nc -l 8080 < <(printf -- 'HTTP/1.1 200 OK\r\nDate: %s\r\nContent-Length: %d\r\n\r\n' "$(date -R)" "$(stat --format='%s' "$file")"; cat "$file") &>/dev/null
+}
 
 run() {
   local args ctx upkg \
@@ -27,7 +34,14 @@ run() {
     shift
   fi
 
+  local serve_pids=()
   for t in "$DIR/tests/"*; do
+    if (( ${#serve_pids} != 0 )); then
+      kill "${serve_pids[@]}" 2>/dev/null
+      wait
+      serve_pids=()
+    fi
+
     [[ -z "$1" || $(basename "$t") == $1* ]] || continue
     export HOME=$OLDHOME
     printf -- '%s\n\n' "$(basename "$t")"
@@ -46,6 +60,13 @@ run() {
 
     [[ -d "$t/fixtures-local" ]] && cp -ax "$t/fixtures-local/." "$ctx/workdir/"
     [[ -d "$t/fixtures-global" ]] && cp -ax "$t/fixtures-global/." "$ctx/home/.local/"
+
+    if [[ -d "$t/assets" ]]; then
+      for f in "$t/assets"/*; do
+        (serve_file "$f") &
+        serve_pids+=("$!")
+      done
+    fi
 
     # shellcheck disable=SC2048,SC2086
     {
