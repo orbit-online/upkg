@@ -10,203 +10,96 @@ upkg() {
   export GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND=${GIT_SSH_COMMAND:-"ssh -oBatchMode=yes"} DRY_RUN=false
   DOC="μpkg - A minimalist package manager
 Usage:
-  upkg install [-n] [-g [remoteurl]user/pkg@<version>]
-  upkg uninstall -g user/pkg
+  upkg add [-g] URL [checksum]
+  upkg remove [-g] PKGNAME
   upkg list [-g]
+  upkg install [-n]
 
 Options:
   -g  Act globally
   -n  Dry run, \$?=1 if install/upgrade is required"
-  local prefix=$HOME/.local pkgspath pkgpath tmppkgspath
-  pkgpath=$(realpath "$PWD")
-  [[ $EUID != 0 ]] || prefix=/usr/local
-  case "$1" in
-    install)
-      [[ $2 != -n ]] || { DRY_RUN=true; shift; }
-      if [[ $# -eq 3 && $2 = -g ]]; then
-        (upkg_install "$3" "$prefix/lib/upkg" "$prefix/bin" >/dev/null)
-        if $DRY_RUN; then processing '%s is up-to-date' "$3"; else processing 'Installed %s' "$3"; fi
-        [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";}
-      elif [[ $# -eq 1 ]]; then
-        deps=$(jq -r '(.dependencies // []) | to_entries[] | "\(.key)@\(.value)"' <"$pkgpath/upkg.json")
-        local installed_deps removed_pkgs dep
-        installed_deps=$(upkg_install "$deps" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin")
-        [[ ! -e "$pkgpath/.upkg" ]] || removed_pkgs=$(comm -13 <(sort <<<"$installed_deps") <(find "$pkgpath/.upkg" \
-          -mindepth 2 -maxdepth 2 -not -path "$pkgpath/.upkg/.bin/*" | rev | cut -d/ -f-2 | rev | sort))
-        while [[ -n $removed_pkgs ]] && read -r -d $'\n' dep; do
-          upkg_uninstall "$dep" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin"
-        done <<<"$removed_pkgs"
-        if $DRY_RUN; then processing 'All dependencies up-to-date'; else processing 'Installed all dependencies'; fi
-        [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";}
-      else fatal "$DOC"; fi ;;
-    uninstall)
-      [[ $# -eq 3 && $2 = -g ]] || fatal "$DOC"
-      [[ $3 =~ ^([^@/: ]+/[^@/: ]+)$ ]] || fatal "Expected packagename ('user/pkg') not '%s'" "$3"
-      upkg_uninstall "$3" "$prefix/lib/upkg" "$prefix/bin"
-      processing 'Uninstalled %s' "$3" && { [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";} } ;;
+  if [[ -n $INSTALL_PREFIX ]]; then
+    INSTALL_PREFIX=$HOME/.local
+    [[ $EUID != 0 ]] || INSTALL_PREFIX=/usr/local
+  fi
+  unset TMPPATH
+  local cmd=$1
+  shift
+  case "$cmd" in
+    add)
+      local pkgpath=$PWD
+      if [[ $# -ge 2 && $1 = -g ]]; then
+        pkgpath=$INSTALL_PREFIX/lib/upkg
+        shift
+      fi
+      [[ $# -eq 1 || $# -eq 2 ]] || fatal "$DOC"
+      upkg_add "$pkgpath" "$1" "$2"
+      ;;
+    remove)
+      local pkgpath=$PWD
+      if [[ $# -eq 2 && $1 = -g ]]; then
+        pkgpath=$INSTALL_PREFIX/lib/upkg
+        shift
+      fi
+      [[ $# -eq 1 ]] || fatal "$DOC"
+      upkg_remove "$pkgpath" "$1"
+      ;;
     list)
-      if [[ $# -eq 2 && $2 = -g ]]; then
-        upkg_list "$prefix/lib/upkg" false
-      elif [[ $# -eq 1 ]]; then
+      if [[ $# -eq 1 && $1 = -g ]]; then
+        upkg_list "$INSTALL_PREFIX/lib/upkg" false
+      elif [[ $# -eq 0 ]]; then
         upkg_list "$pkgpath/.upkg" true
-      else fatal "$DOC"; fi ;;
+      else
+        fatal "$DOC"
+      fi
+      ;;
+    install)
+      DRY_RUN=false
+      [[ $1 != -n ]] || { DRY_RUN=true; shift; }
+      [[ $# -eq 0 ]] || fatal "$DOC"
+      upkg_install "$PWD"
+      ;;
     *) fatal "$DOC" ;;
   esac
+  [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";}
 }
 
-upkg_install() {
-  local repospecs=$1 pkgspath=${2:?} binpath=${3:?} tmppkgspath=$4 parent_deps_sntl repospec deps repourl ret=0 \
-    dep_pid dep_pids=()
-  if [[ -z $4 ]]; then
-    tmppkgspath=$(mktemp -d); trap "rm -rf \"$tmppkgspath\"" EXIT
-    PREPARATION_LOCK=$tmppkgspath/.preparation-lock # Global lock which is shared until all preparation is done
-    INSTALL_LOCK=$tmppkgspath/.install-lock # Global lock which is held exclusively until all preparation is done
-    touch "$INSTALL_LOCK" "$PREPARATION_LOCK"
-    exec 9<>"$INSTALL_LOCK"; flock -x 9
-  else
-    test -e "$INSTALL_LOCK" # Make sure other procs haven't errored out before starting work
-    parent_deps_sntl="$(dirname "$tmppkgspath").deps-sntl" # Sentinel from the parent pkg (see $deps_sntl)
-    until [[ -e "$parent_deps_sntl" ]]; do sleep .01; done
+upkg_add() {
+  local pkgpath=$1 pkgurl=$2 checksum=$3
+  local upkgjson={}
+  [[ ! -e "$pkgpath/upkg.json" ]] || upkgjson=$(cat "$pkgpath/upkg.json")
+  if jq -re --arg pkgurl "$pkgurl" '.dependencies[$pkgurl] // empty' <<<"$upkgjson" >/dev/null; then
+    fatal "The package has already been added, run \`upkg remove %s\` first if you want to update it" "$(basename "$pkgurl")"
   fi
-  local deps_lock=$tmppkgspath/.deps-lock # Local lock which is shared during preparation of all deps on this level
-  local locks_acq_sntl=$tmppkgspath/.locks-sntl # Per loop sentinel that exists until all locks have been acquired
-  mkdir -p "$tmppkgspath"; touch "$deps_lock"
-  while [[ -n $repospecs ]] && read -r -d $'\n' repospec; do
-    if [[ $repospec =~ ^([^@/: ]+/[^@/: ]+)(@([^@ ]+))$ ]]; then
-      repourl="https://github.com/${BASH_REMATCH[1]}.git"
-    elif [[ $repospec =~ ([^@/: ]+/[^@/ ]+)(@([^@ ]+))$ ]]; then
-      repourl=${repospec%@*}
+  if [[ -z "$checksum" ]]; then
+    processing "No checksum given for '%s', determining now" "$pkgurl"
+    if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)(\?|$) ]]; then
+      upkg_mktemp
+      mkdir -p "$TMPPATH/prefetched"
+      local tmp_archive="$TMPPATH/prefetched/temp-archive"
+      upkg_fetch "$pkgurl" "$tmp_archive"
+      checksum=$(shasum -a 256 "$tmp_archive" | cut -d ' ' -f1)
+      mv "$tmp_archive" "$TMPPATH/prefetched/$checksum"
     else
-      fatal "Unable to parse repospec '%s'. Expected a git cloneable URL followed by @version" "$repospec"
+      if ! checksum=$(git ls-remote -q "$pkgurl" HEAD | grep $'\tHEAD$' | cut -f1); then
+        fatal "Unable to determine remote HEAD for '%s', assumed git repo from URL" "$pkgurl"
+      fi
     fi
-    local pkgname="${BASH_REMATCH[1]%\.git}" pkgversion="${BASH_REMATCH[3]}"
-    local pkgpath="$pkgspath/$pkgname" tmppkgpath=$tmppkgspath/$pkgname curversion deps out
-    mkdir -p "$(dirname "$tmppkgpath")"
-    local deps_sntl="$tmppkgpath.deps-sntl" # Sentinel that exists until all dependencies of this pkg have been prepared
-    touch "$locks_acq_sntl"
-    ( exec 8<>"$PREPARATION_LOCK"; flock -sn 8 # Automatically released once this subshell exits
-      exec 7<>"$deps_lock"; flock -sn 7 # Automatically released once this subshell exits
-      touch "$deps_sntl"
-      rm "$locks_acq_sntl" # All locks acquired
-      while [[ -e $deps_sntl ]]; do sleep .01; done )& # Release locks once all deps have finished preparing
-    while [[ -e $locks_acq_sntl ]]; do sleep .01; done
-    ( [[ ! -e "$pkgpath/upkg.json" ]] || curversion=$(jq -r '.version' <"$pkgpath/upkg.json")
-    # Ensure deps sentinel is removed if we error out before calling upkg_install, also signal error to all other procs
-    trap "rm -f \"$deps_sntl\" \"$INSTALL_LOCK\"" ERR
-    if [[ $curversion = refs/heads/* || $pkgversion != "${curversion#'refs/tags/'}" ]]; then
-      ! $DRY_RUN || fatal "%s is not up-to-date" "$pkgname"
-      [[ ! -e "$pkgpath" || -w "$pkgpath" ]] || \
-        fatal "The destination ('%s') for the package '%s' is not writable." "$pkgpath" "$pkgname"
-      processing 'Fetching %s@%s' "$pkgname" "$pkgversion"
-      local ref_is_sym=false gitargs=() upkgjson upkgversion asset assets command commands cmdpath
-      upkgversion=$(git ls-remote -q "$repourl" "$pkgversion" | cut -d$'\t' -f2 | head -n1)
-      if [[ -n "$pkgversion" && -n $upkgversion ]]; then
-        ref_is_sym=true gitargs=(--depth=1 "--branch=$pkgversion")  # version is a ref, we can make a shallow clone
-      fi
-      [[ $upkgversion = refs/* ]] || upkgversion=$pkgversion
-      out=$(git clone -q "${gitargs[@]}" "$repourl" "$tmppkgpath" 2>&1) || \
-        fatal "Unable to clone '%s'. Error:\n%s" "$repospec" "$out"
-      $ref_is_sym || out=$(git -C "$tmppkgpath" checkout -q "$pkgversion" -- 2>&1) || \
-          fatal "Unable to checkout '%s' from '%s'. Error:\n%s" "$pkgversion" "$repourl" "$out"
-      upkgjson=$(jq --arg version "$upkgversion" '.version = $version' <"$tmppkgpath/upkg.json" || \
-        fatal "The package '%s' does not contain a valid upkg.json" "$pkgname")
-      jq -re '.assets != null or .commands != null or .dependencies != null' <<<"$upkgjson" >/dev/null || \
-        fatal "The package '%s' does specify any assets, commands, or dependencies in its upkg.json" "$pkgname"
-
-      assets=$(jq -r '((.assets // []) + [(.commands // {})[]] | unique)[]' <<<"$upkgjson")
-      while [[ -n $assets ]] && read -r -d $'\n' asset; do
-        [[ ! -d "$tmppkgpath/$asset" || "$tmppkgpath/$asset" = */ ]] || \
-          fatal 'Error on asset '%s' in package %s@%s. Directories must have a trailing slash' \
-            "$asset" "$pkgname" "$pkgversion"
-        if [[ $asset = /* || $asset =~ /\.\.(/|$)|//|^.upkg(/|$) || ! -e "$tmppkgpath/$asset" ]]; then
-          fatal "Error on asset '%s' in package %s@%s.\nAll assets in 'assets' and 'commands' must:
-* be relative\n* not contain parent dir parts ('../')\n* not reference the .upkg dir\n* exist in the repository" \
-            "$asset" "$pkgname" "$pkgversion"
-        fi
-      done <<<"$assets"
-      commands=$(jq -r '(.commands // {}) | to_entries[] | "\(.key)\n\(.value)"' <<<"$upkgjson")
-      while [[ -n $commands ]] && read -r -d $'\n' command; do
-        read -r -d $'\n' asset
-        [[ -x "$tmppkgpath/$asset" && -f "$tmppkgpath/$asset" ]] || \
-          fatal "Error on command '%s' in package %s@%s. The file '%s' does not exist or is not executable" \
-            "$command" "$pkgname" "$pkgversion" "$asset"
-        [[ ! $command =~ (/| ) ]] || \
-          fatal "Error on command '%s' in package %s@%s. The command may not contain spaces or slashes" \
-            "$command" "$pkgname" "$pkgversion"
-        cmdpath="$binpath/$command"
-        if [[ -e $cmdpath && $(realpath "$cmdpath") != $pkgpath/* ]]; then
-          fatal "Error on command '%s' in package %s@%s. The 'bin/' file/symlink exists \
-and does not point to the package" "$command" "$pkgname" "$pkgversion"
-        fi
-      done <<<"$commands"
-      deps=$(jq -r '(.dependencies // []) | to_entries[] | "\(.key)@\(.value)"' <<<"$upkgjson")
-      local installed_deps removed_pkgs
-      installed_deps=$(upkg_install "$deps" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgpath/.upkg")
-
-      exec 6<>"$INSTALL_LOCK"; flock -s 6; test -e "$INSTALL_LOCK" # Wait until we can install
-      processing 'Installing %s@%s' "$pkgname" "$pkgversion"
-      if [[ -e $pkgpath/upkg.json ]]; then # Remove package before reinstalling
-        [[ ! -e "$pkgpath/.upkg" ]] || removed_pkgs=$(comm -13 <(sort <<<"$installed_deps") <(find "$pkgpath/.upkg" \
-          -mindepth 2 -maxdepth 2 -not -path "$pkgpath/.upkg/.bin/*" | rev | cut -d/ -f-2 | rev | sort))
-        [[ -n $removed_pkgs ]] || removed_pkgs='-'
-        upkg_uninstall "$pkgname" "$pkgspath" "$binpath" "$removed_pkgs"
-      fi
-      while [[ -n $assets ]] && read -r -d $'\n' asset; do
-        mkdir -p "$(dirname "$pkgpath/$asset")"
-        cp -a "$tmppkgpath/$asset" "$pkgpath/$asset"
-      done <<<"$assets"
-      if [[ -n $commands ]]; then
-        mkdir -p "$binpath"
-        while [[ -n $commands ]] && read -r -d $'\n' command; do
-          read -r -d $'\n' asset
-          if [[ $pkgspath = */lib/upkg ]]; then
-            ln -sf "../lib/upkg/$pkgname/$asset" "$binpath/$command" # Overwrite to support unclean uninstalls
-          else
-            ln -sf "../$pkgname/$asset" "$binpath/$command"
-          fi
-        done <<<"$commands"
-      fi
-      printf "%s\n" "$upkgjson" >"$pkgpath/upkg.json"
-    else
-      if $DRY_RUN; then [[ -t 2 ]] || processing '%s@%s is up-to-date' "$pkgname" "$pkgversion"
-      else processing 'Skipping %s@%s' "$pkgname" "$pkgversion"; fi
-      deps=$(jq -r '(.dependencies // []) | to_entries[] | "\(.key)@\(.value)"' <"$pkgpath/upkg.json")
-      (upkg_install "$deps" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin" "$tmppkgpath/.upkg" >/dev/null)
-    fi
-    printf "%s\n" "$pkgname" )&
-    dep_pids+=($!)
-  done <<<"$repospecs"
-  exec 5<>"$deps_lock"; flock -x 5; rm "$deps_lock" # All pkgs and their deps in the above loop have been prepared
-  if [[ -z $4 ]]; then
-    exec 4<>"$PREPARATION_LOCK"; flock -x 4; rm "$PREPARATION_LOCK" # Wait until all preparations are done
-    flock -u 9 # All preparations are done, signal install can proceed (for some reason 'exec 9>&-' doesn't work)
-  else
-    rm "$parent_deps_sntl" # Signal to the parent pkg that all deps are prepared
   fi
-  for dep_pid in "${dep_pids[@]}"; do wait "$dep_pid" || ret=$?; done
-  return $ret
+  upkgjson=$(jq --arg url "$pkgurl" --arg checksum "$checksum" '.dependencies[$url]=$checksum' <<<"$upkgjson")
+  printf "%s\n" "$upkgjson" >"$pkgpath/upkg.json"
+  upkg_install "$pkgpath"
 }
 
-upkg_uninstall() {
-  local pkgname=${1:?} pkgspath=${2:?} binpath=${3:?} deps_to_remove=$4 dep
-  processing 'Uninstalling %s' "$pkgname"
-  local pkgpath="$pkgspath/$pkgname" asset command commands cmdpath
-  [[ -e "$pkgpath/upkg.json" ]] || { processing "'%s' is not installed" "$pkgname"; return 0; }
-  commands=$(jq -r '(.commands // {}) | to_entries[] | "\(.key)\n\(.value)"' <"$pkgpath/upkg.json")
-  while [[ -n $commands ]] && read -r -d $'\n' command; do
-    read -r -d $'\n' asset
-    cmdpath="$binpath/$command"
-    [[ ! -e $cmdpath || $(realpath "$cmdpath") != $pkgpath/* ]] || rm "$cmdpath"
-  done <<<"$commands"
-  if [[ -n $deps_to_remove ]]; then
-    find "$pkgpath" -mindepth 1 -maxdepth 1 -path "$pkgpath/.upkg" -prune -o -exec rm -rf \{\} \;
-    while [[ $deps_to_remove != '-' ]] && read -r -d $'\n' dep; do
-      upkg_uninstall "$dep" "$pkgpath/.upkg" "$pkgpath/.upkg/.bin"
-    done <<<"$deps_to_remove"
-  else
-    rm -rf "$pkgpath"
-    [[ -n $(find "$(dirname "$pkgpath")" -mindepth 1 -maxdepth 1) ]] || rm -rf "$(dirname "$pkgpath")"
-  fi
+upkg_remove() {
+  local pkgpath=$1 pkgname=$2 dep
+  processing "Removing '%s'" "$pkgname"
+  local pkgurl upkgjson
+  pkgurl=$(upkg_get_pkg_url "$pkgpath" "$pkgname")
+  upkgjson=$(jq -r --arg pkgurl "$pkgurl" 'del(.dependencies[$pkgurl])' "$pkgpath/upkg.json")
+  printf "%s\n" "$upkgjson" >"$pkgpath/upkg.json"
+  upkg_install "$pkgpath"
+  processing "Removed '%s'" "$pkgname"
 }
 
 upkg_list() {
@@ -223,10 +116,229 @@ upkg_list() {
   done <<<"$pkgpaths"
 }
 
+upkg_install() {
+  local pkgpath=$1
+  [[ -e "$pkgpath/upkg.json" ]] || fatal "No upkg.json found in '%s'" "$pkgpath"
+  upkg_mktemp
+  mkdir "$TMPPATH/root"
+  DEDUPPATH="$pkgpath/.upkg/.packages"
+  upkg_install_deps "$TMPPATH/root" "$pkgpath"
+  if [[ $pkgpath = "$INSTALL_PREFIX/lib/upkg" ]]; then
+    local available_cmds global_cmds cmd
+    available_cmds=$(upkg_list_available_cmds "$TMPPATH/root" | sort)
+    global_cmds=$(upkg_list_global_referenced_cmds "$INSTALL_PREFIX" | sort)
+    while read -r -d $'\n' cmd; do
+      [[ -e "$INSTALL_PREFIX/bin/$cmd" ]] || \
+        fatal "conflict: the command '%s' already exists in '%s' but does not point to '%s'" \
+          "$cmd" "$INSTALL_PREFIX/bin" "$INSTALL_PREFIX/lib/upkg"
+    done < <(comm -23 <(printf "%s\n" "$available_cmds") <(printf "%s\n" "$global_cmds"))
+    while read -r -d $'\n' cmd; do
+      processing "Linking '%s'" "$cmd"
+      ln -s "../lib/upkg/.upkg/.bin/$cmd" "$INSTALL_PREFIX/bin/$cmd"
+    done < <(comm -23 <(printf "%s\n" "$available_cmds") <(printf "%s\n" "$global_cmds"))
+    while read -r -d $'\n' cmd; do
+      rm "$INSTALL_PREFIX/bin/$cmd"
+    done < <(comm -12 <(printf "%s\n" "$available_cmds") <(printf "%s\n" "$global_cmds"))
+  fi
+  rm -rf "$pkgpath/.upkg/.bin"
+  if [[ -e "$TMPPATH/root/.upkg" ]]; then
+    [[ ! -e "$pkgpath/.upkg" ]] || find "$pkgpath/.upkg" -mindepth 1 -maxdepth 1 -not -name '.*' -delete
+    cp -a "$TMPPATH/root/.upkg" "$pkgpath/"
+    upkg_remove_unreferenced_pkgs "$pkgpath"
+  else
+    rm -rf "$pkgpath/.upkg"
+  fi
+  processing 'Installed all dependencies'
+}
+
+upkg_get_pkg_url() {
+  local pkgpath=$1 pkgname=$2 checksum
+  [[ -e "$pkgpath/.upkg/$pkgname" ]] || fatal "Unable to find '%s' in '%s'" "$pkgname" "$pkgpath/.upkg"
+  checksum=$(readlink "$pkgpath/.upkg/$pkgname")
+  checksum=$(basename "$checksum")
+  checksum=${checksum#*@}
+  if ! jq -re --arg checksum "$checksum" '.dependencies | to_entries[] | select(.value==$checksum) | .key // empty' "$pkgpath/upkg.json"; then
+    fatal "'%s' is not listed in '%s'" "$pkgname" "$pkgpath/upkg.json"
+  fi
+}
+
+upkg_remove_unreferenced_pkgs() {
+  local pkgpath=$1 dep_pkgpath cmdpath
+  while read -r -d $'\n' dep_pkgpath; do
+    rm -rf "$pkgpath/.upkg/$dep_pkgpath"
+  done < <(comm -23 <(upkg_list_all_pkgs "$pkgpath" | sort) <(upkg_list_referenced_pkgs "$pkgpath" | sort))
+}
+
+upkg_list_all_pkgs() {
+  local pkgpath=$1
+  (cd "$pkgpath/.upkg/"; find .packages -mindepth 1 -maxdepth 1)
+}
+
+upkg_list_referenced_pkgs() {
+  local pkgpath=$1 dep_pkgpath
+  while read -r -d $'\n' dep_pkgpath; do
+    printf "%s\n" "$dep_pkgpath"
+    [[ ! -e "$pkgpath/.upkg/$dep_pkgpath/.upkg" ]] || \
+      find "$pkgpath/.upkg/$dep_pkgpath/.upkg" -mindepth 1 -maxdepth 1 -not -name '.*' -exec readlink \{\} \;
+  done < <(find "$pkgpath/.upkg" -mindepth 1 -maxdepth 1 -not -name '.*' -exec readlink \{\} \;)
+}
+
+upkg_list_available_cmds() {
+  local pkgroot=$1 cmdpath
+  if [[ -e "$pkgroot/.upkg/.bin" ]]; then
+    while read -r -d $'\n' cmdpath; do
+      printf "%s\n" "${cmdpath#"$pkgroot/.upkg/.bin/"}"
+    done < <(find "$pkgroot/.upkg/.bin" -mindepth 1 -maxdepth 1)
+  fi
+}
+
+upkg_list_global_referenced_cmds() {
+  local install_prefix=$1 cmdpath
+  while read -r -d $'\n' cmdpath; do
+    [[ $cmdpath != ../lib/upkg/.upkg/.bin/* ]] || printf "%s\n" "${cmdpath#'../lib/upkg/.upkg/.bin/'}"
+  done < <(find "$install_prefix/bin" -mindepth 1 -maxdepth 1 -exec readlink \{\} \;)
+}
+
+upkg_install_deps() {
+  local pkgpath=$1 realpkgpath=${2:-$1} deps
+  # The `[[ -e ... ]]` is just to save a jq invocation, the proper mutex operation is the `mkdir` below
+  [[ ! -e "$realpkgpath/upkg.json" ]] || deps=$(jq -r '(.dependencies // []) | to_entries[] | .key, .value' "$realpkgpath/upkg.json")
+  if [[ -n $deps ]] && mkdir "$pkgpath/.upkg" 2>/dev/null; then
+    if [[ $pkgpath = "$TMPPATH/root" ]]; then
+      mkdir "$pkgpath/.upkg/.packages"
+    else
+      ln -s ../../ "$pkgpath/.upkg/.packages"
+    fi
+    local dep_pkgurl dep_checksum
+    while read -r -d $'\n' dep_pkgurl; do
+      read -r -d $'\n' dep_checksum
+      upkg_install_pkg "$dep_pkgurl" "$dep_checksum" "$pkgpath" "$realpkgpath"
+    done <<<"$deps"
+  fi
+}
+
+upkg_install_pkg() {
+  local pkgurl=$1 checksum=$2 parentpath=$3 realparentpath=$4 pkgname pkgpath is_dedup=false
+  if [[ -e "$DEDUPPATH" ]] && pkgpath=$(compgen -G "$DEDUPPATH/*@$checksum"); then
+    processing "Skipping '%s'" "$pkgurl"
+    pkgname=${pkgpath#"$DEDUPPATH/"}
+    pkgname=${pkgname%"@$checksum"}
+    is_dedup=true
+  else
+    pkgname=$(upkg_download "$pkgurl" "$checksum" "$realparentpath")
+    pkgpath="$parentpath/.upkg/.packages/$pkgname@$checksum"
+  fi
+  if ! ln -s ".packages/$pkgname@$checksum" "$parentpath/.upkg/$pkgname"; then
+    fatal "conflict: The package '%s' is depended upon multiple times"
+  fi
+
+  local command cmdpath
+  if [[ -e "$pkgpath/bin" ]]; then
+    mkdir -p "$parentpath/.upkg/.bin"
+    while read -r -d $'\n' command; do
+      command=$(basename "$command")
+      cmdpath="$parentpath/.upkg/.bin/$command"
+      if ! ln -s "../$pkgname/bin/$command" "$cmdpath" 2>/dev/null; then
+        local otherpkg
+        otherpkg=$(basename "$(dirname "$(dirname "$(readlink "$cmdpath")")")")
+        fatal "conflict: '%s' and '%s' both have a command named '%s'" "$pkgname" "$otherpkg" "$command"
+      fi
+    done < <(find "$pkgpath/bin" -mindepth 1 -maxdepth 1 -type f -executable)
+  fi
+
+  $is_dedup || upkg_install_deps "$pkgpath"
+}
+
+upkg_download() (
+  local pkgurl=$1 checksum=$2 realparentpath=$3 pkgname
+  mkdir -p "$TMPPATH/download"
+  local downloadpath=$TMPPATH/download/$checksum
+  exec 9<>"$downloadpath.lock"
+  local already_downloading=false
+  if ! flock -nx 9; then
+    already_downloading=true
+    flock -s 9
+  fi
+  if pkgname=$(compgen -G "$TMPPATH/root/.upkg/.packages/*@$checksum"); then
+    processing "Already downloaded '%s'" "$pkgurl"
+    pkgname=${pkgname##*'/'}
+    pkgname=${pkgname%@*}
+    printf "%s\n" "$pkgname"
+    return 0
+  elif $already_downloading; then
+    return 1
+  fi
+  mkdir "$downloadpath"
+  mkdir -p "$TMPPATH/root/.upkg/.packages"
+  if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)(\?|$) ]]; then
+    local archivepath=${downloadpath}${BASH_REMATCH[1]}
+    [[ $checksum =~ ^[a-z0-9]{64}$ ]] || fatal "Checksum for '%s' is not sha256 (64 hexchars), assumed tar archive from URL"
+    if [[ -e "$TMPDIR/prefetched/$checksum" ]]; then
+      archivepath="$TMPDIR/prefetched/$checksum"
+    elif [[ ! $pkgurl =~ ^(https?://|ftps?://)* ]]; then
+      archivepath=$pkgurl
+    else
+      upkg_fetch "$pkgurl" "$archivepath"
+    fi
+    shasum -a 256 -c <(printf "%s  %s" "$checksum" "$archivepath")
+    tar -xf "$archivepath" -C "$downloadpath"
+    rm "$archivepath"
+  else
+    [[ $checksum =~ ^[a-z0-9]{40}$ ]] || fatal "Checksum for '%s' is not sha1 (40 hexchars), assumed git repo from URL"
+    processing 'Cloning %s' "$pkgurl"
+    local out
+    out=$(cd "$realparentpath"; git clone -q "$pkgurl" "$downloadpath" 2>&1) || \
+      fatal "Unable to clone '%s'. Error:\n%s" "$pkgurl" "$out"
+    out=$(git -C "$downloadpath" checkout -q "$checksum" -- 2>&1) || \
+      fatal "Unable to checkout '%s' from '%s'. Error:\n%s" "$checksum" "$pkgurl" "$out"
+    if [[ -e "$downloadpath/upkg.json" ]]; then
+      local version upkgjson
+      version=$(git -C "$downloadpath" describe 2>/dev/null) || version=$checksum
+      upkgjson=$(jq --arg version "$version" '.version = $version' <"$downloadpath/upkg.json" || \
+        fatal "The package from '%s' does not contain a valid upkg.json" "$pkgurl" "$pkgname")
+      printf "%s\n" "$upkgjson" >"$downloadpath/upkg.json"
+    fi
+  fi
+  if [[ -e "$downloadpath/upkg.json" ]]; then
+    pkgname=$(jq -r '.name // empty' "$downloadpath/upkg.json")
+    [[ -n $pkgname ]] || fatal "The package from '%s' does not specify a package name in its upkg.json"
+    [[ $pkgname =~ ^[^@/]+$ || $pkgname = .* ]] || fatal "The package from '%s' specifies an invalid package name: '%s'" "$pkgname"
+  else
+    pkgname=$(basename "$pkgurl")
+    pkgname=${pkgname%%'?'*}
+    pkgname=${pkgname/#./_}
+  fi
+  mv "$downloadpath" "$TMPPATH/root/.upkg/.packages/$pkgname@$checksum"
+  printf "%s\n" "$pkgname"
+)
+
+upkg_fetch() {
+  local url="$1" dest="$2" out
+  processing "Downloading %s" "$url"
+  if type wget >/dev/null 2>&1; then
+    wget --server-response -qO "$dest" "$url" || fatal "Error while downloading '%s'" "$url"
+  elif type curl >/dev/null 2>&1; then
+    curl -fsLo "$dest" "$url" || fatal "Error while downloading '%s'" "$url"
+  else
+    fatal "Unable to download '%s', neither wget nor curl are available" "$url"
+  fi
+}
+
+upkg_mktemp() {
+  if [[ -z $TMPPATH ]]; then
+    TMPPATH=$(mktemp -d)
+    # trap "rm -rf \"$TMPPATH\"" EXIT
+  fi
+}
+
 processing() {
   ! ${UPKG_SILENT:-false} || return 0
   local tpl=$1; shift
-  { [[ -t 2 ]] && printf -- "\e[2Kupkg: $tpl\r" "$@" >&2; } || printf -- "upkg: $tpl\n" "$@" >&2
+  if [[ -t 2 ]]; then
+    printf -- "\e[2Kupkg: $tpl\r" "$@" >&2
+  else
+    printf -- "upkg: $tpl\n" "$@" >&2
+  fi
 }
 
 fatal() {
