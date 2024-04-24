@@ -77,11 +77,15 @@ upkg_add() {
   if [[ -z "$checksum" ]]; then
     processing "No checksum given for '%s', determining now" "$pkgurl"
     if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)(\?|$) ]]; then
-      mkdir "$TMPPATH/prefetched"
-      local tmp_archive="$TMPPATH/prefetched/temp-archive"
-      upkg_fetch "$pkgurl" "$tmp_archive"
-      checksum=$(shasum -a 256 "$tmp_archive" | cut -d ' ' -f1)
-      mv "$tmp_archive" "$TMPPATH/prefetched/$checksum"
+      if [[ $pkgurl =~ ^(https?://|ftps?://) ]]; then
+        mkdir "$TMPPATH/prefetched"
+        local tmp_archive="$TMPPATH/prefetched/temp-archive"
+        upkg_fetch "$pkgurl" "$tmp_archive"
+        checksum=$(shasum -a 256 "$tmp_archive" | cut -d ' ' -f1)
+        mv "$tmp_archive" "$TMPPATH/prefetched/$checksum"
+      else
+        checksum=$(shasum -a 256 "$pkgurl" | cut -d ' ' -f1)
+      fi
     else
       if ! checksum=$(git ls-remote -q "$pkgurl" HEAD | grep $'\tHEAD$' | cut -f1); then
         fatal "Unable to determine remote HEAD for '%s', assumed git repo from URL" "$pkgurl"
@@ -302,12 +306,12 @@ upkg_download() (
     [[ $checksum =~ ^[a-z0-9]{64}$ ]] || fatal "Checksum for '%s' is not sha256 (64 hexchars), assumed tar archive from URL"
     if [[ -e "$TMPDIR/prefetched/$checksum" ]]; then
       archivepath="$TMPDIR/prefetched/$checksum"
-    elif [[ ! $pkgurl =~ ^(https?://|ftps?://)* ]]; then
-      archivepath=$pkgurl
-    else
+    elif [[ $pkgurl =~ ^(https?://|ftps?://) ]]; then
       upkg_fetch "$pkgurl" "$archivepath"
+    else
+      archivepath=$pkgurl
     fi
-    shasum -a 256 -c <(printf "%s  %s" "$checksum" "$archivepath")
+    shasum -a 256 -c <(printf "%s  %s" "$checksum" "$archivepath") >/dev/null
     tar -xf "$archivepath" -C "$downloadpath"
     rm "$archivepath"
   else
@@ -343,7 +347,7 @@ upkg_fetch() {
   local url="$1" dest="$2" out
   processing "Downloading %s" "$url"
   if type wget >/dev/null 2>&1; then
-    wget --server-response -qO "$dest" "$url" || fatal "Error while downloading '%s'" "$url"
+    wget -qO "$dest" "$url" || fatal "Error while downloading '%s'" "$url"
   elif type curl >/dev/null 2>&1; then
     curl -fsLo "$dest" "$url" || fatal "Error while downloading '%s'" "$url"
   else
