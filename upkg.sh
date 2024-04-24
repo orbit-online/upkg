@@ -69,6 +69,7 @@ Options:
 upkg_add() {
   local pkgpath=$1 pkgurl=$2 checksum=$3
   local upkgjson={}
+  upkg_mktemp
   [[ ! -e "$pkgpath/upkg.json" ]] || upkgjson=$(cat "$pkgpath/upkg.json")
   if jq -re --arg pkgurl "$pkgurl" '.dependencies[$pkgurl] // empty' <<<"$upkgjson" >/dev/null; then
     fatal "The package has already been added, run \`upkg remove %s\` first if you want to update it" "$(basename "$pkgurl")"
@@ -76,8 +77,7 @@ upkg_add() {
   if [[ -z "$checksum" ]]; then
     processing "No checksum given for '%s', determining now" "$pkgurl"
     if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)(\?|$) ]]; then
-      upkg_mktemp
-      mkdir -p "$TMPPATH/prefetched"
+      mkdir "$TMPPATH/prefetched"
       local tmp_archive="$TMPPATH/prefetched/temp-archive"
       upkg_fetch "$pkgurl" "$tmp_archive"
       checksum=$(shasum -a 256 "$tmp_archive" | cut -d ' ' -f1)
@@ -89,18 +89,21 @@ upkg_add() {
     fi
   fi
   upkgjson=$(jq --arg url "$pkgurl" --arg checksum "$checksum" '.dependencies[$url]=$checksum' <<<"$upkgjson")
-  printf "%s\n" "$upkgjson" >"$pkgpath/upkg.json"
+  printf "%s\n" "$upkgjson" >"$TMPPATH/root/upkg.json"
   upkg_install "$pkgpath"
+  printf "%s\n" "$upkgjson" >"$pkgpath/upkg.json"
+  processing "Added '%s'" "$pkgurl"
 }
 
 upkg_remove() {
   local pkgpath=$1 pkgname=$2 dep
-  processing "Removing '%s'" "$pkgname"
   local pkgurl upkgjson
   pkgurl=$(upkg_get_pkg_url "$pkgpath" "$pkgname")
   upkgjson=$(jq -r --arg pkgurl "$pkgurl" 'del(.dependencies[$pkgurl])' "$pkgpath/upkg.json")
-  printf "%s\n" "$upkgjson" >"$pkgpath/upkg.json"
+  upkg_mktemp
+  printf "%s\n" "$upkgjson" >"$TMPPATH/root/upkg.json"
   upkg_install "$pkgpath"
+  printf "%s\n" "$upkgjson" >"$pkgpath/upkg.json"
   processing "Removed '%s'" "$pkgname"
 }
 
@@ -130,7 +133,6 @@ upkg_install() {
   local pkgpath=$1
   [[ -e "$pkgpath/upkg.json" ]] || fatal "No upkg.json found in '%s'" "$pkgpath"
   upkg_mktemp
-  mkdir "$TMPPATH/root"
   DEDUPPATH="$pkgpath/.upkg/.packages"
   upkg_install_deps "$TMPPATH/root" "$pkgpath"
   if [[ $pkgpath = "$INSTALL_PREFIX/lib/upkg" ]]; then
@@ -223,9 +225,10 @@ upkg_list_global_referenced_cmds() {
 }
 
 upkg_install_deps() {
-  local pkgpath=$1 realpkgpath=${2:-$1} deps
+  local pkgpath=$1 realpkgpath=${2:-$1} upkgjsonpath=$1/upkg.json deps
+  [[ -e "$upkgjsonpath" ]] || upkgjsonpath=$realpkgpath/upkg.json
   # The `[[ -e ... ]]` is just to save a jq invocation, the proper mutex operation is the `mkdir` below
-  [[ ! -e "$realpkgpath/upkg.json" ]] || deps=$(jq -r '(.dependencies // []) | to_entries[] | .key, .value' "$realpkgpath/upkg.json")
+  [[ ! -e "$upkgjsonpath" ]] || deps=$(jq -r '(.dependencies // []) | to_entries[] | .key, .value' "$upkgjsonpath")
   if [[ -n $deps ]] && mkdir "$pkgpath/.upkg" 2>/dev/null; then
     if [[ $pkgpath = "$TMPPATH/root" ]]; then
       mkdir "$pkgpath/.upkg/.packages"
@@ -351,6 +354,7 @@ upkg_fetch() {
 upkg_mktemp() {
   if [[ -z $TMPPATH ]]; then
     TMPPATH=$(mktemp -d)
+    mkdir "$TMPPATH/root"
     # trap "rm -rf \"$TMPPATH\"" EXIT
   fi
 }
