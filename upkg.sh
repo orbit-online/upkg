@@ -143,22 +143,35 @@ upkg_install() {
           "$cmd" "$INSTALL_PREFIX/bin" "$INSTALL_PREFIX/lib/upkg"
     done < <(comm -23 <(printf "%s\n" "$available_cmds") <(printf "%s\n" "$global_cmds"))
     while read -r -d $'\n' cmd; do
+      ! $DRY_RUN || fatal "'%s' was not symlinked" "$INSTALL_PREFIX/bin/$cmd"
       processing "Linking '%s'" "$cmd"
       ln -s "../lib/upkg/.upkg/.bin/$cmd" "$INSTALL_PREFIX/bin/$cmd"
     done < <(comm -23 <(printf "%s\n" "$available_cmds") <(printf "%s\n" "$global_cmds"))
     while read -r -d $'\n' cmd; do
+      ! $DRY_RUN || fatal "'%s' should not be symlinked" "$INSTALL_PREFIX/bin/$cmd"
       rm "$INSTALL_PREFIX/bin/$cmd"
     done < <(comm -12 <(printf "%s\n" "$available_cmds") <(printf "%s\n" "$global_cmds"))
   fi
-  rm -rf "$pkgpath/.upkg/.bin"
-  if [[ -e "$TMPPATH/root/.upkg" ]]; then
-    [[ ! -e "$pkgpath/.upkg" ]] || find "$pkgpath/.upkg" -mindepth 1 -maxdepth 1 -not -name '.*' -delete
-    cp -a "$TMPPATH/root/.upkg" "$pkgpath/"
-    upkg_remove_unreferenced_pkgs "$pkgpath"
+  if ! $DRY_RUN; then
+    rm -rf "$pkgpath/.upkg/.bin"
+    if [[ -e "$TMPPATH/root/.upkg" ]]; then
+      [[ ! -e "$pkgpath/.upkg" ]] || find "$pkgpath/.upkg" -mindepth 1 -maxdepth 1 -not -name '.*' -delete
+      cp -a "$TMPPATH/root/.upkg" "$pkgpath/"
+      upkg_remove_unreferenced_pkgs "$pkgpath"
+    else
+      rm -rf "$pkgpath/.upkg"
+    fi
+    processing 'Installed all dependencies'
   else
-    rm -rf "$pkgpath/.upkg"
+    local dep_pkgpath
+    while read -r -d $'\n' dep_pkgpath; do
+      fatal "'%s' should not be installed" "$(basename "$dep_pkgpath")"
+    done < <(comm -23 \
+      <(find "$pkgpath/.upkg" -mindepth 1 -maxdepth 1 -not -name '.*' -exec readlink \{\} \; | sort) \
+      <(find "$TMPPATH/root/.upkg" -mindepth 1 -maxdepth 1 -not -name '.*' -exec readlink \{\} \; | sort)
+    )
+    processing 'All dependencies are up-to-date'
   fi
-  processing 'Installed all dependencies'
 }
 
 upkg_get_pkg_url() {
@@ -230,16 +243,17 @@ upkg_install_deps() {
 upkg_install_pkg() {
   local pkgurl=$1 checksum=$2 parentpath=$3 realparentpath=$4 pkgname pkgpath is_dedup=false
   if [[ -e "$DEDUPPATH" ]] && pkgpath=$(compgen -G "$DEDUPPATH/*@$checksum"); then
-    processing "Skipping '%s'" "$pkgurl"
+    $DRY_RUN || processing "Skipping '%s'" "$pkgurl"
     pkgname=${pkgpath#"$DEDUPPATH/"}
     pkgname=${pkgname%"@$checksum"}
     is_dedup=true
   else
+    ! $DRY_RUN || fatal "'%s' is not installed" "$pkgurl"
     pkgname=$(upkg_download "$pkgurl" "$checksum" "$realparentpath")
     pkgpath="$parentpath/.upkg/.packages/$pkgname@$checksum"
   fi
   if ! ln -s ".packages/$pkgname@$checksum" "$parentpath/.upkg/$pkgname"; then
-    fatal "conflict: The package '%s' is depended upon multiple times"
+    fatal "conflict: The package '%s' is depended upon multiple times" "$pkgname"
   fi
 
   local command cmdpath
