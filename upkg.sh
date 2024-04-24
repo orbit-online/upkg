@@ -396,11 +396,10 @@ upkg_fetch() {
 
 # Idempotently create a temporary directory
 upkg_mktemp() {
-  if [[ -z $TMPPATH ]]; then
-    TMPPATH=$(mktemp -d)
-    mkdir "$TMPPATH/root" # Precreate root dir, we always need it
-    trap "rm -rf \"$TMPPATH\"" EXIT
-  fi
+  [[ -z $TMPPATH ]] || return 0
+  TMPPATH=$(mktemp -d)
+  mkdir "$TMPPATH/root" # Precreate root dir, we always need it
+  trap "rm -rf \"$TMPPATH\"" EXIT
 }
 
 processing() {
