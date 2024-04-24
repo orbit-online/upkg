@@ -12,45 +12,45 @@ upkg() {
 Usage:
   upkg add [-g] URL [checksum]
   upkg remove [-g] PKGNAME
-  upkg list [-g]
+  upkg list [-g] [\`column\` options]
   upkg install [-n]
 
 Options:
   -g  Act globally
   -n  Dry run, \$?=1 if install/upgrade is required"
-  if [[ -n $INSTALL_PREFIX ]]; then
+  unset TMPPATH
+  if [[ -z $INSTALL_PREFIX ]]; then
     INSTALL_PREFIX=$HOME/.local
     [[ $EUID != 0 ]] || INSTALL_PREFIX=/usr/local
   fi
-  unset TMPPATH
-  local cmd=$1
-  shift
+  local cmd=$1; shift
   case "$cmd" in
     add)
-      local pkgpath=$PWD
       if [[ $# -ge 2 && $1 = -g ]]; then
-        pkgpath=$INSTALL_PREFIX/lib/upkg
-        shift
-      fi
-      [[ $# -eq 1 || $# -eq 2 ]] || fatal "$DOC"
-      upkg_add "$pkgpath" "$1" "$2"
-      ;;
-    remove)
-      local pkgpath=$PWD
-      if [[ $# -eq 2 && $1 = -g ]]; then
-        pkgpath=$INSTALL_PREFIX/lib/upkg
-        shift
-      fi
-      [[ $# -eq 1 ]] || fatal "$DOC"
-      upkg_remove "$pkgpath" "$1"
-      ;;
-    list)
-      if [[ $# -eq 1 && $1 = -g ]]; then
-        upkg_list "$INSTALL_PREFIX/lib/upkg" false
-      elif [[ $# -eq 0 ]]; then
-        upkg_list "$pkgpath/.upkg" true
+        upkg_add "$INSTALL_PREFIX/lib/upkg" "$2" "$3"
+      elif [[ $# -eq 1 || $# -eq 2 ]]; then
+        upkg_add "$PWD" "$1" "$2"
       else
         fatal "$DOC"
+      fi
+      [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";}
+      ;;
+    remove)
+      if [[ $# -eq 2 && $1 = -g ]]; then
+        upkg_remove "$INSTALL_PREFIX/lib/upkg" "$2"
+      elif [[ $# -eq 1 ]]; then
+        upkg_remove "$PWD" "$1"
+      else
+        fatal "$DOC"
+      fi
+      [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";}
+      ;;
+    list)
+      if [[ $1 = -g ]]; then
+        shift
+        upkg_list "$INSTALL_PREFIX/lib/upkg" "$@"
+      else
+        upkg_list "$PWD" "$@"
       fi
       ;;
     install)
@@ -58,10 +58,12 @@ Options:
       [[ $1 != -n ]] || { DRY_RUN=true; shift; }
       [[ $# -eq 0 ]] || fatal "$DOC"
       upkg_install "$PWD"
+      [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";}
       ;;
+    -h|--help)
+      printf "%s\n" "$DOC" >&2 ;;
     *) fatal "$DOC" ;;
   esac
-  [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";}
 }
 
 upkg_add() {
@@ -103,17 +105,25 @@ upkg_remove() {
 }
 
 upkg_list() {
-  local pkgspath=${1:-} recursive=${2:?} indent=${3:-''} pkgpath pkgpaths pkgname pkgversion upkgversion
-  pkgpaths=$(find "$pkgspath" -mindepth 2 -maxdepth 2 -not -path "$pkgspath/.bin/*")
-  while [[ -n $pkgpaths ]] && read -r -d $'\n' pkgpath; do
-    pkgname=${pkgpath#"$pkgspath/"} upkgversion="$(jq -r .version <"$pkgpath/upkg.json")"
-    pkgversion=${upkgversion#'refs/heads/'}
-    pkgversion=${pkgversion#'refs/tags/'}
-    printf "%s%s@%s\n" "$indent" "$pkgname" "$pkgversion"
-    if $recursive && [[ -e "$pkgpath/.upkg" ]]; then
-      upkg_list "$pkgpath/.upkg" "$recursive" "$indent  "
+  local pkgpath=$1; shift
+  (
+    local dep_pkgpath dedup_pkgpath basename pkgname checksum version upkgjsonpath version
+    while read -r -d $'\n' dedup_pkgpath; do
+      basename=$(basename "$dedup_pkgpath")
+      pkgname=${basename%@*}
+      checksum=${basename#*@}
+      version='no-version'
+      upkgjsonpath=$pkgpath/.upkg/$dedup_pkgpath/upkg.json
+      [[ ! -e "$upkgjsonpath" ]] || version=$(jq -r '.version // "no-version"' "$upkgjsonpath")
+      printf "%s\t%s\t%s\n" "$pkgname" "$version" "$checksum"
+    done < <(find "$pkgpath/.upkg" -mindepth 1 -maxdepth 1 -not -name '.*' -exec readlink \{\} \;)
+  ) | (
+    if type column >/dev/null 2>&1; then
+      column -t -n "Packages" -N "Package name,Version,Checksum" "$@"
+    else
+      cat
     fi
-  done <<<"$pkgpaths"
+  )
 }
 
 upkg_install() {
@@ -171,7 +181,7 @@ upkg_remove_unreferenced_pkgs() {
 
 upkg_list_all_pkgs() {
   local pkgpath=$1
-  (cd "$pkgpath/.upkg/"; find .packages -mindepth 1 -maxdepth 1)
+  (cd "$pkgpath/.upkg"; find .packages -mindepth 1 -maxdepth 1)
 }
 
 upkg_list_referenced_pkgs() {
