@@ -63,7 +63,7 @@ upkg_add() {
   if [[ -z "$checksum" ]]; then
     # Autocalculate the checksum
     processing "No checksum given for '%s', determining now" "$pkgurl"
-    if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)(\?|$) ]]; then
+    if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)([?#]|$) ]]; then
       if [[ $pkgurl =~ ^(https?://|ftps?://) ]]; then
         mkdir "$TMPPATH/prefetched"
         local tmp_archive="$TMPPATH/prefetched/temp-archive"
@@ -75,7 +75,7 @@ upkg_add() {
       fi
     else
       # Use the remote HEAD get a git sha. This is what you would get when clone it without specifying any ref
-      if ! checksum=$(git ls-remote -q "$pkgurl" HEAD | grep $'\tHEAD$' | cut -f1); then
+      if ! checksum=$(git ls-remote -q "${pkgurl%'#'*}" HEAD | grep $'\tHEAD$' | cut -f1); then
         fatal "Unable to determine remote HEAD for '%s', assumed git repo from URL" "$pkgurl"
       fi
     fi
@@ -326,7 +326,7 @@ upkg_download() (
   mkdir "$downloadpath"
   mkdir -p "$TMPPATH/root/.upkg/.packages"
   # Check if we are dealing with a tar archive based on the URL
-  if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)(\?|$) ]]; then
+  if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)([?#]|$) ]]; then
     local archivepath=${downloadpath}${BASH_REMATCH[1]} keep_archive=true
     [[ $checksum =~ ^[a-z0-9]{64}$ ]] || fatal "Checksum for '%s' is not sha256 (64 hexchars), assumed tar archive from URL"
     if [[ -e "$TMPDIR/prefetched/$checksum" ]]; then
@@ -336,7 +336,7 @@ upkg_download() (
       upkg_fetch "$pkgurl" "$archivepath"
     else
       # archive is not a URL, so it's a path
-      archivepath=$pkgurl
+      archivepath=${pkgurl%'#'*}
       keep_archive=true # Don't delete the referenced path
     fi
     shasum -a 256 -c <(printf "%s  %s" "$checksum" "$archivepath") >/dev/null
@@ -347,7 +347,7 @@ upkg_download() (
     [[ $checksum =~ ^[a-z0-9]{40}$ ]] || fatal "Checksum for '%s' is not sha1 (40 hexchars), assumed git repo from URL"
     processing 'Cloning %s' "$pkgurl"
     local out
-    out=$(git clone -q "$pkgurl" "$downloadpath" 2>&1) || \
+    out=$(git clone -q "${pkgurl%'#'*}" "$downloadpath" 2>&1) || \
       fatal "Unable to clone '%s'. Error:\n%s" "$pkgurl" "$out"
     out=$(git -C "$downloadpath" checkout -q "$checksum" -- 2>&1) || \
       fatal "Unable to checkout '%s' from '%s'. Error:\n%s" "$checksum" "$pkgurl" "$out"
