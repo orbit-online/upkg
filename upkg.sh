@@ -360,18 +360,22 @@ upkg_download() (
       printf "%s\n" "$upkgjson" >"$downloadpath/upkg.json"
     fi
   fi
-  if [[ -e "$downloadpath/upkg.json" ]]; then
+  if [[ $pkgurl =~ \#name=([^#]+)(\#|$) ]]; then
+    # Package name override specified
+    pkgname=${BASH_REMATCH[1]}
+  elif [[ -e "$downloadpath/upkg.json" ]]; then
     # upkg.json is supplied, require that there is a name property
     pkgname=$(jq -re '.name // empty' "$downloadpath/upkg.json") || \
-      fatal "The package from '%s' does not specify a package name in its upkg.json"
-    [[ $pkgname =~ ^[^@/]+$ || $pkgname = .* ]] || \
-      fatal "The package from '%s' specifies an invalid package name: '%s'" "$pkgname"
+      fatal "The package from '%s' does not specify a package name in its upkg.json. \
+You can fix the package or override the name by appending #name=PKGNAME to the URL"
   else
-    # No upkg.json supplied, figure something out
-    pkgname=$(basename "$pkgurl")
-    pkgname=${pkgname%%'?'*}
-    pkgname=${pkgname/#./_}
+    # No name override or upkg.json supplied, fail
+      fatal "The package from '%s' does not have a upkg.json. \
+You can fix the package or override the name by appending #name=PKGNAME to the URL"
   fi
+  # "@" and "/" may not be used at all in a package name. They may not begin with a "." either
+  [[ $pkgname =~ ^[^@/]+$ || $pkgname = .* ]] || \
+    fatal "The package from '%s' specifies an invalid package name: '%s'" "$pkgname"
   # Move to dedup path
   mv "$downloadpath" "$TMPPATH/root/.upkg/.packages/$pkgname@$checksum"
   printf "%s\n" "$pkgname"
