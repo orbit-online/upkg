@@ -107,7 +107,7 @@ upkg_remove() {
 upkg_list() {
   local pkgpath=$1; shift
   (
-    local dep_pkgpath dedup_pkgpath basename pkgname checksum version upkgjsonpath version
+    local dedup_pkgpath basename pkgname checksum version upkgjsonpath version
     while read -r -d $'\n' dedup_pkgpath; do
       basename=$(basename "$dedup_pkgpath")
       pkgname=${basename%@*}
@@ -324,7 +324,7 @@ upkg_install_pkg() {
     done < <(find "$pkgpath/bin" -mindepth 1 -maxdepth 1 -type f -executable)
   fi
 
-  # Recursively install deps of this package
+  # Recursively install deps of this package unless it is already dedup'ed
   $is_dedup || upkg_install_deps "$pkgpath"
 }
 
