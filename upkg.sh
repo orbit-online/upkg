@@ -260,8 +260,10 @@ upkg_install_deps() {
     read -r -d $'\n' dep_checksum
     # Run through deps and install them concurrently
     if ${UPKG_SEQUENTIAL_INSTALL:-false}; then
-      # Debug flag for sequential install has been set, don't background anything
-      (upkg_install_pkg "$dep_pkgurl" "$dep_checksum" "$pkgpath")
+      # Debug flag for sequential install has been set.
+      # Don't background anything, but still ignore the exit code and rely on the sentinels.
+      # And yes, this is how you do it. "|| true" disables errexit for the entire subshell.
+      set +e; (set -e; upkg_install_pkg "$dep_pkgurl" "$dep_checksum" "$pkgpath"); set -e
     else
       upkg_install_pkg "$dep_pkgurl" "$dep_checksum" "$pkgpath" &
     fi
@@ -272,7 +274,7 @@ upkg_install_deps() {
     until [[ -e "$pkgpath/.upkg/.sentinels/$dep_checksum.lock" ]]; do sleep .01; done
   done <<<"$deps"
   # All install processes have acquired the shared lock, we can now wait for all shared locks to be released
-  exec 9<>"$pkgpath/upkg.json"; flock -x 9
+  exec 8<>"$pkgpath/upkg.json"; flock -x 8
   while read -r -d $'\n' dep_pkgurl; do
     read -r -d $'\n' dep_checksum
     # Check that no processes failed
@@ -348,10 +350,12 @@ upkg_download() (
     printf "%s\n" "$pkgname"
     return 0
   elif $already_downloading; then
-    # Download failure somewhere. Don't try anything, just fail
+    # Download failure. Don't try anything, just fail
+    return 1
+  elif ! mkdir "$downloadpath" 2>/dev/null; then
+    # Download failure, but the lock has already been released. Don't try anything, just fail
     return 1
   fi
-  mkdir "$downloadpath"
   mkdir -p "$TMPPATH/root/.upkg/.packages"
   # Check if we are dealing with a tar archive based on the URL
   if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)([?#]|$) ]]; then
@@ -382,8 +386,8 @@ upkg_download() (
       # Add a version property to upkg.json
       local version upkgjson
       version=$(git -C "$downloadpath" describe 2>/dev/null) || version=$checksum
-      upkgjson=$(jq --arg version "$version" '.version = $version' <"$downloadpath/upkg.json" || \
-        fatal "The package from '%s' does not contain a valid upkg.json" "$pkgurl" "$pkgname")
+      upkgjson=$(jq --arg version "$version" '.version = $version' <"$downloadpath/upkg.json") || \
+        fatal "The package from '%s' does not contain a valid upkg.json" "$pkgurl" "$pkgname"
       printf "%s\n" "$upkgjson" >"$downloadpath/upkg.json"
     fi
   fi
