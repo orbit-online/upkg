@@ -427,7 +427,13 @@ upkg_mktemp() {
   [[ -z $TMPPATH ]] || return 0
   TMPPATH=$(mktemp -d)
   mkdir "$TMPPATH/root" # Precreate root dir, we always need it
-  trap "rm -rf \"$TMPPATH\"" EXIT
+  if ${UPKG_KEEP_TMPPATH:-false}; then
+    # Debug flag for leaving the TMPDIR has been set, don't remove when done
+    trap "printf \"TMPPATH=%s\n\" \"$TMPPATH\"" EXIT
+  else
+    # Cleanup when done
+    trap "rm -rf \"$TMPPATH\"" EXIT
+  fi
 }
 
 processing() {
