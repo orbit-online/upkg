@@ -331,7 +331,7 @@ upkg_download() (
     [[ $checksum =~ ^[a-z0-9]{64}$ ]] || fatal "Checksum for '%s' is not sha256 (64 hexchars), assumed tar archive from URL"
     if [[ -e "$TMPDIR/prefetched/$checksum" ]]; then
       # archive was already downloaded by upkg_add to generate a checksum, reuse it
-      archivepath="$TMPDIR/prefetched/$checksum"
+      mv "$TMPDIR/prefetched/$checksum" "$archivepath"
     elif [[ $pkgurl =~ ^(https?://|ftps?://) ]]; then
       upkg_fetch "$pkgurl" "$archivepath"
     else
