@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # shellcheck disable=2059,2064
-set -eo pipefail
-shopt -s inherit_errexit
+set -Eeo pipefail
 
 upkg() {
   [[ ! $(bash --version | head -n1) =~ version\ [34]\.[0-3] ]] || fatal "upkg requires bash >= v4.4"
