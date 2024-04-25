@@ -162,6 +162,7 @@ upkg_install() {
   if ! $DRY_RUN; then
     if [[ -e "$pkgpath/.upkg" ]]; then
       # .bin/ and all pkgname symlinks are fully rebuilt during install, so we just remove it and copy it over
+      rm -rf "$pkgpath/.upkg/.bin"
       find "$pkgpath/.upkg" -mindepth 1 -maxdepth 1 -not -name '.packages' -delete
     fi
     if [[ -e "$TMPPATH/root/.upkg" ]]; then
