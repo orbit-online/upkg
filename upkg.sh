@@ -62,21 +62,19 @@ upkg_add() {
   if [[ -z "$checksum" ]]; then
     # Autocalculate the checksum
     processing "No checksum given for '%s', determining now" "$pkgurl"
-    if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)([?#]|$) ]]; then
-      local pkgext=${BASH_REMATCH[1]}
-      if [[ $pkgurl =~ ^(https?://|ftps?://) ]]; then
-        mkdir "$TMPPATH/prefetched"
-        local tmp_archive="$TMPPATH/prefetched/temp-archive"
-        upkg_fetch "$pkgurl" "$tmp_archive"
-        checksum=$(shasum -a 256 "$tmp_archive" | cut -d ' ' -f1)
-        mv "$tmp_archive" "$TMPPATH/prefetched/${checksum}${pkgext}"
+    # Check if the URL is a tar, if not, try getting the remote HEAD commit sha. If that fails, assume it's a file of some sort
+    if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)([?#]|$) ]] || ! checksum=$(git ls-remote -q "${pkgurl%'#'*}" HEAD | grep $'\tHEAD$' | cut -f1 2>/dev/null); then
+      # pkgurl is a file
+      local archiveext=${BASH_REMATCH[1]}
+      if [[ -e ${pkgurl%'#'*} ]]; then
+        # file exists locally on the filesystem
+        checksum=$(shasum -a 256 "${pkgurl%'#'*}" | cut -d ' ' -f1)
       else
-        checksum=$(shasum -a 256 "$pkgurl" | cut -d ' ' -f1)
-      fi
-    else
-      # Use the remote HEAD get a git sha. This is what you would get when clone it without specifying any ref
-      if ! checksum=$(git ls-remote -q "${pkgurl%'#'*}" HEAD | grep $'\tHEAD$' | cut -f1); then
-        fatal "Unable to determine remote HEAD for '%s', assumed git repo from URL" "$pkgurl"
+        mkdir "$TMPPATH/prefetched"
+        local tmpfile="$TMPPATH/prefetched/tmpfile"
+        upkg_fetch "$pkgurl" "$tmpfile"
+        checksum=$(shasum -a 256 "$tmpfile" | cut -d ' ' -f1)
+        mv "$tmpfile" "$TMPPATH/prefetched/${checksum}${archiveext}"
       fi
     fi
   fi
@@ -294,7 +292,7 @@ upkg_install_pkg() {
   if [[ -e "$DEDUPPATH" ]] && dedupname=$(compgen -G "$DEDUPPATH/*@$checksum"); then
     # Package already exists in the destination, all we need is the deduppath so we can symlink it
     $DRY_RUN || processing "Skipping '%s'" "$pkgurl"
-    dedupname=${dedupname#"$DEDUPPATH"}
+    dedupname=${dedupname#"$DEDUPPATH/"}
     dedupname=${dedupname%@*}
     is_dedup=true
   else
@@ -341,9 +339,9 @@ upkg_install_pkg() {
 upkg_download() (
   local pkgurl=$1 checksum=$2 dedupname
   mkdir -p "$TMPPATH/download"
-  local downloadpath=$TMPPATH/download/$checksum
+  local pkgpath=$TMPPATH/download/$checksum
   # Create a lock so we never download a package more than once, and so other processes can wait for the download to finish
-  exec 9<>"$downloadpath.lock"
+  exec 9<>"$pkgpath.lock"
   local already_downloading=false
   if ! flock -nx 9; then # Try getting an exclusive lock, if we can we are either the first, or the very last where everybody else is done
     already_downloading=true # Didn't get it, somebody is already downloading
@@ -360,43 +358,55 @@ upkg_download() (
   elif $already_downloading; then
     # Download failure. Don't try anything, just fail
     return 1
-  elif ! mkdir "$downloadpath" 2>/dev/null; then
+  elif ! mkdir "$pkgpath" 2>/dev/null; then
     # Download failure, but the lock has already been released. Don't try anything, just fail
     return 1
   fi
   mkdir -p "$TMPPATH/root/.upkg/.packages"
-  # Check if we are dealing with a tar archive based on the URL
-  if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)([?#]|$) ]]; then
-    local pkgext=${BASH_REMATCH[1]}
-    local archivepath=${downloadpath}${pkgext} prefetchpath=$TMPDIR/prefetched/${checksum}${pkgext}
+  # Check if the URL is a tar, if not, try getting the remote HEAD commit sha. If that fails, assume it's a file of some sort
+  if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)([?#]|$) ]] || ! git ls-remote -q "${pkgurl%'#'*}" HEAD >/dev/null 2>&1; then
+    local archiveext=${BASH_REMATCH[1]}
+    local filepath=${pkgpath}${archiveext} prefetchpath=$TMPPATH/prefetched/${checksum}${archiveext}
     [[ $checksum =~ ^[a-z0-9]{64}$ ]] || fatal "Checksum for '%s' is not sha256 (64 hexchars), assumed tar archive from URL"
     if [[ -e "$prefetchpath" ]]; then
-      # archive was already downloaded by upkg_add to generate a checksum, reuse it
-      archivepath=$prefetchpath
-    elif [[ $pkgurl =~ ^(https?://|ftps?://) ]]; then
-      upkg_fetch "$pkgurl" "$archivepath"
+      # file was already downloaded by upkg_add to generate a checksum, reuse it
+      filepath=$prefetchpath
+    elif [[ -e ${pkgurl%'#'*} ]]; then
+      # file exists on the filesystem
+      if [[ -n $archiveext ]]; then
+        filepath=${pkgurl%'#'*}
+      else
+        # File is not an archive, copy it so it can be moved later on
+        filepath=$pkgpath.file
+        pkgpath=$filepath
+        cp "${pkgurl%'#'*}" "$pkgpath"
+      fi
     else
-      # archive is not a URL, so it's a path
-      archivepath=${pkgurl%'#'*}
+      if [[ -z $archiveext ]]; then
+        # File is not an archive, download to the final destination
+        filepath=$pkgpath.file
+        pkgpath=$filepath
+      fi
+      upkg_fetch "$pkgurl" "$filepath"
     fi
-    shasum -a 256 -c <(printf "%s  %s" "$checksum" "$archivepath") >/dev/null
-    tar -xf "$archivepath" -C "$downloadpath"
+    shasum -a 256 -c <(printf "%s  %s" "$checksum" "$filepath") >/dev/null
+    [[ -z $archiveext ]] || tar -xf "$filepath" -C "$pkgpath"
   else
     # refs are not allowed, upkg.json functions as a proper lockfile. refs ruin that.
     [[ $checksum =~ ^[a-z0-9]{40}$ ]] || fatal "Checksum for '%s' is not sha1 (40 hexchars), assumed git repo from URL"
     processing 'Cloning %s' "$pkgurl"
     local out
-    out=$(git clone -q "${pkgurl%'#'*}" "$downloadpath" 2>&1) || \
+    out=$(git clone -q "${pkgurl%'#'*}" "$pkgpath" 2>&1) || \
       fatal "Unable to clone '%s'. Error:\n%s" "$pkgurl" "$out"
-    out=$(git -C "$downloadpath" checkout -q "$checksum" -- 2>&1) || \
+    out=$(git -C "$pkgpath" checkout -q "$checksum" -- 2>&1) || \
       fatal "Unable to checkout '%s' from '%s'. Error:\n%s" "$checksum" "$pkgurl" "$out"
-    if [[ -e "$downloadpath/upkg.json" ]]; then
+    if [[ -e "$pkgpath/upkg.json" ]]; then
       # Add a version property to upkg.json
       local version upkgjson
-      version=$(git -C "$downloadpath" describe 2>/dev/null) || version=$checksum
-      upkgjson=$(jq --arg version "$version" '.version = $version' <"$downloadpath/upkg.json") || \
+      version=$(git -C "$pkgpath" describe 2>/dev/null) || version=$checksum
+      upkgjson=$(jq --arg version "$version" '.version = $version' <"$pkgpath/upkg.json") || \
         fatal "The package from '%s' does not contain a valid upkg.json" "$pkgurl"
-      printf "%s\n" "$upkgjson" >"$downloadpath/upkg.json"
+      printf "%s\n" "$upkgjson" >"$pkgpath/upkg.json"
     fi
   fi
   # Generate a dedupname
@@ -406,7 +416,7 @@ upkg_download() (
   dedupname=${dedupname//@/_} # Replace @ with _
   dedupname=${dedupname#'.'/_} # Starting '.' with _
   local upkgname
-  if [[ -e "$downloadpath/upkg.json" ]] && upkgname=$(jq -re '.name // empty' "$downloadpath/upkg.json"); then
+  if [[ -e "$pkgpath/upkg.json" ]] && upkgname=$(jq -re '.name // empty' "$pkgpath/upkg.json"); then
     # upkg.json is supplied, validate the name property or keep the generated one
     if [[ $upkgname =~ ^[@/]+$ || $upkgname != .* ]]; then
       dedupname=$upkgname
@@ -416,7 +426,7 @@ upkg_download() (
     fi
   fi
   # Move to dedup path
-  mv "$downloadpath" "$TMPPATH/root/.upkg/.packages/$dedupname@$checksum"
+  mv "$pkgpath" "$TMPPATH/root/.upkg/.packages/$dedupname@$checksum"
   printf "%s\n" "$dedupname"
 )
 
@@ -439,7 +449,7 @@ upkg_mktemp() {
   TMPPATH=$(mktemp -d)
   mkdir "$TMPPATH/root" # Precreate root dir, we always need it
   if ${UPKG_KEEP_TMPPATH:-false}; then
-    # Debug flag for leaving the TMPDIR has been set, don't remove when done
+    # Debug flag for leaving the TMPPATH has been set, don't remove when done
     trap "printf \"TMPPATH=%s\n\" \"$TMPPATH\"" EXIT
   else
     # Cleanup when done
