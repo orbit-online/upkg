@@ -246,11 +246,9 @@ upkg_install_deps() {
   [[ -n $deps ]] || return 0 # No deps -> nothing to do
   mkdir "$pkgpath/.upkg" 2>/dev/null || return 0 # .upkg exists -> another process is already installing the deps
   if [[ $pkgpath = "$TMPPATH/root" ]]; then
-    # We are at the root, this should be a directory, and not just a link
-    mkdir "$pkgpath/.upkg/.packages"
+    mkdir "$pkgpath/.upkg/.packages" # We are at the root, this should be a directory, and not just a link
   else
-    # Deeper dependency, link to the parent dedup directory (which might be a link even further up)
-    ln -s ../../ "$pkgpath/.upkg/.packages"
+    ln -s ../../ "$pkgpath/.upkg/.packages" # Deeper dependency, link to the parent dedup directory
   fi
   local dep_pkgurl dep_checksum
   while read -r -d $'\n' dep_pkgurl; do
@@ -310,8 +308,7 @@ upkg_download() (
   exec 9<>"$downloadpath.lock"
   local already_downloading=false
   if ! flock -nx 9; then # Try getting an exclusive lock, if we can we are either the first, or the very last where everybody else is done
-    # Didn't get it, somebody is already downloading
-    already_downloading=true
+    already_downloading=true # Didn't get it, somebody is already downloading
     flock -s 9 # Block by trying to get a shared lock
   fi
   if pkgname=$(compgen -G "$TMPPATH/root/.upkg/.packages/*@$checksum"); then
@@ -323,7 +320,7 @@ upkg_download() (
     printf "%s\n" "$pkgname"
     return 0
   elif $already_downloading; then
-    # Download failure somewhere, don't try doing anything, fail
+    # Download failure somewhere. Don't try anything, just fail
     return 1
   fi
   mkdir "$downloadpath"
