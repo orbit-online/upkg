@@ -252,17 +252,44 @@ upkg_install_deps() {
   else
     ln -s ../../ "$pkgpath/.upkg/.packages" # Deeper dependency, link to the parent dedup directory
   fi
+  # Create sentinels dir where subprocesses create a file which indicates that
+  # the shared lock on upkg.json has been acquired.
+  # If the install fails they will create a file indicating the failure
+  mkdir "$pkgpath/.upkg/.sentinels"
   local dep_pkgurl dep_checksum
   while read -r -d $'\n' dep_pkgurl; do
     read -r -d $'\n' dep_checksum
-    # Run through deps and install them
-    upkg_install_pkg "$dep_pkgurl" "$dep_checksum" "$pkgpath"
+    # Run through deps and install them concurrently
+    if ${UPKG_SEQUENTIAL_INSTALL:-false}; then
+      # Debug flag for sequential install has been set, don't background anything
+      (upkg_install_pkg "$dep_pkgurl" "$dep_checksum" "$pkgpath")
+    else
+      upkg_install_pkg "$dep_pkgurl" "$dep_checksum" "$pkgpath" &
+    fi
   done <<<"$deps"
+  while read -r -d $'\n' dep_pkgurl; do
+    read -r -d $'\n' dep_checksum
+    # Wait for each lock sentinel to exist
+    until [[ -e "$pkgpath/.upkg/.sentinels/$dep_checksum.lock" ]]; do sleep .01; done
+  done <<<"$deps"
+  # All install processes have acquired the shared lock, we can now wait for all shared locks to be released
+  exec 9<>"$pkgpath/upkg.json"; flock -x 9
+  while read -r -d $'\n' dep_pkgurl; do
+    read -r -d $'\n' dep_checksum
+    # Check that no processes failed
+    [[ ! -e "$pkgpath/.upkg/.sentinels/$dep_checksum.fail" ]] || \
+      fatal "An error occurred while installing '%s'" "$dep_pkgurl"
+  done <<<"$deps"
+  rm -rf "$pkgpath/.upkg/.sentinels" # Done, remove the lock sentinels
 }
 
 # Obtain (copy, download, clone, extract.. whatever) a package, symlink its commands and the install its dependencies
 upkg_install_pkg() {
   local pkgurl=$1 checksum=$2 parentpath=$3 pkgname pkgpath is_dedup=false
+  # Acquire a shared lock which is released once this process completes. Fail if we can't lock
+  exec 9<>"$parentpath/upkg.json"; flock -ns 9
+  touch "$parentpath/.upkg/.sentinels/$checksum.lock" # Tell the parent process that the shared lock has been acquired
+  trap "touch \"$parentpath/.upkg/.sentinels/$checksum.fail\"" ERR # Inform parent process when an error occurs
   if [[ -e "$DEDUPPATH" ]] && pkgpath=$(compgen -G "$DEDUPPATH/*@$checksum"); then
     # Package already exists in the destination
     $DRY_RUN || processing "Skipping '%s'" "$pkgurl"
