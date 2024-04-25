@@ -64,12 +64,13 @@ upkg_add() {
     # Autocalculate the checksum
     processing "No checksum given for '%s', determining now" "$pkgurl"
     if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)([?#]|$) ]]; then
+      local pkgext=${BASH_REMATCH[1]}
       if [[ $pkgurl =~ ^(https?://|ftps?://) ]]; then
         mkdir "$TMPPATH/prefetched"
         local tmp_archive="$TMPPATH/prefetched/temp-archive"
         upkg_fetch "$pkgurl" "$tmp_archive"
         checksum=$(shasum -a 256 "$tmp_archive" | cut -d ' ' -f1)
-        mv "$tmp_archive" "$TMPPATH/prefetched/$checksum"
+        mv "$tmp_archive" "$TMPPATH/prefetched/${checksum}${pkgext}"
       else
         checksum=$(shasum -a 256 "$pkgurl" | cut -d ' ' -f1)
       fi
@@ -327,21 +328,20 @@ upkg_download() (
   mkdir -p "$TMPPATH/root/.upkg/.packages"
   # Check if we are dealing with a tar archive based on the URL
   if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)([?#]|$) ]]; then
-    local archivepath=${downloadpath}${BASH_REMATCH[1]} keep_archive=true
+    local pkgext=${BASH_REMATCH[1]}
+    local archivepath=${downloadpath}${pkgext} prefetchpath=$TMPDIR/prefetched/${checksum}${pkgext}
     [[ $checksum =~ ^[a-z0-9]{64}$ ]] || fatal "Checksum for '%s' is not sha256 (64 hexchars), assumed tar archive from URL"
-    if [[ -e "$TMPDIR/prefetched/$checksum" ]]; then
+    if [[ -e "$prefetchpath" ]]; then
       # archive was already downloaded by upkg_add to generate a checksum, reuse it
-      mv "$TMPDIR/prefetched/$checksum" "$archivepath"
+      archivepath=$prefetchpath
     elif [[ $pkgurl =~ ^(https?://|ftps?://) ]]; then
       upkg_fetch "$pkgurl" "$archivepath"
     else
       # archive is not a URL, so it's a path
       archivepath=${pkgurl%'#'*}
-      keep_archive=true # Don't delete the referenced path
     fi
     shasum -a 256 -c <(printf "%s  %s" "$checksum" "$archivepath") >/dev/null
     tar -xf "$archivepath" -C "$downloadpath"
-    $keep_archive || rm "$archivepath"
   else
     # refs are not allowed, upkg.json functions as a proper lockfile. refs ruin that.
     [[ $checksum =~ ^[a-z0-9]{40}$ ]] || fatal "Checksum for '%s' is not sha1 (40 hexchars), assumed git repo from URL"
