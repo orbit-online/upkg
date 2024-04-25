@@ -286,30 +286,38 @@ upkg_install_deps() {
 
 # Obtain (copy, download, clone, extract.. whatever) a package, symlink its commands and the install its dependencies
 upkg_install_pkg() {
-  local pkgurl=$1 checksum=$2 parentpath=$3 pkgname pkgpath is_dedup=false
+  local pkgurl=$1 checksum=$2 parentpath=$3 dedupname pkgname is_dedup=false
   # Acquire a shared lock which is released once this process completes. Fail if we can't lock
   exec 9<>"$parentpath/upkg.json"; flock -ns 9
   touch "$parentpath/.upkg/.sentinels/$checksum.lock" # Tell the parent process that the shared lock has been acquired
   trap "touch \"$parentpath/.upkg/.sentinels/$checksum.fail\"" ERR # Inform parent process when an error occurs
-  if [[ -e "$DEDUPPATH" ]] && pkgpath=$(compgen -G "$DEDUPPATH/*@$checksum"); then
-    # Package already exists in the destination
+  if [[ -e "$DEDUPPATH" ]] && dedupname=$(compgen -G "$DEDUPPATH/*@$checksum"); then
+    # Package already exists in the destination, all we need is the deduppath so we can symlink it
     $DRY_RUN || processing "Skipping '%s'" "$pkgurl"
-    # Determine pkgname so we can symlink it
-    pkgname=${pkgpath#"$DEDUPPATH/"}
-    pkgname=${pkgname%"@$checksum"}
+    dedupname=${dedupname#"$DEDUPPATH"}
+    dedupname=${dedupname%@*}
     is_dedup=true
   else
     ! $DRY_RUN || fatal "'%s' is not installed" "$pkgurl"
     # Obtain package
-    pkgname=$(upkg_download "$pkgurl" "$checksum")
-    pkgpath="$parentpath/.upkg/.packages/$pkgname@$checksum"
+    dedupname=$(upkg_download "$pkgurl" "$checksum")
   fi
+  pkgname=$dedupname
+  if [[ $pkgurl =~ \#name=([^#]+)(\#|$) ]]; then
+    # Package name override specified
+    pkgname=${BASH_REMATCH[1]}
+  fi
+  [[ $pkgname =~ ^[@/]+$ || $pkgname != .* ]] ||
+    fatal "The package from '%s' has an invalid package name or name override \
+('@/' are disallowed, may not be empty or start with '.'): '%s'" "$pkgurl" "$pkgname"
+
   # Atomic linking, if this fails there is a duplicate
-  if ! ln -s ".packages/$pkgname@$checksum" "$parentpath/.upkg/$pkgname"; then
-    fatal "conflict: The package '%s' is depended upon multiple times" "$pkgname"
+  if ! ln -s ".packages/$dedupname@$checksum" "$parentpath/.upkg/$pkgname"; then
+    # TODO: Generate dependency tree from pkgpath
+    fatal "conflict: There is more than one package with the name '%s'" "$pkgname"
   fi
 
-  local command cmdpath
+  local pkgpath="$parentpath/.upkg/$dedupname" command cmdpath
   if [[ -e "$pkgpath/bin" ]]; then
     # package has a bin/ dir, symlink the executable files in that directory
     mkdir -p "$parentpath/.upkg/.bin"
@@ -331,7 +339,7 @@ upkg_install_pkg() {
 
 # Copy, download, clone a package, check the checksum, maybe set a version, maybe calculate a pkgname, return the pkgname
 upkg_download() (
-  local pkgurl=$1 checksum=$2 pkgname
+  local pkgurl=$1 checksum=$2 dedupname
   mkdir -p "$TMPPATH/download"
   local downloadpath=$TMPPATH/download/$checksum
   # Create a lock so we never download a package more than once, and so other processes can wait for the download to finish
@@ -341,13 +349,13 @@ upkg_download() (
     already_downloading=true # Didn't get it, somebody is already downloading
     flock -s 9 # Block by trying to get a shared lock
   fi
-  if pkgname=$(compgen -G "$TMPPATH/root/.upkg/.packages/*@$checksum"); then
+  if dedupname=$(compgen -G "$TMPPATH/root/.upkg/.packages/*@$checksum"); then
     # The package has already been deduped
     processing "Already downloaded '%s'" "$pkgurl"
-    # Get the pkgname from the dedup dir, output it, and exit early
-    pkgname=${pkgname##*'/'}
-    pkgname=${pkgname%@*}
-    printf "%s\n" "$pkgname"
+    # Get the dedupname from the dedup dir, output it, and exit early
+    dedupname=${dedupname#"$TMPPATH/root/.upkg/.packages/"}
+    dedupname=${dedupname%@*}
+    printf "%s\n" "$dedupname"
     return 0
   elif $already_downloading; then
     # Download failure. Don't try anything, just fail
@@ -387,29 +395,29 @@ upkg_download() (
       local version upkgjson
       version=$(git -C "$downloadpath" describe 2>/dev/null) || version=$checksum
       upkgjson=$(jq --arg version "$version" '.version = $version' <"$downloadpath/upkg.json") || \
-        fatal "The package from '%s' does not contain a valid upkg.json" "$pkgurl" "$pkgname"
+        fatal "The package from '%s' does not contain a valid upkg.json" "$pkgurl"
       printf "%s\n" "$upkgjson" >"$downloadpath/upkg.json"
     fi
   fi
-  if [[ $pkgurl =~ \#name=([^#]+)(\#|$) ]]; then
-    # Package name override specified
-    pkgname=${BASH_REMATCH[1]}
-  elif [[ -e "$downloadpath/upkg.json" ]]; then
-    # upkg.json is supplied, require that there is a name property
-    pkgname=$(jq -re '.name // empty' "$downloadpath/upkg.json") || \
-      fatal "The package from '%s' does not specify a package name in its upkg.json. \
-You can fix the package or override the name by appending #name=PKGNAME to the URL"
-  else
-    # No name override or upkg.json supplied, fail
-      fatal "The package from '%s' does not have a upkg.json. \
-You can fix the package or override the name by appending #name=PKGNAME to the URL"
+  # Generate a dedupname
+  dedupname=${pkgurl%%'#'*} # Remove trailing anchor
+  dedupname=${dedupname%%'?'*} # Remove query params
+  dedupname=$(basename "$dedupname") # Remove path prefix
+  dedupname=${dedupname//@/_} # Replace @ with _
+  dedupname=${dedupname#'.'/_} # Starting '.' with _
+  local upkgname
+  if [[ -e "$downloadpath/upkg.json" ]] && upkgname=$(jq -re '.name // empty' "$downloadpath/upkg.json"); then
+    # upkg.json is supplied, validate the name property or keep the generated one
+    if [[ $upkgname =~ ^[@/]+$ || $upkgname != .* ]]; then
+      dedupname=$upkgname
+    else
+      warning "The package from '%s' specifies an invalid package name \
+('@/' are disallowed, may not be empty or start with '.'): '%s'" "$pkgurl" "$upkgname"
+    fi
   fi
-  # "@" and "/" may not be used at all in a package name. They may not begin with a "." either
-  [[ $pkgname =~ ^[^@/]+$ || $pkgname = .* ]] || \
-    fatal "The package from '%s' specifies an invalid package name: '%s'" "$pkgname"
   # Move to dedup path
-  mv "$downloadpath" "$TMPPATH/root/.upkg/.packages/$pkgname@$checksum"
-  printf "%s\n" "$pkgname"
+  mv "$downloadpath" "$TMPPATH/root/.upkg/.packages/$dedupname@$checksum"
+  printf "%s\n" "$dedupname"
 )
 
 # Download a file using wget or curl
@@ -444,6 +452,16 @@ processing() {
   local tpl=$1; shift
   if [[ -t 2 ]]; then
     printf -- "\e[2Kupkg: $tpl\r" "$@" >&2
+  else
+    printf -- "upkg: $tpl\n" "$@" >&2
+  fi
+}
+
+warning() {
+  ! ${UPKG_SILENT:-false} || return 0
+  local tpl=$1; shift
+  if [[ -t 2 ]]; then
+    printf -- "\e[2Kupkg: $tpl\n" "$@" >&2
   else
     printf -- "upkg: $tpl\n" "$@" >&2
   fi
