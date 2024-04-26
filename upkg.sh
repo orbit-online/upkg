@@ -521,7 +521,11 @@ warning() {
 
 fatal() {
   local tpl=$1; shift
-  printf -- "upkg: $tpl\n" "$@" >&2
+  if [[ -t 2 ]]; then
+    printf -- "\e[2Kupkg: $tpl\n" "$@" >&2
+  else
+    printf -- "upkg: $tpl\n" "$@" >&2
+  fi
   return 1
 }
 
