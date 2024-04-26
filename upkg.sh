@@ -248,6 +248,7 @@ upkg_list_available_cmds() {
 # List all global commands that link to $install_prefix/lib/upkg/.upkg/.bin
 upkg_list_global_referenced_cmds() {
   local install_prefix=$1 cmdpath
+  [[ -e "$install_prefix/bin" ]] || return 0
   while read -r -d $'\n' cmdpath; do
     [[ $cmdpath != ../lib/upkg/.upkg/.bin/* ]] || printf "%s\n" "${cmdpath#'../lib/upkg/.upkg/.bin/'}"
   done < <(find "$install_prefix/bin" -mindepth 1 -maxdepth 1 -exec readlink \{\} \;)
