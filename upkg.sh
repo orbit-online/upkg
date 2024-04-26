@@ -62,13 +62,18 @@ upkg_add() {
   if [[ -z "$checksum" ]]; then
     # Autocalculate the checksum
     processing "No checksum given for '%s', determining now" "$pkgurl"
-    # Check if the URL is a tar, if not, try getting the remote HEAD commit sha. If that fails, assume it's a file of some sort
-    if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)([?#]|$) ]] || ! checksum=$(git ls-remote -q "${pkgurl%'#'*}" HEAD | grep $'\tHEAD$' | cut -f1 2>/dev/null); then
+    # Check if the URL is a tar, if not, try getting the remote HEAD git commit sha. If that fails, assume it's a file of some sort
+    if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)([?#]|$) ]] || ! checksum=$(git ls-remote -q "${pkgurl%%'#'*}" HEAD | grep $'\tHEAD$' | cut -f1 2>/dev/null); then
       # pkgurl is a file
       local archiveext=${BASH_REMATCH[1]}
-      if [[ -e ${pkgurl%'#'*} ]]; then
+      if [[ -n $archiveext ]]; then # pkgurl is a tar archive
+        validate_pkgurl "$pkgurl" tar
+      else
+        validate_pkgurl "$pkgurl" file
+      fi
+      if [[ -e ${pkgurl%%'#'*} ]]; then
         # file exists locally on the filesystem
-        checksum=$(shasum -a 256 "${pkgurl%'#'*}" | cut -d ' ' -f1)
+        checksum=$(shasum -a 256 "${pkgurl%%'#'*}" | cut -d ' ' -f1)
       else
         mkdir "$TMPPATH/prefetched"
         local tmpfile="$TMPPATH/prefetched/tmpfile"
@@ -76,6 +81,9 @@ upkg_add() {
         checksum=$(shasum -a 256 "$tmpfile" | cut -d ' ' -f1)
         mv "$tmpfile" "$TMPPATH/prefetched/${checksum}${archiveext}"
       fi
+    else
+      # pkgurl is a git archive
+      validate_pkgurl "$pkgurl" git
     fi
   fi
   upkgjson=$(jq --arg url "$pkgurl" --arg checksum "$checksum" '.dependencies[$url]=$checksum' <<<"$upkgjson")
@@ -257,7 +265,7 @@ upkg_install_deps() {
   while read -r -d $'\n' dep_pkgurl; do
     read -r -d $'\n' dep_checksum
     # Run through deps and install them concurrently
-    if ${UPKG_SEQUENTIAL_INSTALL:-false}; then
+    if ${UPKG_SEQUENTIAL:-false}; then
       # Debug flag for sequential install has been set.
       # Don't background anything, but still ignore the exit code and rely on the sentinels.
       # And yes, this is how you do it. "|| true" disables errexit for the entire subshell.
@@ -315,7 +323,7 @@ upkg_install_pkg() {
     fatal "conflict: There is more than one package with the name '%s'" "$pkgname"
   fi
 
-  local pkgpath="$parentpath/.upkg/$dedupname" command cmdpath
+  local pkgpath="$parentpath/.upkg/$dedupname" command cmdpath otherpkg
   if [[ -e "$pkgpath/bin" ]]; then
     # package has a bin/ dir, symlink the executable files in that directory
     mkdir -p "$parentpath/.upkg/.bin"
@@ -324,11 +332,24 @@ upkg_install_pkg() {
       cmdpath="$parentpath/.upkg/.bin/$command"
       # Atomic linking, if this fails there is a duplicate
       if ! ln -s "../$pkgname/bin/$command" "$cmdpath" 2>/dev/null; then
-        local otherpkg
-        otherpkg=$(basename "$(dirname "$(dirname "$(readlink "$cmdpath")")")")
+        otherpkg=$(readlink "$cmdpath")
+        otherpkg=${otherpkg#'../'}
+        otherpkg=${otherpkg%%'/'*}
         fatal "conflict: '%s' and '%s' both have a command named '%s'" "$pkgname" "$otherpkg" "$command"
       fi
     done < <(find "$pkgpath/bin" -mindepth 1 -maxdepth 1 -type f -executable)
+  elif [[ $pkgurl =~ \#bin(\#|$) ]]; then
+    # pkgurl is a file (and has been validated as such in upkg_download), symlink from bin
+    mkdir -p "$parentpath/.upkg/.bin"
+    command=$(basename "${pkgurl%%'#'*}")
+    cmdpath="$parentpath/.upkg/.bin/$command"
+    # Atomic linking, if this fails there is a duplicate
+    if ! ln -s "../$pkgname" "$cmdpath" 2>/dev/null; then
+      otherpkg=$(readlink "$cmdpath")
+      otherpkg=${otherpkg#'../'}
+      otherpkg=${otherpkg%%'/'*}
+      fatal "conflict: '%s' and '%s' both have a command named '%s'" "$pkgname" "$otherpkg" "$command"
+    fi
   fi
 
   # Recursively install deps of this package unless it is already dedup'ed
@@ -364,39 +385,51 @@ upkg_download() (
   fi
   mkdir -p "$TMPPATH/root/.upkg/.packages"
   # Check if the URL is a tar, if not, try getting the remote HEAD commit sha. If that fails, assume it's a file of some sort
-  if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)([?#]|$) ]] || ! git ls-remote -q "${pkgurl%'#'*}" HEAD >/dev/null 2>&1; then
-    local archiveext=${BASH_REMATCH[1]}
-    local filepath=${pkgpath}${archiveext} prefetchpath=$TMPPATH/prefetched/${checksum}${archiveext}
-    [[ $checksum =~ ^[a-z0-9]{64}$ ]] || fatal "Checksum for '%s' is not sha256 (64 hexchars), assumed tar archive from URL"
+  if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)([?#]|$) ]] || ! git ls-remote -q "${pkgurl%%'#'*}" HEAD >/dev/null 2>&1; then
+    local archiveext=${BASH_REMATCH[1]} # Empty if we are not dealing with an archive
+    local prefetchpath=$TMPPATH/prefetched/${checksum}${archiveext} filepath=${pkgpath}${archiveext}
+    if [[ -n $archiveext ]]; then
+      validate_pkgurl "$pkgurl" tar
+    else
+      validate_pkgurl "$pkgurl" file
+    fi
+    [[ $checksum =~ ^[a-z0-9]{64}$ ]] || \
+      fatal "Checksum for '%s' is not sha256 (64 hexchars), assumed tar archive from URL" "$pkgurl"
     if [[ -e "$prefetchpath" ]]; then
       # file was already downloaded by upkg_add to generate a checksum, reuse it
       filepath=$prefetchpath
-    elif [[ -e ${pkgurl%'#'*} ]]; then
+    elif [[ -e ${pkgurl%%'#'*} ]]; then
       # file exists on the filesystem
       if [[ -n $archiveext ]]; then
-        filepath=${pkgurl%'#'*}
+        filepath=${pkgurl%%'#'*}
       else
         # File is not an archive, copy it so it can be moved later on
         filepath=$pkgpath.file
         pkgpath=$filepath
-        cp "${pkgurl%'#'*}" "$pkgpath"
+        cp "${pkgurl%%'#'*}" "$pkgpath"
       fi
     else
       if [[ -z $archiveext ]]; then
-        # File is not an archive, download to the final destination
+        # File is not an archive, don't download to $filepath (which is a directory)
         filepath=$pkgpath.file
         pkgpath=$filepath
       fi
       upkg_fetch "$pkgurl" "$filepath"
     fi
     shasum -a 256 -c <(printf "%s  %s" "$checksum" "$filepath") >/dev/null
-    [[ -z $archiveext ]] || tar -xf "$filepath" -C "$pkgpath"
+    if [[ -n $archiveext ]]; then # file is an archive, extract
+      tar -xf "$filepath" -C "$pkgpath"
+    elif [[ $pkgurl =~ \#bin(\#|$) ]]; then # file has been marked as an executable, chmod
+      chmod +x "$pkgpath"
+    fi
   else
     # refs are not allowed, upkg.json functions as a proper lockfile. refs ruin that.
-    [[ $checksum =~ ^[a-z0-9]{40}$ ]] || fatal "Checksum for '%s' is not sha1 (40 hexchars), assumed git repo from URL"
+    [[ $checksum =~ ^[a-z0-9]{40}$ ]] || \
+      fatal "Checksum for '%s' is not sha1 (40 hexchars), assumed git repo from URL" "$pkgurl"
+    validate_pkgurl "$pkgurl" git
     processing 'Cloning %s' "$pkgurl"
     local out
-    out=$(git clone -q "${pkgurl%'#'*}" "$pkgpath" 2>&1) || \
+    out=$(git clone -q "${pkgurl%%'#'*}" "$pkgpath" 2>&1) || \
       fatal "Unable to clone '%s'. Error:\n%s" "$pkgurl" "$out"
     out=$(git -C "$pkgpath" checkout -q "$checksum" -- 2>&1) || \
       fatal "Unable to checkout '%s' from '%s'. Error:\n%s" "$checksum" "$pkgurl" "$out"
@@ -421,8 +454,7 @@ upkg_download() (
     if [[ $upkgname =~ ^[@/]+$ || $upkgname != .* ]]; then
       dedupname=$upkgname
     else
-      warning "The package from '%s' specifies an invalid package name \
-('@/' are disallowed, may not be empty or start with '.'): '%s'" "$pkgurl" "$upkgname"
+      warning "The package from '%s' specifies an invalid package name (contains @ or /, is empty or starts with '.'): '%s'" "$pkgurl" "$upkgname"
     fi
   fi
   # Move to dedup path
@@ -441,6 +473,16 @@ upkg_fetch() {
   else
     fatal "Unable to download '%s', neither wget nor curl are available" "$url"
   fi
+}
+
+validate_pkgurl() {
+  local pkgurl=$1 urltype=$2
+  [[ $urltype != tar || ! $pkgurl =~ \#bin(\#|$) ]] || \
+    fatal "'%s' has been marked with #bin to be an executable, but the URL points at a tar archive" "$pkgurl"
+  [[ $urltype != git || ! $pkgurl =~ \#bin(\#|$) ]] || \
+    fatal "'%s' has been marked with #bin to be an executable, but the URL points at a git repository" "$pkgurl"
+  [[ $pkgurl =~ (\#name=([^.][^#@/]+)(\#|$))? ]] || \
+    fatal "The package URL '%s' specifies an invalid package name override (contains @ or /, is empty or starts with '.')'" "$pkgurl"
 }
 
 # Idempotently create a temporary directory
