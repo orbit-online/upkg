@@ -211,7 +211,7 @@ upkg_install() {
       # Remove all old links
       ! $DRY_RUN || fatal "'%s' should not be symlinked" "$INSTALL_PREFIX/bin/$cmd"
       rm "$INSTALL_PREFIX/bin/$cmd"
-    done < <(comm -12 <(printf "%s\n" "$available_cmds") <(printf "%s\n" "$global_cmds")) # global - available = old links
+    done < <(comm -13 <(printf "%s\n" "$available_cmds") <(printf "%s\n" "$global_cmds")) # global - available = old links
   fi
 }
 
