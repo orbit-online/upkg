@@ -48,7 +48,7 @@ Options:
       [[ -e "$PWD/upkg.json" ]] || fatal "No upkg.json found in '%s'" "$PWD"
       ln -s "$PWD/upkg.json" "$TMPPATH/root/upkg.json"
       if [[ $# -eq 1 && $1 = -n ]]; then DRY_RUN=true; upkg_install "$PWD" # upkg install -n
-      elif [[ $# -eq 0 ]]; then upkg_install "$PWD"         # upkg install
+      elif [[ $# -eq 0 ]]; then upkg_install "$PWD"                        # upkg install
       else fatal "$DOC"; fi                                                # E_USAGE
       [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";} ;;
     -h|--help)
@@ -70,7 +70,7 @@ upkg_add() {
   if [[ -z "$checksum" ]]; then
     # Autocalculate the checksum
     processing "No checksum given for '%s', determining now" "$pkgurl"
-    # Check if the URL is a tar, if not, try getting the remote HEAD git commit sha. If that fails, assume it's a file of some sort
+    # Check if the URL is a tar or has the #bin tag, if not, try getting the remote HEAD git commit sha. If that fails, assume it's a file of some sort
     if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)([?#]|$)|(#bin(#|$)) ]] || ! checksum=$(git ls-remote -q "${pkgurl%%'#'*}" HEAD 2>/dev/null | grep $'\tHEAD$' | cut -f1); then
       # pkgurl is a file
       local archiveext=${BASH_REMATCH[1]}
