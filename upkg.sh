@@ -47,9 +47,11 @@ Options:
       upkg_mktemp
       [[ -e "$PWD/upkg.json" ]] || fatal "No upkg.json found in '%s'" "$PWD"
       ln -s "$PWD/upkg.json" "$TMPPATH/root/upkg.json"
-      if [[ $# -eq 1 && $1 = -n ]]; then DRY_RUN=true; upkg_install "$PWD" # upkg install -n
-      elif [[ $# -eq 0 ]]; then upkg_install "$PWD"                        # upkg install
-      else fatal "$DOC"; fi                                                # E_USAGE
+      if [[ $# -eq 1 && $1 = -n ]]; then DRY_RUN=true # upkg install -n
+      elif [[ $# -ne 0 ]]; then fatal "$DOC"; fi      # E_USAGE
+      upkg_install "$PWD"
+      if $DRY_RUN; then processing 'All dependencies are up-to-date'
+      else processing 'Installed all dependencies'; fi
       [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";} ;;
     -h|--help)
       printf "%s\n" "$DOC" >&2 ;;
@@ -207,12 +209,6 @@ upkg_install() {
       ! $DRY_RUN || fatal "'%s' should not be symlinked" "$INSTALL_PREFIX/bin/$cmd"
       rm "$INSTALL_PREFIX/bin/$cmd"
     done < <(comm -12 <(printf "%s" "$available_cmds") <(printf "%s" "$global_cmds")) # global - available = old links
-  fi
-
-  if $DRY_RUN; then
-    processing 'All dependencies are up-to-date'
-  else
-    processing 'Installed all dependencies'
   fi
 }
 
