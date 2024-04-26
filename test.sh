@@ -11,14 +11,20 @@ SHELL ["/bin/bash", "-c"]
 RUN <<EOR
 set -e
 apt-get update
-apt-get install -y --no-install-recommends wget ca-certificates git ssh jq tree
-ln -s ../lib/upkg/orbit-online/upkg/upkg.sh /usr/local/bin/upkg
+apt-get install -y --no-install-recommends wget ca-certificates git ssh jq tree psmisc
+ln -s /upkg/upkg.sh /usr/local/bin/upkg
 EOR
 
 ENV SSH_AUTH_SOCK=/ssh_auth
 EOD
 )
-  docker run --rm -ti -v"$PKGROOT:/usr/local/lib/upkg/orbit-online/upkg:ro" -v"${SSH_AUTH_SOCK}:/ssh_auth" "$sha"
+  mkdir "$PKGROOT/test"
+  printf "*" > "$PKGROOT/test/.gitignore"
+  docker run --rm -ti \
+    -v"$PKGROOT/test:/test" --workdir /test \
+    -v"$PKGROOT:/upkg:ro" \
+    -v"${SSH_AUTH_SOCK}:/ssh_auth" \
+    "$sha"
 }
 
 main "$@"
