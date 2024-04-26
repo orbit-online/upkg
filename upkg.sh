@@ -408,6 +408,7 @@ upkg_download() (
     if [[ -e "$prefetchpath" ]]; then
       # file was already downloaded by upkg_add to generate a checksum, reuse it
       filepath=$prefetchpath
+      [[ -n $archiveext ]] || pkgpath=$filepath
     elif [[ -e ${pkgurl%%'#'*} ]]; then
       # file exists on the filesystem
       if [[ -n $archiveext ]]; then
