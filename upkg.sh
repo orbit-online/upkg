@@ -153,17 +153,6 @@ upkg_install() {
         fatal "conflict: the command '%s' already exists in '%s' but does not point to '%s'" \
           "$cmd" "$INSTALL_PREFIX/bin" "$INSTALL_PREFIX/lib/upkg"
     done < <(comm -23 <(printf "%s" "$available_cmds") <(printf "%s" "$global_cmds")) # available - global = new links
-    while read -r -d $'\n' cmd; do
-      # Same loop again, this time we are sure none of the new links exist
-      ! $DRY_RUN || fatal "'%s' was not symlinked" "$INSTALL_PREFIX/bin/$cmd"
-      processing "Linking '%s'" "$cmd"
-      ln -s "../lib/upkg/.upkg/.bin/$cmd" "$INSTALL_PREFIX/bin/$cmd"
-    done < <(comm -23 <(printf "%s" "$available_cmds") <(printf "%s" "$global_cmds"))
-    while read -r -d $'\n' cmd; do
-      # Remove all old links
-      ! $DRY_RUN || fatal "'%s' should not be symlinked" "$INSTALL_PREFIX/bin/$cmd"
-      rm "$INSTALL_PREFIX/bin/$cmd"
-    done < <(comm -12 <(printf "%s" "$available_cmds") <(printf "%s" "$global_cmds")) # global - available = old links
   fi
   if ! $DRY_RUN; then
     if [[ -e "$pkgpath/.upkg" ]]; then
@@ -185,7 +174,6 @@ upkg_install() {
       # The install may have resulted in all deps being remove. Don't keep the .upkg/ dir around
       rm -rf "$pkgpath/.upkg"
     fi
-    processing 'Installed all dependencies'
   else
     # Fail if dependencies have been removed. Though only at the top-level, the rest should/must be the same
     local dep_pkgpath
@@ -195,7 +183,24 @@ upkg_install() {
       <(find "$pkgpath/.upkg" -mindepth 1 -maxdepth 1 -not -name '.*' -exec readlink \{\} \; | sort) \
       <(find "$TMPPATH/root/.upkg" -mindepth 1 -maxdepth 1 -not -name '.*' -exec readlink \{\} \; | sort) # current pkgs - installed pkgs = unreferenced pkgs
     )
+  fi
+  if [[ $pkgpath = "$INSTALL_PREFIX/lib/upkg" ]]; then
+    while read -r -d $'\n' cmd; do
+      # Same loop again, this time we are sure none of the new links exist
+      ! $DRY_RUN || fatal "'%s' was not symlinked" "$INSTALL_PREFIX/bin/$cmd"
+      processing "Linking '%s'" "$cmd"
+      ln -s "../lib/upkg/.upkg/.bin/$cmd" "$INSTALL_PREFIX/bin/$cmd"
+    done < <(comm -23 <(printf "%s" "$available_cmds") <(printf "%s" "$global_cmds"))
+    while read -r -d $'\n' cmd; do
+      # Remove all old links
+      ! $DRY_RUN || fatal "'%s' should not be symlinked" "$INSTALL_PREFIX/bin/$cmd"
+      rm "$INSTALL_PREFIX/bin/$cmd"
+    done < <(comm -12 <(printf "%s" "$available_cmds") <(printf "%s" "$global_cmds")) # global - available = old links
+  fi
+  if $DRY_RUN; then
     processing 'All dependencies are up-to-date'
+  else
+    processing 'Installed all dependencies'
   fi
 }
 
