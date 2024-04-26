@@ -149,7 +149,7 @@ upkg_install() {
     global_cmds=$(upkg_list_global_referenced_cmds "$INSTALL_PREFIX" | sort) # Current list of commands that are linked
     while read -r -d $'\n' cmd; do
       # None of the new links should exist, if they do they don't point to upkg (otherwise they would be in the available list)
-      [[ -e "$INSTALL_PREFIX/bin/$cmd" ]] || \
+      [[ ! -e "$INSTALL_PREFIX/bin/$cmd" ]] || \
         fatal "conflict: the command '%s' already exists in '%s' but does not point to '%s'" \
           "$cmd" "$INSTALL_PREFIX/bin" "$INSTALL_PREFIX/lib/upkg"
     done < <(comm -23 <(printf "%s" "$available_cmds") <(printf "%s" "$global_cmds")) # available - global = new links
