@@ -156,11 +156,12 @@ upkg_install() {
     available_cmds=$(upkg_list_available_cmds "$TMPPATH/root" | sort) # Full list of commands that should be linked
     global_cmds=$(upkg_list_global_referenced_cmds "$INSTALL_PREFIX" | sort) # Current list of commands that are linked
     while read -r -d $'\n' cmd; do
+      [[ -n $cmd ]] || continue # comm returns an empty string when comparing "\n" and "whatever\n" (for example when removing the last package with commands)
       # None of the new links should exist, if they do they don't point to upkg (otherwise they would be in the available list)
       [[ ! -e "$INSTALL_PREFIX/bin/$cmd" ]] || \
         fatal "conflict: the command '%s' already exists in '%s' but does not point to '%s'" \
           "$cmd" "$INSTALL_PREFIX/bin" "$INSTALL_PREFIX/lib/upkg"
-    done < <(comm -23 <(printf "%s" "$available_cmds") <(printf "%s" "$global_cmds")) # available - global = new links
+    done < <(comm -23 <(printf "%s\n" "$available_cmds") <(printf "%s\n" "$global_cmds")) # available - global = new links
   fi
 
   # Copy new packages and all symlinks from $TMPPATH
@@ -198,17 +199,19 @@ upkg_install() {
   # All packages copied successfully, symlink commands
   if [[ $pkgpath = "$INSTALL_PREFIX/lib/upkg" ]]; then
     while read -r -d $'\n' cmd; do
+      [[ -n $cmd ]] || continue # See above
       # Same loop again, this time we are sure none of the new links exist
       ! $DRY_RUN || fatal "'%s' was not symlinked" "$INSTALL_PREFIX/bin/$cmd"
       processing "Linking '%s'" "$cmd"
       mkdir -p "$INSTALL_PREFIX/bin/"
       ln -s "../lib/upkg/.upkg/.bin/$cmd" "$INSTALL_PREFIX/bin/$cmd"
-    done < <(comm -23 <(printf "%s" "$available_cmds") <(printf "%s" "$global_cmds"))
+    done < <(comm -23 <(printf "%s\n" "$available_cmds") <(printf "%s\n" "$global_cmds"))
     while read -r -d $'\n' cmd; do
+      [[ -n $cmd ]] || continue # See above
       # Remove all old links
       ! $DRY_RUN || fatal "'%s' should not be symlinked" "$INSTALL_PREFIX/bin/$cmd"
       rm "$INSTALL_PREFIX/bin/$cmd"
-    done < <(comm -12 <(printf "%s" "$available_cmds") <(printf "%s" "$global_cmds")) # global - available = old links
+    done < <(comm -12 <(printf "%s\n" "$available_cmds") <(printf "%s\n" "$global_cmds")) # global - available = old links
   fi
 }
 
