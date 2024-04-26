@@ -23,6 +23,7 @@ Options:
     INSTALL_PREFIX=$HOME/.local
     [[ $EUID != 0 ]] || INSTALL_PREFIX=/usr/local
   fi
+  DRY_RUN=false
   local cmd=$1; shift || fatal "$DOC"
   case "$cmd" in
     add)
@@ -40,7 +41,7 @@ Options:
       else upkg_list "$PWD" "$@"; fi ;;                                       # upkg list ...
     install)
       if [[ $# -eq 1 && $1 = -n ]]; then DRY_RUN=true; upkg_install "$PWD" # upkg install -n
-      elif [[ $# -eq 0 ]]; then DRY_RUN=false; upkg_install "$PWD"         # upkg install
+      elif [[ $# -eq 0 ]]; then upkg_install "$PWD"         # upkg install
       else fatal "$DOC"; fi                                                # E_USAGE
       [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";} ;;
     -h|--help)
