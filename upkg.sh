@@ -27,11 +27,13 @@ Options:
   local cmd=$1; shift || fatal "$DOC"
   case "$cmd" in
     add)
+      upkg_mktemp
       if [[ $# -ge 2 && $1 = -g ]]; then upkg_add "$INSTALL_PREFIX/lib/upkg" "$2" "$3" # upkg add -g URL [CHECKSUM]
       elif [[ $# -eq 1 || $# -eq 2 ]]; then upkg_add "$PWD" "$1" "$2"                  # upkg add URL [CHECKSUM]
       else fatal "$DOC"; fi                                                            # E_USAGE
       [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";} ;; # Add a newline after the processing lines
     remove)
+      upkg_mktemp
       if [[ $# -eq 2 && $1 = -g ]]; then upkg_remove "$INSTALL_PREFIX/lib/upkg" "$2" # upkg remove -g PKGNAME
       elif [[ $# -eq 1 ]]; then upkg_remove "$PWD" "$1"                              # upkg remove PKGNAME
       else fatal "$DOC"; fi                                                          # E_USAGE
@@ -40,6 +42,9 @@ Options:
       if [[ $1 = -g ]]; then shift; upkg_list "$INSTALL_PREFIX/lib/upkg" "$@" # upkg list -g ...
       else upkg_list "$PWD" "$@"; fi ;;                                       # upkg list ...
     install)
+      upkg_mktemp
+      [[ -e "$PWD/upkg.json" ]] || fatal "No upkg.json found in '%s'" "$PWD"
+      ln -s "$PWD/upkg.json" "$TMPPATH/root/upkg.json"
       if [[ $# -eq 1 && $1 = -n ]]; then DRY_RUN=true; upkg_install "$PWD" # upkg install -n
       elif [[ $# -eq 0 ]]; then upkg_install "$PWD"         # upkg install
       else fatal "$DOC"; fi                                                # E_USAGE
@@ -59,7 +64,6 @@ upkg_add() {
     # Package updates and the likes are not supported
     fatal "The package has already been added, run \`upkg remove %s\` first if you want to update it" "$(basename "$pkgurl")"
   fi
-  upkg_mktemp
   if [[ -z "$checksum" ]]; then
     # Autocalculate the checksum
     processing "No checksum given for '%s', determining now" "$pkgurl"
@@ -101,7 +105,6 @@ upkg_remove() {
   local pkgurl upkgjson
   pkgurl=$(upkg_get_pkg_url "$pkgpath" "$pkgname")
   upkgjson=$(jq -r --arg pkgurl "$pkgurl" 'del(.dependencies[$pkgurl])' "$pkgpath/upkg.json")
-  upkg_mktemp
   # Modify upkg.json, but only in the temp dir, so a failure doesn't change anything
   printf "%s\n" "$upkgjson" >"$TMPPATH/root/upkg.json"
   upkg_install "$pkgpath"
@@ -136,9 +139,6 @@ upkg_list() {
 # Install all packages referenced upkg.json, remove existing ones that aren't, then do the same for their binary symlinks
 upkg_install() {
   local pkgpath=$1
-  [[ -e "$pkgpath/upkg.json" ]] || fatal "No upkg.json found in '%s'" "$pkgpath"
-  upkg_mktemp
-  ln -s "$pkgpath/upkg.json" "$TMPPATH/root/upkg.json" 2>/dev/null || true
   DEDUPPATH="$pkgpath/.upkg/.packages" # The path to the non-temporary package dedup directory
   upkg_install_deps "$TMPPATH/root"
   # All deps installed, check and then symlink binaries globally
@@ -488,7 +488,6 @@ validate_pkgurl() {
 
 # Idempotently create a temporary directory
 upkg_mktemp() {
-  [[ -z $TMPPATH ]] || return 0
   TMPPATH=$(mktemp -d)
   mkdir "$TMPPATH/root" # Precreate root dir, we always need it
   if ${UPKG_KEEP_TMPPATH:-false}; then
