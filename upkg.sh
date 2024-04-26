@@ -23,7 +23,7 @@ Options:
     INSTALL_PREFIX=$HOME/.local
     [[ $EUID != 0 ]] || INSTALL_PREFIX=/usr/local
   fi
-  local cmd=$1; shift
+  local cmd=$1; shift || fatal "$DOC"
   case "$cmd" in
     add)
       if [[ $# -ge 2 && $1 = -g ]]; then upkg_add "$INSTALL_PREFIX/lib/upkg" "$2" "$3" # upkg add -g URL [CHECKSUM]
