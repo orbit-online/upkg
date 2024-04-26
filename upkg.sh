@@ -68,7 +68,7 @@ upkg_add() {
     # Autocalculate the checksum
     processing "No checksum given for '%s', determining now" "$pkgurl"
     # Check if the URL is a tar, if not, try getting the remote HEAD git commit sha. If that fails, assume it's a file of some sort
-    if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)([?#]|$) ]] || ! checksum=$(git ls-remote -q "${pkgurl%%'#'*}" HEAD 2>/dev/null | grep $'\tHEAD$' | cut -f1); then
+    if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)([?#]|$)|(#bin(#|$)) ]] || ! checksum=$(git ls-remote -q "${pkgurl%%'#'*}" HEAD 2>/dev/null | grep $'\tHEAD$' | cut -f1); then
       # pkgurl is a file
       local archiveext=${BASH_REMATCH[1]}
       if [[ -n $archiveext ]]; then # pkgurl is a tar archive
@@ -394,7 +394,7 @@ upkg_download() (
   fi
   mkdir -p "$TMPPATH/root/.upkg/.packages"
   # Check if the URL is a tar, if not, try getting the remote HEAD commit sha. If that fails, assume it's a file of some sort
-  if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)([?#]|$) ]] || ! git ls-remote -q "${pkgurl%%'#'*}" HEAD >/dev/null 2>&1; then
+  if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)([?#]|$)|(#bin(#|$)) ]] || ! git ls-remote -q "${pkgurl%%'#'*}" HEAD >/dev/null 2>&1; then
     local archiveext=${BASH_REMATCH[1]} # Empty if we are not dealing with an archive
     local prefetchpath=$TMPPATH/prefetched/${checksum}${archiveext} filepath=${pkgpath}${archiveext}
     if [[ -n $archiveext ]]; then
