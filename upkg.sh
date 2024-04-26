@@ -368,14 +368,13 @@ upkg_install_pkg() {
   elif [[ $pkgurl =~ \#bin(\#|$) ]]; then
     # pkgurl is a file (and has been validated as such in upkg_download), symlink from bin
     mkdir -p "$parentpath/.upkg/.bin"
-    command=$(basename "${pkgurl%%'#'*}")
-    cmdpath="$parentpath/.upkg/.bin/$command"
+    cmdpath="$parentpath/.upkg/.bin/$pkgname"
     # Atomic linking, if this fails there is a duplicate
     if ! ln -s "../$pkgname" "$cmdpath" 2>/dev/null; then
       otherpkg=$(readlink "$cmdpath")
       otherpkg=${otherpkg#'../'}
       otherpkg=${otherpkg%%'/'*}
-      fatal "conflict: '%s' and '%s' both have a command named '%s'" "$pkgname" "$otherpkg" "$command"
+      fatal "conflict: '%s' and '%s' both have a command named '%s'" "$pkgname" "$otherpkg" "$pkgname"
     fi
   fi
 
