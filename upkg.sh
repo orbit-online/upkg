@@ -170,6 +170,8 @@ upkg_install() {
       # .bin/ and all pkgname symlinks are fully rebuilt during install, so we just remove it and copy it over
       rm -rf "$pkgpath/.upkg/.bin"
       find "$pkgpath/.upkg" -mindepth 1 -maxdepth 1 -not -name '.packages' -delete
+    else
+      mkdir -p "$pkgpath/.upkg"
     fi
     if [[ -e "$TMPPATH/root/.upkg" ]]; then
       # Merge copy the tmp directory (basically just merging .upkg/.packages)
