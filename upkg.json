@@ -1,5 +1,3 @@
 {
-  "commands": {
-    "upkg": "upkg.sh"
-  }
+  "name": "upkg"
 }
