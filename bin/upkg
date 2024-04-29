@@ -129,6 +129,9 @@ upkg_remove() {
 upkg_list() {
   local pkgpath=$1; shift
   (
+    if [[ ! -e "$pkgpath/.upkg" ]]; then
+      processing "No packages are installed in '%s'" "$pkgpath"
+    fi
     local dedup_pkgpath basename pkgname checksum version upkgjsonpath version
     while read -r -d $'\n' dedup_pkgpath; do
       basename=$(basename "$dedup_pkgpath")
