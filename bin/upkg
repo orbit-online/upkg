@@ -26,19 +26,19 @@ Options:
   fi
   DRY_RUN=false
 
-  local cmd=$1; shift || fatal "$DOC"
+  local cmd=$1; shift || upkg_usage
   case "$cmd" in
     add)
       upkg_mktemp
       if [[ $# -ge 2 && $1 = -g ]]; then upkg_add "$INSTALL_PREFIX/lib/upkg" "$2" "$3" # upkg add -g URL [CHECKSUM]
       elif [[ $# -eq 1 || $# -eq 2 ]]; then upkg_add "$PWD" "$1" "$2"                  # upkg add URL [CHECKSUM]
-      else fatal "$DOC"; fi                                                            # E_USAGE
+      else upkg_usage; fi                                                            # E_USAGE
       [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";} ;; # Add a newline after the processing lines
     remove)
       upkg_mktemp
       if [[ $# -eq 2 && $1 = -g ]]; then upkg_remove "$INSTALL_PREFIX/lib/upkg" "$2" # upkg remove -g PKGNAME
       elif [[ $# -eq 1 ]]; then upkg_remove "$PWD" "$1"                              # upkg remove PKGNAME
-      else fatal "$DOC"; fi                                                          # E_USAGE
+      else upkg_usage; fi                                                          # E_USAGE
       [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";} ;;
     list)
       if [[ $1 = -g ]]; then shift; upkg_list "$INSTALL_PREFIX/lib/upkg" "$@" # upkg list -g ...
@@ -48,15 +48,21 @@ Options:
       [[ -e "$PWD/upkg.json" ]] || fatal "No upkg.json found in '%s'" "$PWD"
       ln -s "$PWD/upkg.json" "$TMPPATH/root/upkg.json"
       if [[ $# -eq 1 && $1 = -n ]]; then DRY_RUN=true # upkg install -n
-      elif [[ $# -ne 0 ]]; then fatal "$DOC"; fi      # E_USAGE
+      elif [[ $# -ne 0 ]]; then upkg_usage; fi      # E_USAGE
       upkg_install "$PWD"
       if $DRY_RUN; then processing 'All dependencies are up-to-date'
       else processing 'Installed all dependencies'; fi
       [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";} ;;
     -h|--help)
-      printf "%s\n" "$DOC" >&2 ;;
-    *) fatal "$DOC" ;;
+      upkg_usage 0 ;;
+    *) upkg_usage ;;
   esac
+}
+
+upkg_usage() {
+  local exit_code=${1:-1}
+  printf "%s\n" "$DOC" >&2
+  exit "$exit_code"
 }
 
 # Add a package from upkg.json (optionally determine its checksum) and run upkg_install
