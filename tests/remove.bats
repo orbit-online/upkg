@@ -1,0 +1,23 @@
+#!/usr/bin/env bats
+
+load 'helpers'
+setup_file() { common_setup_file; }
+setup() { common_setup; }
+teardown() { common_teardown; }
+teardown_file() { common_teardown_file; }
+
+@test "no metadata, global" {
+  local name=acme-empty-v1.0.2-no-metadata
+  run -0 upkg add -g "$PACKAGE_FIXTURES/$name.tar" "$(create_tar_package $name)"
+  run -0 upkg remove -g $name.tar
+  assert_output_file
+  assert_file_structure "$HOME/.local"
+}
+
+@test "metadata, global" {
+  local name=acme-empty-v1.0.2-metadata
+  run -0 upkg add -g "$PACKAGE_FIXTURES/$name.tar" "$(create_tar_package $name)"
+  run -0 upkg remove -g acme-empty
+  assert_output_file
+  assert_file_structure "$HOME/.local"
+}

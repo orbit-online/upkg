@@ -1,0 +1,11 @@
+.
+├── .upkg
+│   ├── acme-empty-v1.0.2-no-metadata.tar -> .packages/acme-empty-v1.0.2-no-metadata.tar@d32fc5587a541622c8f24878e32193535295bf9ea2c1e7f540934e00404addb0
+│   ├── .bin
+│   └── .packages
+│       └── acme-empty-v1.0.2-no-metadata.tar@d32fc5587a541622c8f24878e32193535295bf9ea2c1e7f540934e00404addb0
+│           └── bin
+│               └── acme-empty-v1.0.2.bin
+└── upkg.json
+
+7 directories, 2 files

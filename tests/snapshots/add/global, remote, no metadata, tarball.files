@@ -1,0 +1,16 @@
+.
+├── bin
+│   └── orbit-cli -> ../lib/upkg/.upkg/.bin/orbit-cli
+└── lib
+    └── upkg
+        ├── .upkg
+        │   ├── .bin
+        │   │   └── orbit-cli -> ../orbit-cli-v0.1.3.tar.gz/bin/orbit-cli
+        │   ├── orbit-cli-v0.1.3.tar.gz -> .packages/orbit-cli-v0.1.3.tar.gz@1d04b2b7e0d9edbb611bff4ea032de6d5dc98ccc77be6e7d1b51c175da299511
+        │   └── .packages
+        │       └── orbit-cli-v0.1.3.tar.gz@1d04b2b7e0d9edbb611bff4ea032de6d5dc98ccc77be6e7d1b51c175da299511
+        │           └── bin
+        │               └── orbit-cli
+        └── upkg.json
+
+10 directories, 4 files

@@ -1,0 +1,10 @@
+.
+├── .upkg
+│   ├── acme-empty -> .packages/acme-empty-v1.0.2-no-metadata.git@9b1c889a7199250421d7a01b18b76c9d04311dc4
+│   └── .packages
+│       └── acme-empty-v1.0.2-no-metadata.git@9b1c889a7199250421d7a01b18b76c9d04311dc4
+│           └── bin
+│               └── acme-empty-v1.0.2.bin
+└── upkg.json
+
+6 directories, 2 files
