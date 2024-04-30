@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -Eeo pipefail
-PKGROOT=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
+PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 
 main() {
   docker buildx build "$PKGROOT" --tag upkg-sandbox --file - <<EOD
@@ -10,8 +10,8 @@ SHELL ["/bin/bash", "-Eeo", "pipefail", "-c"]
 
 RUN apt-get update && apt-get install -y --no-install-recommends \\
   wget ca-certificates git ssh jq tree psmisc sudo
-RUN ln -s /upkg/upkg.sh /usr/local/bin/upkg
-RUN ln -s /upkg/sandbox /sandbox
+RUN ln -s /upkg/bin/upkg /usr/local/bin/upkg
+WORKDIR /upkg/sandbox
 RUN useradd --uid "$UID" -d /upkg/sandbox "$USER"
 RUN adduser "$USER" sudo
 COPY <<EOF /etc/sudoers.d/nopass
@@ -22,7 +22,6 @@ EOD
   mkdir -p "$PKGROOT/sandbox"
   printf "*" > "$PKGROOT/sandbox/.gitignore"
   docker run --rm -ti \
-    --workdir /sandbox \
     --user "$USER" \
     -v"$PKGROOT:/upkg:ro" \
     -v"$PKGROOT/sandbox:/upkg/sandbox:rw" \
