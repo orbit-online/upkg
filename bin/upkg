@@ -212,7 +212,7 @@ upkg_install() {
       # Same loop again, this time we are sure none of the new links exist
       ! $DRY_RUN || fatal "'%s' was not symlinked" "$INSTALL_PREFIX/bin/$cmd"
       processing "Linking '%s'" "$cmd"
-      mkdir -p "$INSTALL_PREFIX/bin/"
+      mkdir -p "$INSTALL_PREFIX/bin"
       ln -s "../lib/upkg/.upkg/.bin/$cmd" "$INSTALL_PREFIX/bin/$cmd"
     done < <(comm -23 <(printf "%s\n" "$available_cmds") <(printf "%s\n" "$global_cmds"))
     while read -r -d $'\n' cmd; do
