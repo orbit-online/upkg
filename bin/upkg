@@ -18,7 +18,6 @@ Options:
   -g  Act globally
   -n  Dry run, \$?=1 if install/upgrade is required"
 
-  unset TMPPATH # upkg_mktemp doesn't create a temppath if TMPPATH is set, make sure we don't reuse something else
   if [[ -z $INSTALL_PREFIX ]]; then # Allow the user to override the path prefix when using the global (-g) switch
     # Otherwise switch based on the UID
     INSTALL_PREFIX=$HOME/.local
@@ -29,32 +28,47 @@ Options:
   local cmd=$1; shift || upkg_usage
   case "$cmd" in
     add)
+      if [[ $# -ge 2 && $1 = -g ]]; then
+        shift
+        if [[ ! -e "$INSTALL_PREFIX/lib/upkg" ]]; then
+          ! $DRY_RUN || fatal "'%s' did not exist" "$INSTALL_PREFIX/lib/upkg"
+          mkdir -p "$INSTALL_PREFIX/lib/upkg"
+        fi
+        cd "$INSTALL_PREFIX/lib/upkg"
+      fi
       upkg_mktemp
-      if [[ $# -ge 2 && $1 = -g ]]; then upkg_add "$INSTALL_PREFIX/lib/upkg" "$2" "$3" # upkg add -g URL [CHECKSUM]
-      elif [[ $# -eq 1 || $# -eq 2 ]]; then upkg_add "$PWD" "$1" "$2"                  # upkg add URL [CHECKSUM]
-      else upkg_usage; fi                                                            # E_USAGE
+      [[ $# -eq 1 || $# -eq 2 ]] || upkg_usage
+      upkg_add "$1" "$2"
       [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";} ;; # Add a newline after the processing lines
     remove)
+      if [[ $# -eq 2 && $1 = -g ]]; then
+        shift
+        [[ -e "$INSTALL_PREFIX/lib/upkg" ]] || return 0
+        cd "$INSTALL_PREFIX/lib/upkg"
+      fi
       upkg_mktemp
-      if [[ $# -eq 2 && $1 = -g ]]; then upkg_remove "$INSTALL_PREFIX/lib/upkg" "$2" # upkg remove -g PKGNAME
-      elif [[ $# -eq 1 ]]; then upkg_remove "$PWD" "$1"                              # upkg remove PKGNAME
-      else upkg_usage; fi                                                          # E_USAGE
+      [[ $# -eq 1 ]] || upkg_usage
+      upkg_remove "$1"
       [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";} ;;
     list)
-      if [[ $1 = -g ]]; then shift; upkg_list "$INSTALL_PREFIX/lib/upkg" "$@" # upkg list -g ...
-      else upkg_list "$PWD" "$@"; fi ;;                                       # upkg list ...
+      if [[ $1 = -g ]]; then
+        shift
+        [[ -e "$INSTALL_PREFIX/lib/upkg" ]] || return 0
+        cd "$INSTALL_PREFIX/lib/upkg"
+      fi
+      [[ -e .upkg ]] || return 0
+      upkg_list "$@" ;;
     install)
       upkg_mktemp
       [[ -e "$PWD/upkg.json" ]] || fatal "No upkg.json found in '%s'" "$PWD"
-      ln -s "$PWD/upkg.json" "$TMPPATH/root/upkg.json"
+      ln -s "$PWD/upkg.json" ".upkg/.tmp/root/upkg.json"
       if [[ $# -eq 1 && $1 = -n ]]; then DRY_RUN=true # upkg install -n
       elif [[ $# -ne 0 ]]; then upkg_usage; fi      # E_USAGE
       upkg_install "$PWD"
       if $DRY_RUN; then processing 'All dependencies are up-to-date'
       else processing 'Installed all dependencies'; fi
       [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";} ;;
-    -h|--help)
-      upkg_usage 0 ;;
+    -h|--help) upkg_usage 0 ;;
     *) upkg_usage ;;
   esac
 }
@@ -67,9 +81,9 @@ upkg_usage() {
 
 # Add a package from upkg.json (optionally determine its checksum) and run upkg_install
 upkg_add() {
-  local pkgpath=$1 pkgurl=$2 checksum=$3
+  local pkgurl=$1 checksum=$2
   local upkgjson={}
-  [[ ! -e "$pkgpath/upkg.json" ]] || upkgjson=$(cat "$pkgpath/upkg.json")
+  [[ ! -e upkg.json ]] || upkgjson=$(cat upkg.json)
   if jq -re --arg pkgurl "$pkgurl" '.dependencies[$pkgurl] // empty' <<<"$upkgjson" >/dev/null; then
     # Package updates and the likes are not supported
     fatal "The package has already been added, run \`upkg remove %s\` first if you want to update it" "$(basename "$pkgurl")"
@@ -91,11 +105,11 @@ upkg_add() {
         # file exists locally on the filesystem
         checksum=$(shasum -a 256 "${pkgurl%%'#'*}" | cut -d ' ' -f1)
       else
-        mkdir "$TMPPATH/prefetched"
-        local tmpfile="$TMPPATH/prefetched/tmpfile"
+        mkdir .upkg/.tmp/prefetched
+        local tmpfile=.upkg/.tmp/prefetched/tmpfile
         upkg_fetch "$pkgurl" "$tmpfile"
         checksum=$(shasum -a 256 "$tmpfile" | cut -d ' ' -f1)
-        mv "$tmpfile" "$TMPPATH/prefetched/${checksum}${archiveext}"
+        mv "$tmpfile" ".upkg/.tmp/prefetched/${checksum}${archiveext}"
       fi
     else
       # pkgurl is a git archive
@@ -103,34 +117,30 @@ upkg_add() {
     fi
   fi
 
-  upkgjson=$(jq --arg url "$pkgurl" --arg checksum "$checksum" '.dependencies[$url]=$checksum' <<<"$upkgjson")
   # Modify upkg.json, but only in the temp dir, so a failure doesn't change anything
-  printf "%s\n" "$upkgjson" >"$TMPPATH/root/upkg.json"
-  upkg_install "$pkgpath"
-  printf "%s\n" "$upkgjson" >"$pkgpath/upkg.json"
+  jq --arg url "$pkgurl" --arg checksum "$checksum" '.dependencies[$url]=$checksum' <<<"$upkgjson" >.upkg/.tmp/root/upkg.json
+  upkg_install
+  cp .upkg/.tmp/root/upkg.json upkg.json
 
   processing "Added '%s'" "$pkgurl"
 }
 
 # Remove a package from upkg.json and run upkg_install
 upkg_remove() {
-  local pkgpath=$1 pkgname=$2
-  local pkgurl upkgjson
-  pkgurl=$(upkg_get_pkg_url "$pkgpath" "$pkgname")
-  upkgjson=$(jq -r --arg pkgurl "$pkgurl" 'del(.dependencies[$pkgurl])' "$pkgpath/upkg.json")
+  local pkgname=$1 pkgurl
+  pkgurl=$(upkg_get_pkg_url . "$pkgname")
   # Modify upkg.json, but only in the temp dir, so a failure doesn't change anything
-  printf "%s\n" "$upkgjson" >"$TMPPATH/root/upkg.json"
-  upkg_install "$pkgpath"
-  printf "%s\n" "$upkgjson" >"$pkgpath/upkg.json"
+  jq -r --arg pkgurl "$pkgurl" 'del(.dependencies[$pkgurl])' upkg.json >.upkg/.tmp/root/upkg.json
+  upkg_install
+  [[ ! -e .upkg ]] || cp .upkg/.tmp/root/upkg.json upkg.json
   processing "Removed '%s'" "$pkgname"
 }
 
 # List all top-level installed packages. Not based on upkg.json, but the actually installed packages
 upkg_list() {
-  local pkgpath=$1; shift
   (
-    if [[ ! -e "$pkgpath/.upkg" ]]; then
-      processing "No packages are installed in '%s'" "$pkgpath"
+    if [[ ! -e .upkg ]]; then
+      processing "No packages are installed in '%s'" "$PWD"
     fi
     local dedup_pkgpath basename pkgname checksum version upkgjsonpath version
     while read -r -d $'\n' dedup_pkgpath; do
@@ -138,10 +148,10 @@ upkg_list() {
       pkgname=${basename%@*}
       checksum=${basename#*@}
       version='no-version'
-      upkgjsonpath=$pkgpath/.upkg/$dedup_pkgpath/upkg.json
+      upkgjsonpath=.upkg/$dedup_pkgpath/upkg.json
       [[ ! -e "$upkgjsonpath" ]] || version=$(jq -r '.version // "no-version"' "$upkgjsonpath")
       printf "%s\t%s\t%s\n" "$pkgname" "$version" "$checksum"
-    done < <(find "$pkgpath/.upkg" -mindepth 1 -maxdepth 1 -not -name '.*' -exec readlink \{\} \;) # Don't descend into .packages, we only want the top-level
+    done < <(find .upkg -mindepth 1 -maxdepth 1 -not -name '.*' -exec readlink \{\} \;) # Don't descend into .packages, we only want the top-level
   ) | (
     # Allow nice formatting if `column` (from bsdextrautils) is installed
     if type column >/dev/null 2>&1; then
@@ -154,15 +164,14 @@ upkg_list() {
 
 # Install all packages referenced upkg.json, remove existing ones that aren't, then do the same for their command symlinks
 upkg_install() {
-  local pkgpath=$1
-  DEDUPPATH="$pkgpath/.upkg/.packages" # The path to the non-temporary package dedup directory
-  upkg_install_deps "$TMPPATH/root"
+  DEDUPPATH=.upkg/.packages # The path to the non-temporary package dedup directory
+  upkg_install_deps .upkg/.tmp/root
 
   # All deps installed, pre-flight check command symlinks
-  if [[ $pkgpath = "$INSTALL_PREFIX/lib/upkg" ]]; then
+  if [[ $PWD = "$INSTALL_PREFIX/lib/upkg" ]]; then
     # Check that any global bin/ symlinks would not conflict with existing ones
     local available_cmds global_cmds cmd
-    available_cmds=$(upkg_list_available_cmds "$TMPPATH/root" | sort) # Full list of commands that should be linked
+    available_cmds=$(upkg_list_available_cmds .upkg/.tmp/root | sort) # Full list of commands that should be linked
     global_cmds=$(upkg_list_global_referenced_cmds "$INSTALL_PREFIX" | sort) # Current list of commands that are linked
     while read -r -d $'\n' cmd; do
       [[ -n $cmd ]] || continue # comm returns an empty string when comparing "\n" and "whatever\n" (for example when removing the last package with commands)
@@ -173,26 +182,22 @@ upkg_install() {
     done < <(comm -23 <(printf "%s\n" "$available_cmds") <(printf "%s\n" "$global_cmds")) # available - global = new links
   fi
 
-  # Copy new packages and all symlinks from $TMPPATH
+  # Copy new packages and all symlinks from .upkg/.tmp
   if ! $DRY_RUN; then
-    if [[ -e "$pkgpath/.upkg" ]]; then
-      # .bin/ and all pkgname symlinks are fully rebuilt during install, so we just remove it and copy it over
-      rm -rf "$pkgpath/.upkg/.bin"
-      find "$pkgpath/.upkg" -mindepth 1 -maxdepth 1 -not -name '.packages' -delete
-    else
-      mkdir -p "$pkgpath/.upkg"
-    fi
-    if [[ -e "$TMPPATH/root/.upkg" ]]; then
+    # .bin/ and all pkgname symlinks are fully rebuilt during install, so we just remove it and copy it over
+    rm -rf .upkg/.bin
+    find .upkg -mindepth 1 -maxdepth 1 -not -name '.*' -delete
+    if [[ -e .upkg/.tmp/root/.upkg ]]; then
       # Merge copy the tmp directory (basically just merging .upkg/.packages)
-      cp -a "$TMPPATH/root/.upkg" "$pkgpath/"
+      cp -a .upkg/.tmp/root/.upkg ./
       # Remove all unreferenced packages
       local dep_pkgpath
       while read -r -d $'\n' dep_pkgpath; do
-        rm -rf "$pkgpath/.upkg/$dep_pkgpath"
-      done < <(comm -23 <(upkg_list_all_pkgs "$pkgpath" | sort) <(upkg_list_referenced_pkgs "$pkgpath" | sort)) # all pkgs - referenced pkgs = unreferenced pkgs
+        rm -rf ".upkg/$dep_pkgpath"
+      done < <(comm -23 <(upkg_list_all_pkgs . | sort) <(upkg_list_referenced_pkgs . | sort)) # all pkgs - referenced pkgs = unreferenced pkgs
     else
       # The install resulted in all deps being removed. Don't keep the .upkg/ dir around
-      rm -rf "$pkgpath/.upkg"
+      rm -rf .upkg
     fi
   else
     # Fail if dependencies have been removed. Though only at the top-level, the rest should/must be the same
@@ -200,13 +205,13 @@ upkg_install() {
     while read -r -d $'\n' dep_pkgpath; do
       fatal "'%s' should not be installed" "$(basename "$dep_pkgpath")"
     done < <(comm -23 \
-      <(find "$pkgpath/.upkg" -mindepth 1 -maxdepth 1 -not -name '.*' -exec readlink \{\} \; | sort) \
-      <(find "$TMPPATH/root/.upkg" -mindepth 1 -maxdepth 1 -not -name '.*' -exec readlink \{\} \; | sort) # current pkgs - installed pkgs = unreferenced pkgs
+      <(find .upkg -mindepth 1 -maxdepth 1 -not -name '.*' -exec readlink \{\} \; | sort) \
+      <(find .upkg/.tmp/root/.upkg -mindepth 1 -maxdepth 1 -not -name '.*' -exec readlink \{\} \; | sort) # current pkgs - installed pkgs = unreferenced pkgs
     )
   fi
 
   # All packages copied successfully, symlink commands
-  if [[ $pkgpath = "$INSTALL_PREFIX/lib/upkg" ]]; then
+  if [[ $PWD = "$INSTALL_PREFIX/lib/upkg" ]]; then
     while read -r -d $'\n' cmd; do
       [[ -n $cmd ]] || continue # See above
       # Same loop again, this time we are sure none of the new links exist
@@ -282,7 +287,7 @@ upkg_install_deps() {
   deps=$(jq -r '(.dependencies // []) | to_entries[] | .key, .value' "$pkgpath/upkg.json")
   [[ -n $deps ]] || return 0 # No deps -> nothing to do
   mkdir "$pkgpath/.upkg" 2>/dev/null || return 0 # .upkg exists -> another process is already installing the deps
-  if [[ $pkgpath = "$TMPPATH/root" ]]; then
+  if [[ $pkgpath = .upkg/.tmp/root ]]; then
     mkdir "$pkgpath/.upkg/.packages" # We are at the root, this should be a directory, and not just a link
   else
     ln -s ../../ "$pkgpath/.upkg/.packages" # Deeper dependency, link to the parent dedup directory
@@ -352,7 +357,7 @@ upkg_install_pkg() {
     fatal "The package from '%s' has an invalid package name or name override \
 ('@/' are disallowed, may not be empty or start with '.'): '%s'" "$pkgurl" "$pkgname"
 
-  # Atomic linking, if this fails there is a duplicate
+  # Atomic operation, if this fails there is a duplicate
   if ! ln -s ".packages/$dedupname@$checksum" "$parentpath/.upkg/$pkgname"; then
     # TODO: Generate dependency tree from pkgpath
     fatal "conflict: There is more than one package with the name '%s'" "$pkgname"
@@ -365,7 +370,7 @@ upkg_install_pkg() {
     while read -r -d $'\n' command; do
       command=$(basename "$command")
       cmdpath="$parentpath/.upkg/.bin/$command"
-      # Atomic linking, if this fails there is a duplicate
+      # Atomic operation, if this fails there is a duplicate
       if ! ln -s "../$pkgname/bin/$command" "$cmdpath" 2>/dev/null; then
         otherpkg=$(readlink "$cmdpath")
         otherpkg=${otherpkg#'../'}
@@ -377,7 +382,7 @@ upkg_install_pkg() {
     # pkgurl is a file (and has been validated as such in upkg_download), symlink from bin
     mkdir -p "$parentpath/.upkg/.bin"
     cmdpath="$parentpath/.upkg/.bin/$pkgname"
-    # Atomic linking, if this fails there is a duplicate
+    # Atomic operation, if this fails there is a duplicate
     if ! ln -s "../$pkgname" "$cmdpath" 2>/dev/null; then
       otherpkg=$(readlink "$cmdpath")
       otherpkg=${otherpkg#'../'}
@@ -393,8 +398,8 @@ upkg_install_pkg() {
 # Copy, download, clone a package, check the checksum, maybe set a version, maybe calculate a pkgname, return the pkgname
 upkg_download() (
   local pkgurl=$1 checksum=$2 dedupname
-  mkdir -p "$TMPPATH/download"
-  local pkgpath=$TMPPATH/download/$checksum
+  mkdir -p .upkg/.tmp/download
+  local pkgpath=.upkg/.tmp/download/$checksum
 
   # Create a lock so we never download a package more than once, and so other processes can wait for the download to finish
   exec 9<>"$pkgpath.lock"
@@ -404,11 +409,11 @@ upkg_download() (
     flock -s 9 # Block by trying to get a shared lock
   fi
 
-  if dedupname=$(compgen -G "$TMPPATH/root/.upkg/.packages/*@$checksum"); then
+  if dedupname=$(compgen -G ".upkg/.tmp/root/.upkg/.packages/*@$checksum"); then
     # The package has already been deduped
     processing "Already downloaded '%s'" "$pkgurl"
     # Get the dedupname from the dedup dir, output it, and exit early
-    dedupname=${dedupname#"$TMPPATH/root/.upkg/.packages/"}
+    dedupname=${dedupname#".upkg/.tmp/root/.upkg/.packages/"}
     dedupname=${dedupname%@*}
     printf "%s\n" "$dedupname"
     return 0
@@ -419,12 +424,12 @@ upkg_download() (
     # Download failure, but the lock has already been released. Don't try anything, just fail
     return 1
   fi
-  mkdir -p "$TMPPATH/root/.upkg/.packages"
+  mkdir -p .upkg/.tmp/root/.upkg/.packages
 
   # Check if the URL is a tar, if not, try getting the remote HEAD commit sha. If that fails, assume it's a file of some sort
   if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)([?#]|$)|(#bin(#|$)) ]] || ! git ls-remote -q "${pkgurl%%'#'*}" HEAD >/dev/null 2>&1; then
     local archiveext=${BASH_REMATCH[1]} # Empty if we are not dealing with an archive
-    local prefetchpath=$TMPPATH/prefetched/${checksum}${archiveext} filepath=${pkgpath}${archiveext}
+    local prefetchpath=.upkg/.tmp/prefetched/${checksum}${archiveext} filepath=${pkgpath}${archiveext}
     if [[ -n $archiveext ]]; then validate_pkgurl "$pkgurl" tar
     else validate_pkgurl "$pkgurl" file; fi
     [[ $checksum =~ ^[a-z0-9]{64}$ ]] || \
@@ -500,7 +505,7 @@ upkg_download() (
   fi
 
   # Move to dedup path
-  mv "$pkgpath" "$TMPPATH/root/.upkg/.packages/$dedupname@$checksum"
+  mv "$pkgpath" ".upkg/.tmp/root/.upkg/.packages/$dedupname@$checksum"
   printf "%s\n" "$dedupname"
 )
 
@@ -529,14 +534,15 @@ validate_pkgurl() {
 
 # Idempotently create a temporary directory
 upkg_mktemp() {
-  TMPPATH=$(mktemp -d)
-  mkdir "$TMPPATH/root" # Precreate root dir, we always need it
-  if ${UPKG_KEEP_TMPPATH:-false}; then
-    # Debug flag for leaving the TMPPATH has been set, don't remove when done
-    trap "printf \"TMPPATH=%s\n\" \"$TMPPATH\"" EXIT
-  else
+  local keep_dotupkg=false
+  mkdir .upkg 2>/dev/null || keep_dotupkg=true
+  ! $DRY_RUN || $keep_dotupkg || fatal ".upkg/ does not exist"
+  mkdir .upkg/.tmp || fatal "Another upkg instance is already installing to '%s'" "$PWD" # Implicit lock
+  mkdir .upkg/.tmp/root # Precreate root dir, we always need it
+  if ! ${UPKG_KEEP_TMP:-false}; then
     # Cleanup when done
-    trap "rm -rf \"$TMPPATH\"" EXIT
+    trap "rm -rf .upkg/.tmp" EXIT
+    $keep_dotupkg || trap "rm -rf .upkg" ERR
   fi
 }
 
