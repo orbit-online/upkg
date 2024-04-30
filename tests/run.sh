@@ -4,8 +4,9 @@ set -Eeo pipefail
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 
 main() {
-  (docker buildx build -q "$PKGROOT" --tag upkg-tests --file - <<EOD
-FROM debian
+  local shasum
+  shasum=$(docker buildx build -q "$PKGROOT" --tag upkg-tests --file - <<EOD
+FROM debian:bookworm
 SHELL ["/bin/bash", "-Eeo", "pipefail", "-c"]
 
 RUN apt-get update && apt-get install -y --no-install-recommends \\
@@ -30,8 +31,12 @@ WORKDIR /upkg
 ENTRYPOINT ["/usr/local/bin/bats"]
 CMD ["tests"]
 EOD
-  ) >/dev/null
-  exec docker run --rm -ti -eUPDATE_SNAPSHOTS -v"$PKGROOT:/upkg:ro" upkg-tests "$@"
+  )
+  if [[ -t 0 || -t 1 ]]; then
+    exec docker run --rm -ti -eUPDATE_SNAPSHOTS -v"$PKGROOT:/upkg:ro" "$shasum" "$@"
+  else
+    exec docker run --rm -a stdout -a stderr -eUPDATE_SNAPSHOTS -v"$PKGROOT:/upkg:ro" "$shasum" "$@"
+  fi
 }
 
 main "$@"
