@@ -36,6 +36,14 @@ teardown_file() { common_teardown_file; }
   assert_file_structure
 }
 
+@test "local, filesystem, metadata, tarball" {
+  local name=acme-empty-v1.0.2-metadata
+  create_tar_package $name
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
+  assert_output_file
+  assert_file_structure "" local-metadata-tarball
+}
+
 @test "local, remote, metadata, tarball" {
   local name=acme-empty-v1.0.2-metadata shasum
   create_tar_package $name
@@ -43,7 +51,7 @@ teardown_file() { common_teardown_file; }
   serve_file "$PACKAGE_FIXTURES/$name.tar"
   run -0 upkg add http://localhost:8080/$name.tar "$shasum"
   assert_output_file
-  assert_file_structure
+  assert_file_structure "" local-metadata-tarball
 }
 
 @test "global, remote, metadata, git" {
