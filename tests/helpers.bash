@@ -15,14 +15,16 @@ common_setup_file() {
     PACKAGE_TEMPLATES=$BATS_TEST_DIRNAME/package-templates \
     PACKAGE_FIXTURES=$BATS_RUN_TMPDIR/package-fixtures
   mkdir -p "$SNAPSHOTS" "$PACKAGE_FIXTURES"
+  # Fixed timestamp for reproducible builds. 2024-01-01T00:00:00Z
+  export SOURCE_DATE_EPOCH=1704067200
   # Reproducible git repos
   export \
     GIT_AUTHOR_NAME=Anonymous \
     GIT_AUTHOR_EMAIL=anonymous@example.org \
-    GIT_AUTHOR_DATE='2024-04-29 10:00:00' \
+    GIT_AUTHOR_DATE="$SOURCE_DATE_EPOCH+0000" \
     GIT_COMMITTER_NAME=Anonymous \
     GIT_COMMITTER_EMAIL=anonymous@example.org \
-    GIT_COMMITTER_DATE='2024-04-29 10:00:00'
+    GIT_COMMITTER_DATE="$SOURCE_DATE_EPOCH+0000"
 }
 
 common_setup() {
@@ -49,7 +51,13 @@ common_teardown_file() {
 
 create_tar_package() {
   local tpl=$PACKAGE_TEMPLATES/$1 dest=$PACKAGE_FIXTURES/$1.tar
-  [[ -e "$dest" ]] || tar -cf "$dest" -C "$tpl" .
+  # https://reproducible-builds.org/docs/archives/
+  [[ -e "$dest" ]] || tar \
+    --sort=name \
+    --mtime="@${SOURCE_DATE_EPOCH}" \
+    --owner=0 --group=0 --numeric-owner \
+    --pax-option=exthdr.name=%d/PaxHeaders/%f,delete=atime,delete=ctime \
+    -cf "$dest" -C "$tpl" .
   shasum -a 256 "$dest" | cut -d' ' -f1
 }
 
