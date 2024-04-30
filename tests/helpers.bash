@@ -27,6 +27,10 @@ common_setup_file() {
     GIT_COMMITTER_NAME=Anonymous \
     GIT_COMMITTER_EMAIL=anonymous@example.org \
     GIT_COMMITTER_DATE="$SOURCE_DATE_EPOCH+0000"
+  export DELTA=cat
+  if type delta &>/dev/null; then
+    DELTA="delta --hunk-header-style omit"
+  fi
 }
 
 common_setup() {
@@ -74,24 +78,34 @@ create_git_package() {
   git -C "$dest" rev-parse HEAD
 }
 
+assert_output_diff() {
+  local expected=$1 out
+  # Preserving trailing newlines is super cumbersome, let's hope we don't need it
+  # shellcheck disable=SC2154
+  if ! out=$(diff --color=always --label=expected --label=actual -su <(printf -- "%s\n" "$expected") <(printf -- "%s\n" "$output") | $DELTA); then
+    printf -- "-- output differs --\n%s" "$out" | fail
+  fi
+}
+
 assert_output_file() {
   local output_file=$SNAPSHOTS/${1:-$BATS_TEST_DESCRIPTION}.out
   if ${UPDATE_SNAPSHOTS:-false}; then
     # shellcheck disable=SC2001,SC2154
     sed "s#$BATS_RUN_TMPDIR#\$BATS_RUN_TMPDIR#g" <<<"$output" >"$output_file"
   fi
-  assert_output "$(sed "s#\$BATS_RUN_TMPDIR#$BATS_RUN_TMPDIR#g" "$output_file")"
+  assert_output_diff "$(sed "s#\$BATS_RUN_TMPDIR#$BATS_RUN_TMPDIR#g" "$output_file")"
 }
 
 assert_file_structure() (
   [[ -z $1 ]] || cd "$1"
-  local output_file=$SNAPSHOTS/${2:-$BATS_TEST_DESCRIPTION}.files
+  local output_file=$SNAPSHOTS/${2:-$BATS_TEST_DESCRIPTION}.files \
+    treecmd="tree -n --charset=UTF-8 -a -I .git ."
   if ${UPDATE_SNAPSHOTS:-false}; then
     # shellcheck disable=SC2001,SC2154
-    tree -a -I .git . -o "$output_file"
+    $treecmd > "$output_file"
   fi
-  run tree -a -I .git .
-  assert_output "$(cat "$output_file")"
+  run $treecmd
+  assert_output_diff "$(cat "$output_file")"
 )
 
 serve_file() {
