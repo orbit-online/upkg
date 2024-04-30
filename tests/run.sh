@@ -6,7 +6,7 @@ PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 main() {
   local shasum
   shasum=$(docker buildx build -q "$PKGROOT" --tag upkg-tests --file - <<EOD
-FROM debian:bookworm
+FROM ubuntu:22.04
 SHELL ["/bin/bash", "-Eeo", "pipefail", "-c"]
 
 RUN apt-get update && apt-get install -y --no-install-recommends \\

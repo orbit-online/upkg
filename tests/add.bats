@@ -8,14 +8,16 @@ teardown_file() { common_teardown_file; }
 
 @test "local, filesystem, no metadata, tarball" {
   local name=acme-empty-v1.0.2-no-metadata
-  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" "$(create_tar_package $name)"
+  create_tar_package $name
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
   assert_output_file
   assert_file_structure
 }
 
 @test "local, filesystem, no metadata, tarball, rename" {
   local name=acme-empty-v1.0.2-no-metadata
-  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar#acme-empty" "$(create_tar_package $name)"
+  create_tar_package $name
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar#acme-empty" "$TAR_SHASUM"
   assert_output_file
   assert_file_structure
 }
@@ -36,7 +38,8 @@ teardown_file() { common_teardown_file; }
 
 @test "local, remote, metadata, tarball" {
   local name=acme-empty-v1.0.2-metadata shasum
-  shasum=$(create_tar_package $name)
+  create_tar_package $name
+  shasum=$TAR_SHASUM
   serve_file "$PACKAGE_FIXTURES/$name.tar"
   run -0 upkg add http://localhost:8080/$name.tar "$shasum"
   assert_output_file

@@ -31,6 +31,15 @@ common_setup_file() {
   if type delta &>/dev/null; then
     DELTA="delta --hunk-header-style omit"
   fi
+  export TAR='tar is not available, use tests/run.sh to run this test in a container'
+  if type tar &>/dev/null; then
+    local tar_actual_version tar_expected_version='tar (GNU tar) 1.34'
+    tar_actual_version=$(tar --version | head -n1)
+    TAR=
+    if [[ $tar_actual_version != "$tar_expected_version" ]]; then
+      TAR="tar reported version ${tar_actual_version#tar (GNU tar) }. Only ${tar_expected_version#tar (GNU tar) } is supported, use tests/run.sh to run this test in a container"
+    fi
+  fi
 }
 
 common_setup() {
@@ -60,6 +69,7 @@ common_teardown_file() {
 
 create_tar_package() {
   local tpl=$PACKAGE_TEMPLATES/$1 dest=$PACKAGE_FIXTURES/$1.tar
+  [[ -z $TAR ]] || skip "$TAR"
   # https://reproducible-builds.org/docs/archives/
   [[ -e "$dest" ]] || tar \
     --sort=name \
@@ -67,7 +77,8 @@ create_tar_package() {
     --owner=0 --group=0 --numeric-owner \
     --pax-option=exthdr.name=%d/PaxHeaders/%f,delete=atime,delete=ctime \
     -cf "$dest" -C "$tpl" .
-  shasum -a 256 "$dest" | cut -d' ' -f1
+  # shellcheck disable=SC2034
+  TAR_SHASUM=$(shasum -a 256 "$dest" | cut -d' ' -f1)
 }
 
 create_git_package() {
