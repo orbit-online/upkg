@@ -18,12 +18,18 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: bats-core/bats-action@2.0.0
+    - name: Install bats
+      uses: bats-core/bats-action@2.0.0
       with:
         detik-install: false
-    - name: Checkout
+    - name: Checkout source
       uses: actions/checkout@v4
     - name: Run tests
-      run: bats tests
+      run: bats --formatter tap13 tests | tee tests/results.tap
       env:
         BATS_LIB_PATH: /usr/lib
+    - name: Generate test summary
+      uses: test-summary/action@v2
+      with:
+        paths: tests/results.tap
+      if: always()
