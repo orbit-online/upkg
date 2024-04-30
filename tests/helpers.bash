@@ -38,6 +38,9 @@ common_setup() {
     HOME=$BATS_TEST_TMPDIR/home \
     GLOBAL_INSTALL_PREFIX=$BATS_TEST_TMPDIR/usr \
     PROJECT_ROOT=$BATS_TEST_TMPDIR/project
+  # EUID cannot be set, so even when running as root make sure to install to $HOME
+  export INSTALL_PREFIX=$HOME/.local
+  # Don't let upkg run installs in parallel, this results in non-deterministic ouput
   export UPKG_SEQUENTIAL=true
   mkdir "$HOME" "$GLOBAL_INSTALL_PREFIX" "$PROJECT_ROOT"
   SERVE_PIDS=()
