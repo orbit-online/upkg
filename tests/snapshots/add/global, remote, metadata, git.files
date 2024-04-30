@@ -4,10 +4,10 @@
         ├── .upkg
         │   ├── .packages
         │   │   └── records.sh@493ebb2c7c52dcf8f83a6fcaae6c7cbcfb2be736
-        │   │       ├── bpkg.json
-        │   │       ├── example.sh
         │   │       ├── LICENSE
         │   │       ├── README.md
+        │   │       ├── bpkg.json
+        │   │       ├── example.sh
         │   │       ├── records.sh
         │   │       └── upkg.json
         │   └── records.sh -> .packages/records.sh@493ebb2c7c52dcf8f83a6fcaae6c7cbcfb2be736

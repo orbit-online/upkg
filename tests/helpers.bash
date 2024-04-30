@@ -15,6 +15,8 @@ common_setup_file() {
     PACKAGE_TEMPLATES=$BATS_TEST_DIRNAME/package-templates \
     PACKAGE_FIXTURES=$BATS_RUN_TMPDIR/package-fixtures
   mkdir -p "$SNAPSHOTS" "$PACKAGE_FIXTURES"
+  # Ensure stable file sorting
+  export LC_ALL=
   # Fixed timestamp for reproducible builds. 2024-01-01T00:00:00Z
   export SOURCE_DATE_EPOCH=1704067200
   # Reproducible git repos
@@ -86,7 +88,7 @@ assert_file_structure() (
   local output_file=$SNAPSHOTS/${2:-$BATS_TEST_DESCRIPTION}.files
   if ${UPDATE_SNAPSHOTS:-false}; then
     # shellcheck disable=SC2001,SC2154
-    tree -a -I .git . >"$output_file"
+    tree -a -I .git . -o "$output_file"
   fi
   run tree -a -I .git .
   assert_output "$(cat "$output_file")"
