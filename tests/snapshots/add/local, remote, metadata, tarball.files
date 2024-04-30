@@ -1,9 +1,9 @@
 .
 ├── .upkg
-│   ├── acme-empty -> .packages/acme-empty@78c3c8b2f9d508a79aea1b683b9db6e85a78bd107910bf15a0e25daedc4995f1
+│   ├── acme-empty -> .packages/acme-empty@024855bd4fffd18e78f86594750b216f2c9aa06421e277caa6f5eeb30777c8a1
 │   ├── .bin
 │   └── .packages
-│       └── acme-empty@78c3c8b2f9d508a79aea1b683b9db6e85a78bd107910bf15a0e25daedc4995f1
+│       └── acme-empty@024855bd4fffd18e78f86594750b216f2c9aa06421e277caa6f5eeb30777c8a1
 │           ├── bin
 │           │   └── acme-empty-v1.0.2.bin
 │           └── upkg.json

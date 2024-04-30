@@ -1,9 +1,9 @@
 .
 ├── .upkg
-│   ├── acme-empty-v1.0.2-no-metadata.git -> .packages/acme-empty-v1.0.2-no-metadata.git@9b1c889a7199250421d7a01b18b76c9d04311dc4
+│   ├── acme-empty-v1.0.2-no-metadata.git -> .packages/acme-empty-v1.0.2-no-metadata.git@97529f79999133a89a48582db5ec58d5a37d5ae7
 │   ├── .bin
 │   └── .packages
-│       └── acme-empty-v1.0.2-no-metadata.git@9b1c889a7199250421d7a01b18b76c9d04311dc4
+│       └── acme-empty-v1.0.2-no-metadata.git@97529f79999133a89a48582db5ec58d5a37d5ae7
 │           └── bin
 │               └── acme-empty-v1.0.2.bin
 └── upkg.json

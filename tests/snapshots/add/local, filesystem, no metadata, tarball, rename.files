@@ -1,9 +1,9 @@
 .
 ├── .upkg
-│   ├── acme-empty-v1.0.2-no-metadata.tar -> .packages/acme-empty-v1.0.2-no-metadata.tar@d32fc5587a541622c8f24878e32193535295bf9ea2c1e7f540934e00404addb0
+│   ├── acme-empty-v1.0.2-no-metadata.tar -> .packages/acme-empty-v1.0.2-no-metadata.tar@2a038322f12c1dedd2788f997685e5b4712db853123e4a2eed493f00c04d75d7
 │   ├── .bin
 │   └── .packages
-│       └── acme-empty-v1.0.2-no-metadata.tar@d32fc5587a541622c8f24878e32193535295bf9ea2c1e7f540934e00404addb0
+│       └── acme-empty-v1.0.2-no-metadata.tar@2a038322f12c1dedd2788f997685e5b4712db853123e4a2eed493f00c04d75d7
 │           └── bin
 │               └── acme-empty-v1.0.2.bin
 └── upkg.json
