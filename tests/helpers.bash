@@ -20,7 +20,7 @@ common_setup_file() {
     DELTA="delta --hunk-header-style omit"
   fi
   # Ensure stable file sorting
-  export LC_ALL=
+  export LC_ALL=C
   # Don't include atime & ctime in tar archives (https://reproducible-builds.org/docs/archives/)
   unset POSIXLY_CORRECT
   # Fixed timestamp for reproducible builds. 2024-01-01T00:00:00Z
