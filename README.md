@@ -1,5 +1,6 @@
 TODO:
 Describe meta package, depend on a bunch of binaries an symlink them out
+Use wait for dep install, instead of the sentinel mess
 
 ## Testing
 

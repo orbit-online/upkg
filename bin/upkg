@@ -331,10 +331,11 @@ upkg_install_deps() {
 # Obtain (copy, download, clone, extract.. whatever) a package, symlink its commands and the install its dependencies
 upkg_install_pkg() {
   local pkgurl=$1 checksum=$2 parentpath=$3 dedupname pkgalias is_dedup=false
+  trap "" EXIT # Clear parent process trap
+  trap "touch \"$parentpath/.upkg/.sentinels/$checksum.fail\"" ERR # Inform parent process when an error occurs
   # Acquire a shared lock which is released once this process completes. Fail if we can't lock
   exec 9<>"$parentpath/upkg.json"; flock -ns 9
   touch "$parentpath/.upkg/.sentinels/$checksum.lock" # Tell the parent process that the shared lock has been acquired
-  trap "touch \"$parentpath/.upkg/.sentinels/$checksum.fail\"" ERR # Inform parent process when an error occurs
 
   if [[ -e "$DEDUPPATH" ]] && dedupname=$(compgen -G "$DEDUPPATH/*@$checksum"); then
     # Package already exists in the destination, all we need is the deduppath so we can symlink it
@@ -539,9 +540,9 @@ upkg_mktemp() {
   mkdir .upkg/.tmp || fatal "Another upkg instance is already installing to '%s'" "$PWD" # Implicit lock
   mkdir .upkg/.tmp/root # Precreate root dir, we always need it
   if ! ${UPKG_KEEP_TMP:-false}; then
-    # Cleanup when done
-    trap "rm -rf .upkg/.tmp" EXIT
-    $keep_dotupkg || trap "rm -rf .upkg" ERR
+    # Cleanup when done, make sure no subshell ever calls these traps
+    trap "[[ \$BASHPID != $BASHPID ]] || rm -rf .upkg/.tmp" EXIT
+    $keep_dotupkg || trap "[[ \$BASHPID != $BASHPID ]] || rm -rf .upkg" ERR
   fi
 }
 
