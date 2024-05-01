@@ -122,7 +122,7 @@ assert_snapshot_files() (
 
 get_file_structure() (
   [[ -z $1 ]] || cd "$1"
-  tree -n --charset=UTF-8 -a -I .git . 2>&1
+  tree -n -p --charset=UTF-8 -a -I .git . 2>&1
 )
 
 serve_file() {

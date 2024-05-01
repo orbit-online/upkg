@@ -1,11 +1,11 @@
-.
-├── .upkg
-│   ├── .bin
-│   ├── .packages
-│   │   └── acme-empty-v1.0.2-no-metadata.tar@6200b47d49a92868bbfa7bc4b061746db7dc86bd45a92c011f2c921a3368b582
-│   │       └── bin
-│   │           └── acme-empty-v1.0.2.bin
-│   └── acme-empty-v1.0.2-no-metadata.tar -> .packages/acme-empty-v1.0.2-no-metadata.tar@6200b47d49a92868bbfa7bc4b061746db7dc86bd45a92c011f2c921a3368b582
-└── upkg.json
+[drwxr-xr-x]  .
+├── [drwxr-xr-x]  .upkg
+│   ├── [drwxr-xr-x]  .bin
+│   ├── [drwxr-xr-x]  .packages
+│   │   └── [drwxr-xr-x]  acme-empty-v1.0.2-no-metadata.tar@6200b47d49a92868bbfa7bc4b061746db7dc86bd45a92c011f2c921a3368b582
+│   │       └── [drwxr-xr-x]  bin
+│   │           └── [-rw-r--r--]  acme-empty-v1.0.2.bin
+│   └── [lrwxrwxrwx]  acme-empty-v1.0.2-no-metadata.tar -> .packages/acme-empty-v1.0.2-no-metadata.tar@6200b47d49a92868bbfa7bc4b061746db7dc86bd45a92c011f2c921a3368b582
+└── [-rw-r--r--]  upkg.json
 
 6 directories, 2 files

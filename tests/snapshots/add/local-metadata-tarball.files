@@ -1,12 +1,12 @@
-.
-├── .upkg
-│   ├── .bin
-│   ├── .packages
-│   │   └── acme-empty@0ae9300f4651848e63719bd5320691c7fdfb81a39b09ee84c58435f30d42d39b
-│   │       ├── bin
-│   │       │   └── acme-empty-v1.0.2.bin
-│   │       └── upkg.json
-│   └── acme-empty -> .packages/acme-empty@0ae9300f4651848e63719bd5320691c7fdfb81a39b09ee84c58435f30d42d39b
-└── upkg.json
+[drwxr-xr-x]  .
+├── [drwxr-xr-x]  .upkg
+│   ├── [drwxr-xr-x]  .bin
+│   ├── [drwxr-xr-x]  .packages
+│   │   └── [drwxr-xr-x]  acme-empty@0ae9300f4651848e63719bd5320691c7fdfb81a39b09ee84c58435f30d42d39b
+│   │       ├── [drwxr-xr-x]  bin
+│   │       │   └── [-rw-r--r--]  acme-empty-v1.0.2.bin
+│   │       └── [-rw-r--r--]  upkg.json
+│   └── [lrwxrwxrwx]  acme-empty -> .packages/acme-empty@0ae9300f4651848e63719bd5320691c7fdfb81a39b09ee84c58435f30d42d39b
+└── [-rw-r--r--]  upkg.json
 
 6 directories, 3 files
