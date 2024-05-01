@@ -23,3 +23,14 @@ teardown_file() { common_teardown_file; }
   assert_snapshot
   assert_snapshot_files "" "$HOME/.local"
 }
+
+@test "add 1 -> add 2 -> remove 1" {
+  local name1=acme-empty-v1.0.2-metadata name2=acme-empty-v1.0.2-no-metadata
+  create_tar_package $name1
+  run -0 upkg add "$PACKAGE_FIXTURES/$name1.tar" "$TAR_SHASUM"
+  create_tar_package $name2
+  run -0 upkg add "$PACKAGE_FIXTURES/$name2.tar" "$TAR_SHASUM"
+  run -0 upkg remove acme-empty
+  assert_snapshot
+  assert_snapshot_files
+}
