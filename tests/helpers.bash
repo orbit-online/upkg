@@ -21,6 +21,8 @@ common_setup_file() {
   fi
   # Ensure stable file sorting
   export LC_ALL=
+  # Don't include atime & ctime in tar archives (https://reproducible-builds.org/docs/archives/)
+  unset POSIXLY_CORRECT
   # Fixed timestamp for reproducible builds. 2024-01-01T00:00:00Z
   export SOURCE_DATE_EPOCH=1704067200
   # Reproducible git repos
@@ -75,7 +77,6 @@ create_tar_package() {
     --sort=name \
     --mtime="@${SOURCE_DATE_EPOCH}" \
     --owner=0 --group=0 --numeric-owner \
-    --pax-option=exthdr.name=%d/PaxHeaders/%f,delete=atime,delete=ctime \
     -cf "$dest" -C "$tpl" .
   # shellcheck disable=SC2034
   TAR_SHASUM=$(shasum -a 256 "$dest" | cut -d' ' -f1)
