@@ -67,7 +67,13 @@ common_setup() {
 common_teardown() {
   if (( ${#SERVE_PIDS} != 0 )); then
     kill "${SERVE_PIDS[@]}" 2>/dev/null
-    wait
+    local pid
+    for pid in "${SERVE_PIDS[@]}"; do
+      wait "$pid"
+    done
+  fi
+  if [[ -n $(jobs -p) ]]; then
+    fail "There were unterminated background jobs after test completion"
   fi
 }
 
