@@ -45,7 +45,7 @@ common_setup_file() {
   fi
   # Make sure the package-templates have the correct permissions (i.e. git checkout wasn't run with a 002 instead of 022 umask)
   export SKIP_PACKAGE_TEMPLATES=
-  if ! (assert_snapshot_files "../package-templates" "$BATS_TEST_DIRNAME/package-templates"); then
+  if ! (SNAPSHOTS=$BATS_TEST_DIRNAME/snapshots assert_snapshot_files "package-templates" "$BATS_TEST_DIRNAME/package-templates"); then
     SKIP_PACKAGE_TEMPLATES="The package templates do not match the stored snapshot, run the the README to determine how to fix the issue"
   fi
 }
@@ -111,7 +111,9 @@ assert_equals_diff() {
 }
 
 assert_snapshot() {
-  local snapshot_path=$SNAPSHOTS/${1:-$BATS_TEST_DESCRIPTION}.out actual=${2:-$output}
+  local snapshot_name=${1:-$BATS_TEST_DESCRIPTION} actual=${2:-$output}
+  snapshot_name=${snapshot_name//'/'/_}
+  local snapshot_path=$SNAPSHOTS/$snapshot_name.out
   if ${UPDATE_SNAPSHOTS:-false}; then
     # shellcheck disable=SC2001
     sed "s#$BATS_RUN_TMPDIR#\$BATS_RUN_TMPDIR#g" <<<"$output" >"$snapshot_path"
@@ -120,7 +122,9 @@ assert_snapshot() {
 }
 
 assert_snapshot_files() {
-  local snapshot_path=$SNAPSHOTS/${1:-$BATS_TEST_DESCRIPTION}.files actual_path=$2
+  local snapshot_name=${1:-$BATS_TEST_DESCRIPTION} actual_path=$2
+  snapshot_name=${snapshot_name//'/'/_}
+  local snapshot_path=$SNAPSHOTS/$snapshot_name.files
   if ${UPDATE_SNAPSHOTS:-false}; then
     get_file_structure "$actual_path" > "$snapshot_path"
   fi
