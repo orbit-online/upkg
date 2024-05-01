@@ -362,8 +362,7 @@ upkg_install_pkg() {
     # TODO: Generate dependency tree from pkgpath
     fatal "conflict: There is more than one package with the name '%s'" "$pkgname"
   fi
-
-  local pkgpath="$parentpath/.upkg/$dedupname" command cmdpath otherpkg
+  local pkgpath="$parentpath/.upkg/$pkgname" command cmdpath otherpkg
   if [[ -e "$pkgpath/bin" ]]; then
     # package has a bin/ dir, symlink the executable files in that directory
     mkdir -p "$parentpath/.upkg/.bin"
