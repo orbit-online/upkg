@@ -21,15 +21,21 @@ jobs:
     - name: Install bats
       uses: bats-core/bats-action@2.0.0
       with:
+        support-path: ${{ github.workspace }}/lib/bats-support
+        assert-path: ${{ github.workspace }}/lib/bats-assert
+        file-path: ${{ github.workspace }}/lib/bats-file
         detik-install: false
     - name: Checkout source
       uses: actions/checkout@v4
+      with:
+        path: upkg
     - name: Run tests
       run: bats --formatter tap13 tests > tests/results.tap
+      working-directory: upkg
       env:
-        BATS_LIB_PATH: /usr/lib
+        BATS_LIB_PATH: ${{ github.workspace }}/lib
     - name: Generate test summary
       uses: test-summary/action@v2
       with:
-        paths: tests/results.tap
+        paths: upkg/tests/results.tap
       if: always()
