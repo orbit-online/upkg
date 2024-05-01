@@ -28,6 +28,8 @@ EOINSTALL
 ENV BATS_LIB_PATH=/usr/local/bats/lib
 
 WORKDIR /upkg
+RUN useradd --uid "$UID" -d /upkg "$USER"
+USER "$USER"
 ENTRYPOINT ["/usr/local/bin/bats"]
 CMD ["tests"]
 EOD
