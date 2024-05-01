@@ -21,8 +21,11 @@ ENV BATS_LIB_PATH=/usr/local/bats/lib
 
 ARG USER
 ARG UID
-RUN useradd --uid "${UID}" -d /upkg "${USER}"
-RUN adduser "$USER" sudo
+RUN <<EOUSERSETUP
+mkdir -p /upkg/sandbox
+useradd --uid "${UID}" -d /upkg/sandbox "${USER}"
+adduser "$USER" sudo
+EOUSERSETUP
 COPY <<EOF /etc/sudoers.d/nopass
 $USER ALL=(ALL) NOPASSWD:ALL
 EOF
