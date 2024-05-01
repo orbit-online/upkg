@@ -6,8 +6,11 @@ bats_load_library bats-assert
 
 common_setup_file() {
   bats_require_minimum_version 1.5.0
-  # Setup path to upkg
-  PATH=$(realpath "$BATS_TEST_DIRNAME/../bin"):$PATH
+  # Use
+  if [[ $(which upkg) != "$(realpath "$BATS_TEST_DIRNAME/../bin/upkg")" ]]; then
+    # Setup path to upkg
+    PATH=$(realpath "$BATS_TEST_DIRNAME/../bin"):$PATH
+  fi
   # Global dirs
   export SNAPSHOTS PACKAGE_TEMPLATES PACKAGE_FIXTURES
   SNAPSHOTS=$BATS_TEST_DIRNAME/snapshots/$(basename "$BATS_TEST_FILENAME" .bats)

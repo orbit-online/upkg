@@ -27,7 +27,7 @@ COPY <<EOF /etc/sudoers.d/nopass
 $USER ALL=(ALL) NOPASSWD:ALL
 EOF
 USER "$USER"
-ENV PATH=$PATH/upkg/bin:$PATH
+ENV PATH=/upkg/bin/:$PATH
 ENV SSH_AUTH_SOCK=/ssh_auth
 
 WORKDIR /upkg
