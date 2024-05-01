@@ -120,16 +120,16 @@ assert_snapshot() {
   local snapshot_name=${1:-$BATS_TEST_DESCRIPTION} actual=${2:-$output}
   snapshot_name=${snapshot_name//'/'/_}
   local snapshot_path=$SNAPSHOTS/$snapshot_name.out
-  if ${UPDATE_SNAPSHOTS:-false}; then
-    # shellcheck disable=SC2001
-    sed "s#$BATS_RUN_TMPDIR#\$BATS_RUN_TMPDIR#g" <<<"$output" >"$snapshot_path"
-  elif [[ ! -e "$snapshot_path" ]]; then
+  if [[ ! -e "$snapshot_path" ]]; then
     if ${CREATE_SNAPSHOTS:-false}; then
       # shellcheck disable=SC2001
       sed "s#$BATS_RUN_TMPDIR#\$BATS_RUN_TMPDIR#g" <<<"$output" > "$snapshot_path"
     else
       fail "The snapshot ${snapshot_path%"$SNAPSHOTS"} does not exist, run with CREATE_SNAPSHOTS=true to create it"
     fi
+  elif ${UPDATE_SNAPSHOTS:-false}; then
+    # shellcheck disable=SC2001
+    sed "s#$BATS_RUN_TMPDIR#\$BATS_RUN_TMPDIR#g" <<<"$output" >"$snapshot_path"
   fi
   assert_equals_diff "$(sed "s#\$BATS_RUN_TMPDIR#$BATS_RUN_TMPDIR#g" "$snapshot_path")" "$actual"
 }
@@ -138,14 +138,14 @@ assert_snapshot_files() {
   local snapshot_name=${1:-$BATS_TEST_DESCRIPTION} actual_path=$2
   snapshot_name=${snapshot_name//'/'/_}
   local snapshot_path=$SNAPSHOTS/$snapshot_name.files
-  if ${UPDATE_SNAPSHOTS:-false}; then
-    get_file_structure "$actual_path" > "$snapshot_path"
-  elif [[ ! -e "$snapshot_path" ]]; then
+  if [[ ! -e "$snapshot_path" ]]; then
     if ${CREATE_SNAPSHOTS:-false}; then
       get_file_structure "$actual_path" > "$snapshot_path"
     else
       fail "The snapshot ${snapshot_path%"$SNAPSHOTS"} does not exist, run with CREATE_SNAPSHOTS=true to create it"
     fi
+  elif ${UPDATE_SNAPSHOTS:-false}; then
+    get_file_structure "$actual_path" > "$snapshot_path"
   fi
   assert_equals_diff "$(cat "$snapshot_path")" "$(get_file_structure "$actual_path")"
 }
