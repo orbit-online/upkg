@@ -34,13 +34,15 @@ ENTRYPOINT ["/usr/local/bin/bats"]
 CMD ["tests"]
 EOD
   )
-  local mode=ro
+  local mode=ro docker_opts=()
   ! ${UPDATE_SNAPSHOTS:-false} || mode=rw
+  ! ${CREATE_SNAPSHOTS:-false} || mode=rw
   if [[ -t 0 || -t 1 ]]; then
-    exec docker run --rm -ti -eUPDATE_SNAPSHOTS -v"$PKGROOT:/upkg:$mode" "$shasum" "$@"
+    docker_opts+=(-ti)
   else
-    exec docker run --rm -a stdout -a stderr -eUPDATE_SNAPSHOTS -v"$PKGROOT:/upkg:$mode" "$shasum" "$@"
+    docker_opts+=( -a stdout -a stderr)
   fi
+  exec docker run --rm "${docker_opts[@]}" -eUPDATE_SNAPSHOTS -eCREATE_SNAPSHOTS -v"$PKGROOT:/upkg:$mode" "$shasum" "$@"
 }
 
 main "$@"
