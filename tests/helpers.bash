@@ -46,7 +46,7 @@ common_setup_file() {
   # Make sure the package-templates have the correct permissions (i.e. git checkout wasn't run with a 002 instead of 022 umask)
   export SKIP_PACKAGE_TEMPLATES=
   if ! (SNAPSHOTS=$BATS_TEST_DIRNAME/snapshots assert_snapshot_files "package-templates" "$BATS_TEST_DIRNAME/package-templates"); then
-    SKIP_PACKAGE_TEMPLATES="The package templates do not match the stored snapshot, run the the README to determine how to fix the issue"
+    SKIP_PACKAGE_TEMPLATES="The package templates do not match the stored snapshot, consult the README to see how to debug the issue"
   fi
 }
 
