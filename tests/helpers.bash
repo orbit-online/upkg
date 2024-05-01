@@ -15,6 +15,10 @@ common_setup_file() {
     PACKAGE_TEMPLATES=$BATS_TEST_DIRNAME/package-templates \
     PACKAGE_FIXTURES=$BATS_RUN_TMPDIR/package-fixtures
   mkdir -p "$SNAPSHOTS" "$PACKAGE_FIXTURES"
+  export DELTA=cat
+  if type delta &>/dev/null; then
+    DELTA="delta --hunk-header-style omit"
+  fi
   # Ensure stable file sorting
   export LC_ALL=
   # Fixed timestamp for reproducible builds. 2024-01-01T00:00:00Z
@@ -27,10 +31,6 @@ common_setup_file() {
     GIT_COMMITTER_NAME=Anonymous \
     GIT_COMMITTER_EMAIL=anonymous@example.org \
     GIT_COMMITTER_DATE="$SOURCE_DATE_EPOCH+0000"
-  export DELTA=cat
-  if type delta &>/dev/null; then
-    DELTA="delta --hunk-header-style omit"
-  fi
   export TAR='tar is not available, use tests/run.sh to run this test in a container'
   if type tar &>/dev/null; then
     local tar_actual_version tar_expected_version='tar (GNU tar) 1.34'
