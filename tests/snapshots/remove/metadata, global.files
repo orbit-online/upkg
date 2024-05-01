@@ -1,6 +1,7 @@
 [drwxr-xr-x]  .
+├── [drwxr-xr-x]  bin
 └── [drwxr-xr-x]  lib
     └── [drwxr-xr-x]  upkg
         └── [-rw-r--r--]  upkg.json
 
-2 directories, 1 file
+3 directories, 1 file
