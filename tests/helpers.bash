@@ -6,15 +6,15 @@ bats_load_library bats-assert
 
 common_setup_file() {
   bats_require_minimum_version 1.5.0
+  # Setup path to upkg
   PATH=$(realpath "$BATS_TEST_DIRNAME/../bin"):$PATH
-  local suite_name
-  suite_name=$(basename "$BATS_TEST_FILENAME" .bats)
   # Global dirs
-  export \
-    SNAPSHOTS=$BATS_TEST_DIRNAME/snapshots/$suite_name \
-    PACKAGE_TEMPLATES=$BATS_TEST_DIRNAME/package-templates \
-    PACKAGE_FIXTURES=$BATS_RUN_TMPDIR/package-fixtures
+  export SNAPSHOTS PACKAGE_TEMPLATES PACKAGE_FIXTURES
+  SNAPSHOTS=$BATS_TEST_DIRNAME/snapshots/$(basename "$BATS_TEST_FILENAME" .bats)
+  PACKAGE_TEMPLATES=$BATS_TEST_DIRNAME/package-templates
+  PACKAGE_FIXTURES=$BATS_RUN_TMPDIR/package-fixtures
   mkdir -p "$SNAPSHOTS" "$PACKAGE_FIXTURES"
+  # Optionally show diff with delta
   export DELTA=cat
   if type delta &>/dev/null; then
     DELTA="delta --hunk-header-style omit"
@@ -33,14 +33,20 @@ common_setup_file() {
     GIT_COMMITTER_NAME=Anonymous \
     GIT_COMMITTER_EMAIL=anonymous@example.org \
     GIT_COMMITTER_DATE="$SOURCE_DATE_EPOCH+0000"
-  export TAR='tar is not available, use tests/run.sh to run this test in a container'
+  # Setup TAR to allow skipping tests with a message
+  export SKIP_TAR='tar is not available, use tests/run.sh to run this test in a container'
   if type tar &>/dev/null; then
     local tar_actual_version tar_expected_version='tar (GNU tar) 1.34'
     tar_actual_version=$(tar --version | head -n1)
-    TAR=
+    SKIP_TAR=
     if [[ $tar_actual_version != "$tar_expected_version" ]]; then
-      TAR="tar reported version ${tar_actual_version#tar (GNU tar) }. Only ${tar_expected_version#tar (GNU tar) } is supported, use tests/run.sh to run this test in a container"
+      SKIP_TAR="tar reported version ${tar_actual_version#tar (GNU tar) }. Only ${tar_expected_version#tar (GNU tar) } is supported, use tests/run.sh to run this test in a container"
     fi
+  fi
+  # Make sure the package-templates have the correct permissions (i.e. git checkout wasn't run with a 002 instead of 022 umask)
+  export SKIP_PACKAGE_TEMPLATES=
+  if ! (assert_snapshot_files "../package-templates" "$BATS_TEST_DIRNAME/package-templates"); then
+    SKIP_PACKAGE_TEMPLATES="The package templates do not match the stored snapshot, run the the README to determine how to fix the issue"
   fi
 }
 
@@ -71,7 +77,8 @@ common_teardown_file() {
 
 create_tar_package() {
   local tpl=$PACKAGE_TEMPLATES/$1 dest=$PACKAGE_FIXTURES/$1.tar
-  [[ -z $TAR ]] || skip "$TAR"
+  [[ -z $SKIP_PACKAGE_TEMPLATES ]] || skip "$SKIP_PACKAGE_TEMPLATES"
+  [[ -z $SKIP_TAR ]] || skip "$SKIP_TAR"
   # https://reproducible-builds.org/docs/archives/
   [[ -e "$dest" ]] || tar \
     --sort=name \
@@ -84,13 +91,15 @@ create_tar_package() {
 
 create_git_package() {
   local tpl=$PACKAGE_TEMPLATES/$1 dest=$PACKAGE_FIXTURES/$1.git
+  [[ -z $SKIP_PACKAGE_TEMPLATES ]] || skip "$SKIP_PACKAGE_TEMPLATES"
   if [[ ! -e $dest ]]; then
     git init -q  "$dest"
     cp -r "$tpl/." "$dest/"
     git -C "$dest" add -A
     git -C "$dest" commit -q --no-gpg-sign -m 'Initial import'
   fi
-  git -C "$dest" rev-parse HEAD
+  # shellcheck disable=SC2034
+  GIT_COMMIT=$(git -C "$dest" rev-parse HEAD)
 }
 
 assert_equals_diff() {
@@ -111,14 +120,14 @@ assert_snapshot() {
   assert_equals_diff "$(sed "s#\$BATS_RUN_TMPDIR#$BATS_RUN_TMPDIR#g" "$snapshot_path")" "$actual"
 }
 
-assert_snapshot_files() (
+assert_snapshot_files() {
   local snapshot_path=$SNAPSHOTS/${1:-$BATS_TEST_DESCRIPTION}.files actual_path=$2
   if ${UPDATE_SNAPSHOTS:-false}; then
     # shellcheck disable=SC2001,SC2154
     get_file_structure "$actual_path" > "$snapshot_path"
   fi
   assert_equals_diff "$(cat "$snapshot_path")" "$(get_file_structure "$actual_path")"
-)
+}
 
 get_file_structure() (
   [[ -z $1 ]] || cd "$1"

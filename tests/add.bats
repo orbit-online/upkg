@@ -24,14 +24,16 @@ teardown_file() { common_teardown_file; }
 
 @test "local, filesystem, no metadata, git" {
   local name=acme-empty-v1.0.2-no-metadata shasum
-  run -0 upkg add "$PACKAGE_FIXTURES/$name.git" "$(create_git_package $name)"
+  create_git_package $name
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.git" "$GIT_COMMIT"
   assert_snapshot
   assert_snapshot_files
 }
 
 @test "local, filesystem, no metadata, git, rename" {
   local name=acme-empty-v1.0.2-no-metadata shasum
-  run -0 upkg add "$PACKAGE_FIXTURES/$name.git#name=acme-empty" "$(create_git_package $name)"
+  create_git_package $name
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.git#name=acme-empty" "$GIT_COMMIT"
   assert_snapshot
   assert_snapshot_files
 }

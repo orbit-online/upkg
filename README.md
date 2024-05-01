@@ -353,6 +353,10 @@ You _must not_ specify it.
 }
 ```
 
+## Testing
+
+(cd tests/package-templates; diff --color=always -u <(tree -n -p --charset=UTF-8 -a -I .git .) ../snapshots/package-templates.files)
+
 ## Things that μpkg does not and will not support
 
 - `upkg run command` ([modify `$PATH` instead](#including-dependencies))

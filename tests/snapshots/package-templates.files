@@ -1,0 +1,10 @@
+[drwxr-xr-x]  .
+├── [drwxr-xr-x]  acme-empty-v1.0.2-metadata
+│   ├── [drwxr-xr-x]  bin
+│   │   └── [-rw-r--r--]  acme-empty-v1.0.2.bin
+│   └── [-rw-r--r--]  upkg.json
+└── [drwxr-xr-x]  acme-empty-v1.0.2-no-metadata
+    └── [drwxr-xr-x]  bin
+        └── [-rw-r--r--]  acme-empty-v1.0.2.bin
+
+4 directories, 3 files
