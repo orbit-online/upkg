@@ -316,6 +316,8 @@ upkg_install_deps() {
 
   # All install processes have acquired the shared lock, we can now wait for all shared locks to be released
   exec 8<>"$pkgpath/upkg.json"; flock -x 8
+
+  # All processes have either succeeded or failed, check the result
   while read -r -d $'\n' dep_pkgurl; do
     read -r -d $'\n' dep_checksum
     # Check that no processes failed
