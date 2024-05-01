@@ -90,18 +90,15 @@ upkg_add() {
     fatal "The package has already been added, run \`upkg remove %s\` first if you want to update it" "$(basename "$pkgurl")"
   fi
 
+  local pkgtype whytype
+  pkgtype=$(upkg_get_pkgtype "$pkgurl" "$checksum")
+  whytype=${pkgtype#*$'\n'}
+  pkgtype=${pkgtype%$'\n'*}
+
   if [[ -z "$checksum" ]]; then
     # Autocalculate the checksum
     processing "No checksum given for '%s', determining now" "$pkgurl"
-    # Check if the URL is a tar or has the #bin tag, if not, try getting the remote HEAD git commit sha. If that fails, assume it's a file of some sort
-    if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)([?#]|$)|(#bin(#|$)) ]] || ! checksum=$(git ls-remote -q "${pkgurl%%'#'*}" HEAD 2>/dev/null | grep $'\tHEAD$' | cut -f1); then
-      # pkgurl is a file
-      local archiveext=${BASH_REMATCH[1]}
-      if [[ -n $archiveext ]]; then # pkgurl is a tar archive
-        validate_pkgurl "$pkgurl" tar
-      else
-        validate_pkgurl "$pkgurl" file
-      fi
+    if [[ $pkgtype != git ]]; then
       if [[ -e ${pkgurl%%'#'*} ]]; then
         # file exists locally on the filesystem
         checksum=$(shasum -a 256 "${pkgurl%%'#'*}" | cut -d ' ' -f1)
@@ -110,11 +107,16 @@ upkg_add() {
         local tmpfile=.upkg/.tmp/prefetched/tmpfile
         upkg_fetch "$pkgurl" "$tmpfile"
         checksum=$(shasum -a 256 "$tmpfile" | cut -d ' ' -f1)
+        local archiveext
+        if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)([?#]|$) ]]; then
+          # pkgurl is an archive
+          archiveext=${BASH_REMATCH[1]}
+        fi
         mv "$tmpfile" ".upkg/.tmp/prefetched/${checksum}${archiveext}"
       fi
     else
       # pkgurl is a git archive
-      validate_pkgurl "$pkgurl" git
+      checksum=$(git ls-remote -q "${pkgurl%%'#'*}" HEAD | grep $'\tHEAD$' | cut -f1)
     fi
   fi
 
@@ -422,50 +424,65 @@ upkg_download() (
   fi
   mkdir -p .upkg/.tmp/root/.upkg/.packages
 
-  # Check if the URL is a tar, if not, try getting the remote HEAD commit sha. If that fails, assume it's a file of some sort
-  if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)([?#]|$)|(#bin(#|$)) ]] || ! git ls-remote -q "${pkgurl%%'#'*}" HEAD >/dev/null 2>&1; then
-    local archiveext=${BASH_REMATCH[1]} # Empty if we are not dealing with an archive
-    local prefetchpath=.upkg/.tmp/prefetched/${checksum}${archiveext} filepath=${pkgpath}${archiveext}
-    if [[ -n $archiveext ]]; then validate_pkgurl "$pkgurl" tar
-    else validate_pkgurl "$pkgurl" file; fi
-    [[ $checksum =~ ^[a-z0-9]{64}$ ]] || \
-      fatal "Checksum for '%s' is not sha256 (64 hexchars), assumed tar archive from URL" "$pkgurl"
+
+  local pkgtype whytype archiveext prefetchpath
+    # shellcheck disable=SC2209
+  if prefetchpath=$(compgen -G ".upkg/.tmp/prefetched/${checksum}*"); then
+    if [[ $prefetchpath =~ \.tar(\.[^.?#/]+)?$ ]]; then
+      pkgtype=tar
+      whytype="URL was prefetched and filename extension was '${BASH_REMATCH[1]}'"
+    else
+      pkgtype=file
+      whytype="URL was prefetched and filename did not have a .tar or .tar.* extension"
+    fi
+  else
+    pkgtype=$(upkg_get_pkgtype "$pkgurl" "$checksum")
+    whytype=${pkgtype#*$'\n'}
+    pkgtype=${pkgtype%$'\n'*}
+  fi
+
+  if [[ $pkgtype = tar ]]; then
+    [[ ${prefetchpath:-$pkgurl} =~ (\.tar(\.[^.?#/]+)?)([?#]|$) ]]
+    local filepath=${pkgpath}${BASH_REMATCH[1]}
 
     if [[ -e "$prefetchpath" ]]; then
       # file was already downloaded by upkg_add to generate a checksum, reuse it
       filepath=$prefetchpath
-      [[ -n $archiveext ]] || pkgpath=$filepath
     elif [[ -e ${pkgurl%%'#'*} ]]; then
-      # file exists on the filesystem
-      if [[ -n $archiveext ]]; then
-        filepath=${pkgurl%%'#'*}
-      else
-        # File is not an archive, copy it so it can be moved later on
-        filepath=$pkgpath.file
-        pkgpath=$filepath
-        cp "${pkgurl%%'#'*}" "$pkgpath"
-      fi
+      # file exists on the filesystem, extract from it directly
+      filepath=${pkgurl%%'#'*}
     else
-      if [[ -z $archiveext ]]; then
-        # File is not an archive, don't download to $filepath (which is a directory)
-        filepath=$pkgpath.file
-        pkgpath=$filepath
-      fi
       upkg_fetch "$pkgurl" "$filepath"
     fi
 
     shasum -a 256 -c <(printf "%s  %s" "$checksum" "$filepath") >/dev/null
-    if [[ -n $archiveext ]]; then # file is an archive, extract
-      tar -xf "$filepath" -C "$pkgpath"
-    elif [[ $pkgurl =~ \#bin(\#|$) ]]; then # file has been marked as an executable, chmod
+    tar -xf "$filepath" -C "$pkgpath"
+
+  elif [[ $pkgtype = file ]]; then
+    local filepath=${pkgpath}
+
+    if [[ -e "$prefetchpath" ]]; then
+      # file was already downloaded by upkg_add to generate a checksum, reuse it
+      filepath=$prefetchpath
+      pkgpath=$filepath
+    elif [[ -e ${pkgurl%%'#'*} ]]; then
+      # file exists on the filesystem, copy it so it can be moved later on
+      filepath=$pkgpath.file
+      pkgpath=$filepath
+      cp "${pkgurl%%'#'*}" "$pkgpath"
+    else
+      # don't download to $filepath (which is a directory)
+      filepath=$pkgpath.file
+      pkgpath=$filepath
+      upkg_fetch "$pkgurl" "$filepath"
+    fi
+
+    shasum -a 256 -c <(printf "%s  %s" "$checksum" "$filepath") >/dev/null
+    if [[ $pkgurl =~ \#bin(\#|$) ]]; then # file has been marked as an executable, chmod
       chmod +x "$pkgpath"
     fi
 
   else
-    # refs are not allowed, upkg.json functions as a proper lockfile. refs ruin that.
-    [[ $checksum =~ ^[a-z0-9]{40}$ ]] || \
-      fatal "Checksum for '%s' is not sha1 (40 hexchars), assumed git repo from URL" "$pkgurl"
-    validate_pkgurl "$pkgurl" git
     processing 'Cloning %s' "$pkgurl"
     local out
     out=$(git clone -q "${pkgurl%%'#'*}" "$pkgpath" 2>&1) || \
@@ -505,29 +522,77 @@ upkg_download() (
   printf "%s\n" "$dedupname"
 )
 
+# Determine the type of a package by looking at the URL and checksum, fall back to doing a HEAD/ls-remote request
+upkg_get_pkgtype() {
+  local pkgurl=$1 checksum=$2 pkgtype whytype
+  # shellcheck disable=SC2209
+  if [[ $pkgurl =~ \#bin(#|$) ]]; then
+    pkgtype=file
+    whytype="the URL is marked with #bin"
+  elif [[ $checksum =~ ^[a-z0-9]{64}$ ]]; then
+    if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)([?#]|$) ]]; then
+      pkgtype=tar
+      whytype="the checksum is 64 hexchars (sha256 hash) and the URL has a '${BASH_REMATCH[1]}' file extension"
+    else
+      pkgtype=file
+      whytype="the checksum is 64 hexchars (sha256 hash) and the URL does not have a .tar or .tar.* file extension"
+    fi
+  elif [[ $checksum =~ ^[a-z0-9]{40}$ ]]; then
+    pkgtype=git
+    whytype="the checksum is 40 hexchars (sha1 git commit hash)"
+  elif [[ -n $checksum ]]; then
+    fatal "Checksum for URL '%s' is neither 40 or 64 hexchars ('%s')" "$pkgurl" "$checksum"
+  elif [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)([?#]|$) ]]; then
+    pkgtype=tar
+    whytype="the URL has a '${BASH_REMATCH[1]}' file extension"
+  elif git ls-remote -q "${pkgurl%%'#'*}" HEAD >/dev/null 2>&1; then
+    pkgtype=git
+    whytype="the command \`git ls-remote\` to the URL succeeded"
+  elif upkg_head "$pkgurl"; then
+    pkgtype=file
+    whytype="a HEAD request to URL succeeded"
+  else
+    fatal "Unable to determine package type from URL '%s'" "$pkgurl"
+  fi
+  if [[ $checksum =~ ^[a-z0-9]{64}$ && $pkgtype = git ]]; then
+    fatal "The checksum is 64 hexchars (sha256 hash), but the URL seems to point at a git repository because %s" "$whytype"
+  fi
+  if [[ $checksum =~ ^[a-z0-9]{40}$ && $pkgtype != git ]]; then
+    fatal "The checksum is 40 hexchars (sha256 hash), but the URL does not seem to point at a git repository because %s" "$whytype"
+  fi
+  if [[ $pkgtype != file && $pkgurl =~ \#bin(\#|$) ]]; then
+    fatal "'%s' has been marked with #bin to be an executable, but the URL does not seem to point at a binary because %s" "$pkgurl" "$whytype"
+  fi
+  [[ $pkgurl =~ (\#alias=([^.][^#@/]+)(\#|$))? ]] || \
+    fatal "The package URL '%s' specifies an invalid package name override (contains @ or /, is empty or starts with '.')'" "$pkgurl"
+  printf "%s\n%s" "$pkgtype" "$whytype"
+}
+
 # Download a file using wget or curl
 upkg_fetch() {
   local url="$1" dest="$2" out
   processing "Downloading %s" "$url"
   if type wget >/dev/null 2>&1; then
-    out=$(wget --server-response -T "${UPKG_TIMEOUT:-10}" -t 2 -qO "$dest" "$url" 2>&1) || \
+    out=$(wget --server-response -T "${UPKG_TIMEOUT:-10}" -t "${UPKG_FETCH_RETRIES:-2}" -qO "$dest" "$url" 2>&1) || \
       fatal "Error while downloading '%s', server response:\n%s" "$url" "$out"
   elif type curl >/dev/null 2>&1; then
-    curl -fsL --connect-timeout "${UPKG_TIMEOUT:-10}" --retry 2 -o "$dest" "$url" || \
+    curl -fsL --connect-timeout "${UPKG_TIMEOUT:-10}" --retry "${UPKG_FETCH_RETRIES:-2}" -o "$dest" "$url" || \
       fatal "Error while downloading '%s'" "$url"
   else
     fatal "Unable to download '%s', neither wget nor curl are available" "$url"
   fi
 }
 
-validate_pkgurl() {
-  local pkgurl=$1 urltype=$2
-  [[ $urltype != tar || ! $pkgurl =~ \#bin(\#|$) ]] || \
-    fatal "'%s' has been marked with #bin to be an executable, but the URL points at a tar archive" "$pkgurl"
-  [[ $urltype != git || ! $pkgurl =~ \#bin(\#|$) ]] || \
-    fatal "'%s' has been marked with #bin to be an executable, but the URL points at a git repository" "$pkgurl"
-  [[ $pkgurl =~ (\#alias=([^.][^#@/]+)(\#|$))? ]] || \
-    fatal "The package URL '%s' specifies an invalid package name override (contains @ or /, is empty or starts with '.')'" "$pkgurl"
+upkg_head() {
+  local url="$1"
+  processing "Downloading %s" "$url"
+  if type wget >/dev/null 2>&1; then
+    wget --spider -T "${UPKG_TIMEOUT:-10}" -t "${UPKG_FETCH_RETRIES:-2}" -q "$url" &>/dev/null
+  elif type curl >/dev/null 2>&1; then
+    curl -I -fsL --connect-timeout "${UPKG_TIMEOUT:-10}" --retry "${UPKG_FETCH_RETRIES:-2}" "$url" &>/dev/null
+  else
+    fatal "Unable to download '%s', neither wget nor curl are available" "$url"
+  fi
 }
 
 # Idempotently create a temporary directory
