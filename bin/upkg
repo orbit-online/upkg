@@ -301,14 +301,7 @@ upkg_install_deps() {
   while read -r -d $'\n' dep_pkgurl; do
     read -r -d $'\n' dep_checksum
     # Run through deps and install them concurrently
-    if ${UPKG_SEQUENTIAL:-false}; then
-      # Debug flag for sequential install has been set.
-      # Don't background anything, but still ignore the exit code and rely on the sentinels.
-      # And yes, this is how you do it. "|| true" disables errexit for the entire subshell.
-      set +e; (set -e; upkg_install_pkg "$dep_pkgurl" "$dep_checksum" "$pkgpath"); set -e
-    else
-      upkg_install_pkg "$dep_pkgurl" "$dep_checksum" "$pkgpath" &
-    fi
+    upkg_install_pkg "$dep_pkgurl" "$dep_checksum" "$pkgpath" &
   done <<<"$deps"
 
   while read -r -d $'\n' dep_pkgurl; do
@@ -331,10 +324,12 @@ upkg_install_deps() {
 # Obtain (copy, download, clone, extract.. whatever) a package, symlink its commands and the install its dependencies
 upkg_install_pkg() {
   local pkgurl=$1 checksum=$2 parentpath=$3 dedupname pkgalias is_dedup=false
+
   trap "" EXIT # Clear parent process trap
   trap "touch \"$parentpath/.upkg/.sentinels/$checksum.fail\"" ERR # Inform parent process when an error occurs
-  # Acquire a shared lock which is released once this process completes. Fail if we can't lock
-  exec 9<>"$parentpath/upkg.json"; flock -ns 9
+  exec 9<>"$parentpath/upkg.json"
+  if ${UPKG_SEQUENTIAL:-false}; then flock -x 9 # Acquire an exclusive lock which is released once this process completes. Fail if we can't lock
+  else flock -ns 9; fi # Acquire a shared lock which is released once this process completes. Fail if we can't lock
   touch "$parentpath/.upkg/.sentinels/$checksum.lock" # Tell the parent process that the shared lock has been acquired
 
   if [[ -e "$DEDUPPATH" ]] && dedupname=$(compgen -G "$DEDUPPATH/*@$checksum"); then
