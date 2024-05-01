@@ -1,3 +1,10 @@
+TODO:
+Describe meta package, depend on a bunch of binaries an symlink them out
+
+## Testing
+
+(cd tests/package-templates; diff --color=always -u <(tree -n -p --charset=UTF-8 -a -I .git .) ../snapshots/package-templates.files)
+
 # μpkg - A minimalist package manager
 
 μpkg is a package manager written in bash with just the bare minimum of features.  
@@ -352,10 +359,6 @@ You _must not_ specify it.
   ...
 }
 ```
-
-## Testing
-
-(cd tests/package-templates; diff --color=always -u <(tree -n -p --charset=UTF-8 -a -I .git .) ../snapshots/package-templates.files)
 
 ## Things that μpkg does not and will not support
 
