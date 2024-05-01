@@ -2,10 +2,10 @@
 ├── .upkg
 │   ├── .bin
 │   ├── .packages
-│   │   └── acme-empty-v1.0.2-no-metadata.tar@2a038322f12c1dedd2788f997685e5b4712db853123e4a2eed493f00c04d75d7
+│   │   └── acme-empty-v1.0.2-no-metadata.tar@6200b47d49a92868bbfa7bc4b061746db7dc86bd45a92c011f2c921a3368b582
 │   │       └── bin
 │   │           └── acme-empty-v1.0.2.bin
-│   └── acme-empty-v1.0.2-no-metadata.tar -> .packages/acme-empty-v1.0.2-no-metadata.tar@2a038322f12c1dedd2788f997685e5b4712db853123e4a2eed493f00c04d75d7
+│   └── acme-empty-v1.0.2-no-metadata.tar -> .packages/acme-empty-v1.0.2-no-metadata.tar@6200b47d49a92868bbfa7bc4b061746db7dc86bd45a92c011f2c921a3368b582
 └── upkg.json
 
 6 directories, 2 files
