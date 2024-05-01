@@ -75,3 +75,11 @@ teardown_file() { common_teardown_file; }
   assert_snapshot
   assert_snapshot_files "" "$HOME/.local"
 }
+
+@test "failing dependency causes nothing to be installed" {
+  local name=failing-dependency shasum
+  create_tar_package $name
+  run -1 upkg add "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
+  assert_snapshot
+  assert_snapshot_files
+}

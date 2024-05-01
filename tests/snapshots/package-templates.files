@@ -6,9 +6,11 @@
 ├── [drwxr-xr-x]  acme-empty-v1.0.2-no-metadata
 │   └── [drwxr-xr-x]  bin
 │       └── [-rwxr-xr-x]  acme-empty-v1.0.2.bin
+├── [drwxrwxr-x]  failing-dependency
+│   └── [-rw-rw-r--]  upkg.json
 └── [drwxr-xr-x]  no-executables
     ├── [-rw-r--r--]  asset.txt
     └── [drwxr-xr-x]  bin
         └── [-rw-r--r--]  non-executable.sh
 
-6 directories, 5 files
+7 directories, 6 files
