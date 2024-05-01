@@ -314,7 +314,7 @@ upkg_install_deps() {
   while read -r -d $'\n' dep_pkgurl; do
     read -r -d $'\n' dep_checksum
     # Wait for each lock sentinel to exist
-    until [[ -e "$pkgpath/.upkg/.sentinels/$dep_checksum.lock" ]]; do sleep .01; done
+    until [[ -e "$pkgpath/.upkg/.sentinels/$dep_checksum.lock" || -e "$pkgpath/.upkg/.sentinels/$dep_checksum.fail" ]]; do sleep .01; done
   done <<<"$deps"
 
   # All install processes have acquired the shared lock, we can now wait for all shared locks to be released
