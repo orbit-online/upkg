@@ -67,3 +67,11 @@ teardown_file() { common_teardown_file; }
   assert_snapshot
   assert_snapshot_files "" "$HOME/.local"
 }
+
+@test "don't link non-executable files in bin/" {
+  local name=no-executables shasum
+  create_tar_package $name
+  run -0 upkg add -g "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
+  assert_snapshot
+  assert_snapshot_files "" "$HOME/.local"
+}

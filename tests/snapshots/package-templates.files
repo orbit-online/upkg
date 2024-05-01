@@ -3,8 +3,12 @@
 │   ├── [drwxr-xr-x]  bin
 │   │   └── [-rwxr-xr-x]  acme-empty-v1.0.2.bin
 │   └── [-rw-r--r--]  upkg.json
-└── [drwxr-xr-x]  acme-empty-v1.0.2-no-metadata
+├── [drwxr-xr-x]  acme-empty-v1.0.2-no-metadata
+│   └── [drwxr-xr-x]  bin
+│       └── [-rwxr-xr-x]  acme-empty-v1.0.2.bin
+└── [drwxr-xr-x]  no-executables
+    ├── [-rw-r--r--]  asset.txt
     └── [drwxr-xr-x]  bin
-        └── [-rwxr-xr-x]  acme-empty-v1.0.2.bin
+        └── [-rw-r--r--]  non-executable.sh
 
-4 directories, 3 files
+6 directories, 5 files
