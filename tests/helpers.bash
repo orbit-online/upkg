@@ -98,7 +98,7 @@ assert_output_diff() {
   # Preserving trailing newlines is super cumbersome, let's hope we don't need it
   # shellcheck disable=SC2154
   if ! out=$(diff --label=expected --label=actual -su <(printf -- "%s\n" "$expected") <(printf -- "%s\n" "$output") | $DELTA); then
-    printf -- "-- output differs --\n%s" "$out" | fail
+    printf -- "-- output differs --\n%s" "${out#$'\n'}" | fail
   fi
 }
 
