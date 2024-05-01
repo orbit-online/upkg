@@ -144,6 +144,7 @@ upkg_list() {
   (
     if [[ ! -e .upkg ]]; then
       processing "No packages are installed in '%s'" "$PWD"
+      return 0
     fi
     local dedup_pkgpath basename pkgalias checksum version upkgjsonpath version
     while read -r -d $'\n' dedup_pkgpath; do
