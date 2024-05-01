@@ -40,6 +40,7 @@ common_setup_file() {
       TAR="tar reported version ${tar_actual_version#tar (GNU tar) }. Only ${tar_expected_version#tar (GNU tar) } is supported, use tests/run.sh to run this test in a container"
     fi
   fi
+  umask 022
 }
 
 common_setup() {
