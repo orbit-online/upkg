@@ -1,1 +1,5 @@
+upkg: Downloading http://localhost:123/dep.tar
+upkg: Error while downloading 'http://localhost:123/dep.tar', server response:
+
+upkg: An error occurred while installing 'http://localhost:123/dep.tar'
 upkg: An error occurred while installing '$BATS_RUN_TMPDIR/package-fixtures/failing-dependency.tar'
