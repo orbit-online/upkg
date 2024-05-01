@@ -8,20 +8,20 @@ teardown_file() { common_teardown_file; }
 
 @test "no arguments" {
   run -1 upkg
-  assert_output_file help
+  assert_snapshot help
 }
 
 @test "help longoption" {
   run -0 upkg --help
-  assert_output_file help
+  assert_snapshot help
 }
 
 @test "help shorthand" {
   run -0 upkg -h
-  assert_output_file help
+  assert_snapshot help
 }
 
 @test "invalid command" {
   run -1 upkg invalid-command
-  assert_output_file help
+  assert_snapshot help
 }

@@ -93,34 +93,36 @@ create_git_package() {
   git -C "$dest" rev-parse HEAD
 }
 
-assert_output_diff() {
-  local expected=$1 out
+assert_equals_diff() {
+  local expected=${1:-} actual=${2:-} out
   # Preserving trailing newlines is super cumbersome, let's hope we don't need it
   # shellcheck disable=SC2154
-  if ! out=$(diff --label=expected --label=actual -su <(printf -- "%s\n" "$expected") <(printf -- "%s\n" "$output") | $DELTA); then
+  if ! out=$(diff --label=expected --label=actual -su <(printf -- "%s\n" "$expected") <(printf -- "%s\n" "$actual") | $DELTA); then
     printf -- "-- output differs --\n%s" "${out#$'\n'}" | fail
   fi
 }
 
-assert_output_file() {
-  local output_file=$SNAPSHOTS/${1:-$BATS_TEST_DESCRIPTION}.out
+assert_snapshot() {
+  local snapshot_path=$SNAPSHOTS/${1:-$BATS_TEST_DESCRIPTION}.out actual=${2:-$output}
   if ${UPDATE_SNAPSHOTS:-false}; then
     # shellcheck disable=SC2001,SC2154
-    sed "s#$BATS_RUN_TMPDIR#\$BATS_RUN_TMPDIR#g" <<<"$output" >"$output_file"
+    sed "s#$BATS_RUN_TMPDIR#\$BATS_RUN_TMPDIR#g" <<<"$output" >"$snapshot_path"
   fi
-  assert_output_diff "$(sed "s#\$BATS_RUN_TMPDIR#$BATS_RUN_TMPDIR#g" "$output_file")"
+  assert_equals_diff "$(sed "s#\$BATS_RUN_TMPDIR#$BATS_RUN_TMPDIR#g" "$snapshot_path")" "$actual"
 }
 
-assert_file_structure() (
-  [[ -z $1 ]] || cd "$1"
-  local output_file=$SNAPSHOTS/${2:-$BATS_TEST_DESCRIPTION}.files \
-    treecmd="tree -n --charset=UTF-8 -a -I .git ."
+assert_snapshot_files() (
+  local snapshot_path=$SNAPSHOTS/${1:-$BATS_TEST_DESCRIPTION}.files actual_path=$2
   if ${UPDATE_SNAPSHOTS:-false}; then
     # shellcheck disable=SC2001,SC2154
-    $treecmd > "$output_file"
+    get_file_structure "$actual_path" > "$snapshot_path"
   fi
-  run $treecmd
-  assert_output_diff "$(cat "$output_file")"
+  assert_equals_diff "$(cat "$snapshot_path")" "$(get_file_structure "$actual_path")"
+)
+
+get_file_structure() (
+  [[ -z $1 ]] || cd "$1"
+  tree -n --charset=UTF-8 -a -I .git . 2>&1
 )
 
 serve_file() {

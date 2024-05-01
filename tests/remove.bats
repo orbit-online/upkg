@@ -11,8 +11,8 @@ teardown_file() { common_teardown_file; }
   create_tar_package $name
   run -0 upkg add -g "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
   run -0 upkg remove -g $name.tar
-  assert_output_file
-  assert_file_structure "$HOME/.local"
+  assert_snapshot
+  assert_snapshot_files "" "$HOME/.local"
 }
 
 @test "metadata, global" {
@@ -20,6 +20,6 @@ teardown_file() { common_teardown_file; }
   create_tar_package $name
   run -0 upkg add -g "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
   run -0 upkg remove -g acme-empty
-  assert_output_file
-  assert_file_structure "$HOME/.local"
+  assert_snapshot
+  assert_snapshot_files "" "$HOME/.local"
 }
