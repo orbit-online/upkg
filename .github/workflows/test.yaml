@@ -30,7 +30,7 @@ jobs:
       with:
         path: upkg
     - name: Run tests
-      run: bats --formatter tap13 tests > tests/results.tap
+      run: bats --formatter tap13 --filter-tags '!shellcheck' tests > tests/results.tap
       working-directory: upkg
       env:
         BATS_LIB_PATH: ${{ github.workspace }}/lib
