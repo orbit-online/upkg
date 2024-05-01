@@ -129,7 +129,7 @@ upkg_add() {
 # Remove a package from upkg.json and run upkg_install
 upkg_remove() {
   local pkgalias=$1 pkgurl
-  pkgurl=$(upkg_get_pkg_url . "$pkgalias")
+  pkgurl=$(upkg_get_pkgurl . "$pkgalias")
   # Modify upkg.json, but only in the temp dir, so a failure doesn't change anything
   jq -r --arg pkgurl "$pkgurl" 'del(.dependencies[$pkgurl])' upkg.json >.upkg/.tmp/root/upkg.json
   upkg_install
@@ -231,7 +231,7 @@ upkg_install() {
 }
 
 # Get the URL of a package via its package name
-upkg_get_pkg_url() {
+upkg_get_pkgurl() {
   local pkgpath=$1 pkgalias=$2 checksum
   [[ -e "$pkgpath/.upkg/$pkgalias" ]] || fatal "Unable to find '%s' in '%s'" "$pkgalias" "$pkgpath/.upkg"
   # Use the .upkg/pkg symlink to get the .package path ...
