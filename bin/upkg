@@ -186,7 +186,7 @@ upkg_install() {
   if ! $DRY_RUN; then
     # .bin/ and all pkgname symlinks are fully rebuilt during install, so we just remove it and copy it over
     rm -rf .upkg/.bin
-    find .upkg -mindepth 1 -maxdepth 1 -not -name '.*' -delete
+    rm -f .upkg/*
     if [[ -e .upkg/.tmp/root/.upkg ]]; then
       # Merge copy the tmp directory (basically just merging .upkg/.packages)
       cp -a .upkg/.tmp/root/.upkg ./
