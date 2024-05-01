@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -Eeo pipefail
+set -Eeo pipefail; shopt -s inherit_errexit
 
 bats_load_library bats-support
 bats_load_library bats-assert

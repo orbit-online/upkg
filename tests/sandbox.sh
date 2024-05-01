@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-
-set -Eeo pipefail
+set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 
 main() {

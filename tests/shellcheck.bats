@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -Eeo pipefail
+set -Eeo pipefail; shopt -s inherit_errexit
 
 # bats file_tags=shellcheck
 @test 'shellcheck' {
