@@ -3,7 +3,7 @@ Describe meta package, depend on a bunch of binaries an symlink them out
 
 ## Testing
 
-(cd tests/package-templates; diff --color=always -u <(tree -n -p --charset=UTF-8 -a -I .git .) ../snapshots/package-templates.files)
+diff --color=always -u --label expected --label actual tests/snapshots/package-templates.files <(cd tests/package-templates; tree -n -p --charset=UTF-8 -a -I .git .)
 
 # μpkg - A minimalist package manager
 
