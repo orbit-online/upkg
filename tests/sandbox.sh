@@ -8,7 +8,7 @@ main() {
   shasum=$(docker buildx build -q --file "$PKGROOT/tests/Dockerfile" --build-arg="UID=$UID" --build-arg="USER=$USER" "$PKGROOT")
   mkdir -p "$PKGROOT/sandbox"
   printf "*" > "$PKGROOT/sandbox/.gitignore"
-  docker run --rm -ti \
+  docker run --rm -ti --name upkg-sandbox \
     --workdir '/upkg/sandbox' \
     -v"$PKGROOT:/upkg:ro" \
     -v"$PKGROOT/sandbox:/upkg/sandbox:rw" \
