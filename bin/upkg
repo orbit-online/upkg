@@ -292,7 +292,7 @@ upkg_install_deps() {
 
   # Loads of early returns here
   [[ -e "$pkgpath/upkg.json" ]] || return 0 # No upkg.json -> no deps -> nothing to do
-  deps=$(jq -r '(.dependencies // []) | to_entries[] | .key, .value' "$pkgpath/upkg.json")
+  deps=$(jq -rc '(.dependencies // []) | to_entries[]' "$pkgpath/upkg.json")
   [[ -n $deps ]] || return 0 # No deps -> nothing to do
   mkdir "$pkgpath/.upkg" 2>/dev/null || return 0 # .upkg exists -> another process is already installing the deps
   if [[ $pkgpath = .upkg/.tmp/root ]]; then
@@ -305,15 +305,17 @@ upkg_install_deps() {
   # the shared lock on upkg.json has been acquired.
   # If the install fails they will create a file indicating the failure
   mkdir "$pkgpath/.upkg/.sentinels"
-  local dep_pkgurl dep_checksum
-  while read -r -d $'\n' dep_pkgurl; do
-    read -r -d $'\n' dep_checksum
+  local dep dep_pkgurl dep_checksum
+  while read -r -d $'\n' dep; do
+    dep_pkgurl=$(jq -r .key <<<"$dep")
+    dep_checksum=$(jq -r .value <<<"$dep")
     # Run through deps and install them concurrently
     upkg_install_pkg "$dep_pkgurl" "$dep_checksum" "$pkgpath" &
   done <<<"$deps"
 
-  while read -r -d $'\n' dep_pkgurl; do
-    read -r -d $'\n' dep_checksum
+  while read -r -d $'\n' dep; do
+    dep_pkgurl=$(jq -r .key <<<"$dep")
+    dep_checksum=$(jq -r .value <<<"$dep")
     # Wait for each lock sentinel to exist
     until [[ -e "$pkgpath/.upkg/.sentinels/$dep_checksum.lock" || -e "$pkgpath/.upkg/.sentinels/$dep_checksum.fail" ]]; do sleep .01; done
   done <<<"$deps"
@@ -322,8 +324,9 @@ upkg_install_deps() {
   exec 8<>"$pkgpath/upkg.json"; flock -x 8
 
   # All processes have either succeeded or failed, check the result
-  while read -r -d $'\n' dep_pkgurl; do
-    read -r -d $'\n' dep_checksum
+  while read -r -d $'\n' dep; do
+    dep_pkgurl=$(jq -r .key <<<"$dep")
+    dep_checksum=$(jq -r .value <<<"$dep")
     # Check that no processes failed
     [[ ! -e "$pkgpath/.upkg/.sentinels/$dep_checksum.fail" ]] || \
       fatal "An error occurred while installing '%s'" "$dep_pkgurl"
@@ -360,13 +363,11 @@ upkg_install_pkg() {
   if [[ $pkgurl =~ \#alias=([^#]+)(\#|$) ]]; then
     # Package name override specified
     pkgalias=${BASH_REMATCH[1]}
-    if [[ $pkgalias = */* ]]; then
-      warning "Package alias for '%s' contained slashes (/), they have been replaced with underscore (_)" "$pkgurl"
-    fi
-    if [[ $pkgalias = .* ]]; then
-      warning "Package alias for '%s' starts with a dot (.), it has been replaced with an underscore (_)" "$pkgurl"
-    fi
+    [[ $pkgalias != */* ]] || warning "Package alias for '%s' contained slashes (/), they have been replaced with underscores (_)" "$pkgurl"
+    [[ $pkgalias != *$'\n'* ]] || warning "Package alias for '%s' contained newlines, they has been replaced with underscores (_)" "$pkgurl"
+    [[ $pkgalias != .* ]] || warning "Package alias for '%s' starts with a dot (.), it has been replaced with an underscore (_)" "$pkgurl"
     pkgalias=${pkgalias//'/'/_} # Replace '/' with _
+    pkgalias=${pkgalias//$'\n'/_} # Replace newline with _
     pkgalias=${pkgalias#'.'/_} # Replace starting '.' with _
   fi
   [[ $pkgalias =~ ^[@/]+$ || $pkgalias != .* ]] ||
@@ -530,19 +531,20 @@ upkg_download() (
 
   if [[ -e "$pkgpath/upkg.json" ]] && dedupname=$(jq -re '.name // empty' "$pkgpath/upkg.json"); then
     # upkg.json is supplied, validate the name property or keep the generated one
-    if [[ ! $dedupname =~ ^[^@/]+$ || $dedupname = .* ]]; then
-      warning "The package from '%s' specifies the package name '%s' which contains @ or /, is empty, or starts with '.'. The invalid characters have been replaced with an underscore: '%s'" "$pkgurl" "$dedupname"
+    if [[ ! $dedupname =~ ^[^@/\n]+$ || $dedupname = .* ]]; then
+      warning "The package from '%s' specifies the package name '%s' which contains '@', '/' or a newline, is empty, or starts with '.'. The invalid characters have been replaced with an underscore: '%s'" "$pkgurl" "$dedupname"
     fi
+    dedupname=${dedupname//$'\n'/_} # Replace newline with _
     dedupname=${dedupname//'@'/_} # Replace @ with _
-    dedupname=${dedupname//'/'/_} # Replace @ with _
+    dedupname=${dedupname//'/'/_} # Replace / with _
     dedupname=${dedupname#'.'/_} # Replace starting '.' with _
   else
     # Generate a dedupname
     dedupname=${pkgurl%%'#'*} # Remove trailing anchor
     dedupname=${dedupname%%'?'*} # Remove query params
     dedupname=$(basename "$dedupname") # Remove path prefix
+    dedupname=${dedupname//$'\n'/_} # Replace newline with _
     dedupname=${dedupname//'@'/_} # Replace @ with _
-    # dedupname=${dedupname//$'\n'/_} # Replace @ with _
     dedupname=${dedupname#'.'/_} # Replace starting '.' with _
   fi
 

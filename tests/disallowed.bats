@@ -6,7 +6,7 @@ setup() { common_setup; }
 teardown() { common_teardown; }
 teardown_file() { common_teardown_file; }
 
-@test "warns when a package with a disallowed name in upkg.json is added" {
+@test "warns and then replaces when a package with a disallowed name in upkg.json is added" {
   local name=disallowed/with-at-in-name
   create_tar_package $name
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
@@ -42,6 +42,22 @@ teardown_file() { common_teardown_file; }
   local name=acme-empty-v1.0.2-metadata
   create_tar_package $name
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar#alias=has/in-name" "$TAR_SHASUM"
+  assert_snapshot_output
+  assert_snapshot_path
+}
+
+@test "warns and then replaces newlines in aliases" {
+  local name=acme-empty-v1.0.2-metadata
+  create_tar_package $name
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar#alias=has"$'\n'"in-name" "$TAR_SHASUM"
+  assert_snapshot_output
+  assert_snapshot_path
+}
+
+@test "warns and then replaces when a package with a newline in upkg.json is added" {
+  local name=disallowed/with-newline-in-name
+  create_tar_package $name
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
   assert_snapshot_output
   assert_snapshot_path
 }
