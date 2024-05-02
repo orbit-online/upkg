@@ -11,7 +11,7 @@ teardown_file() { common_teardown_file; }
   create_tar_package "$name"
   run -0 upkg add -g "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
   run -0 upkg list -g
-  assert_snapshot acme-metadata-installed
+  assert_snapshot_output acme-metadata-installed
 }
 
 @test "local, dep installed" {
@@ -19,10 +19,10 @@ teardown_file() { common_teardown_file; }
   create_tar_package "$name"
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
   run -0 upkg list
-  assert_snapshot acme-metadata-installed
+  assert_snapshot_output acme-metadata-installed
 }
 
 @test "local, no dep installed" {
   run -0 upkg list
-  assert_snapshot
+  assert_snapshot_output
 }

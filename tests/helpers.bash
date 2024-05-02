@@ -56,7 +56,7 @@ common_setup_file() {
 $wrong_mode_paths"
     fi
   fi
-  if ! (SNAPSHOTS=$BATS_TEST_DIRNAME/snapshots assert_snapshot_files "package-templates" "$BATS_TEST_DIRNAME/package-templates"); then
+  if ! (SNAPSHOTS=$BATS_TEST_DIRNAME/snapshots assert_snapshot_path "package-templates" "$BATS_TEST_DIRNAME/package-templates"); then
     PACKAGE_TEMPLATES_ERROR="The package templates do not match the stored snapshot, consult the README to see how to debug the issue"
   fi
 }
@@ -127,7 +127,7 @@ assert_equals_diff() {
   fi
 }
 
-assert_snapshot() {
+assert_snapshot_output() {
   local snapshot_name=${1:-$BATS_TEST_DESCRIPTION} actual=${2:-$output}
   snapshot_name=${snapshot_name//'/'/_}
   local snapshot_path=$SNAPSHOTS/$snapshot_name.out
@@ -145,7 +145,7 @@ assert_snapshot() {
   assert_equals_diff "$(sed "s#\$BATS_RUN_TMPDIR#$BATS_RUN_TMPDIR#g" "$snapshot_path")" "$actual"
 }
 
-assert_snapshot_files() {
+assert_snapshot_path() {
   local snapshot_name=${1:-$BATS_TEST_DESCRIPTION} actual_path=$2
   snapshot_name=${snapshot_name//'/'/_}
   local snapshot_path=$SNAPSHOTS/$snapshot_name.files
