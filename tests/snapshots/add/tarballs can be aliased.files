@@ -1,0 +1,12 @@
+[drwxr-xr-x]  .
+├── [drwxr-xr-x]  .upkg
+│   ├── [drwxr-xr-x]  .bin
+│   │   └── [lrwxrwxrwx]  acme-empty-v1.0.2.bin -> ../.packages/acme-empty-v1.0.2-no-metadata.tar@5860f689ad48f0d7125d37351e66bd317c09f3c42af1c53143d10ba90eb957af/bin/acme-empty-v1.0.2.bin
+│   ├── [drwxr-xr-x]  .packages
+│   │   └── [drwxr-xr-x]  acme-empty-v1.0.2-no-metadata.tar@5860f689ad48f0d7125d37351e66bd317c09f3c42af1c53143d10ba90eb957af
+│   │       └── [drwxr-xr-x]  bin
+│   │           └── [-rwxr-xr-x]  acme-empty-v1.0.2.bin
+│   └── [lrwxrwxrwx]  acme-empty -> .packages/acme-empty-v1.0.2-no-metadata.tar@5860f689ad48f0d7125d37351e66bd317c09f3c42af1c53143d10ba90eb957af
+└── [-rw-r--r--]  upkg.json
+
+6 directories, 3 files

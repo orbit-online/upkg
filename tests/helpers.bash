@@ -3,6 +3,7 @@ set -Eeo pipefail; shopt -s inherit_errexit
 
 bats_load_library bats-support
 bats_load_library bats-assert
+bats_load_library bats-file
 
 common_setup_file() {
   bats_require_minimum_version 1.5.0

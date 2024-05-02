@@ -6,7 +6,7 @@ setup() { common_setup; }
 teardown() { common_teardown; }
 teardown_file() { common_teardown_file; }
 
-@test "local, filesystem, no metadata, tarball" {
+@test "local tarball install from the filesystem with no metadata succeeds" {
   local name=acme-empty-v1.0.2-no-metadata
   create_tar_package $name
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
@@ -14,15 +14,15 @@ teardown_file() { common_teardown_file; }
   assert_snapshot_path
 }
 
-@test "local, filesystem, no metadata, tarball, rename" {
+@test "tarballs can be aliased" {
   local name=acme-empty-v1.0.2-no-metadata
   create_tar_package $name
-  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar#acme-empty" "$TAR_SHASUM"
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar#alias=acme-empty" "$TAR_SHASUM"
   assert_snapshot_output
   assert_snapshot_path
 }
 
-@test "local, filesystem, no metadata, git" {
+@test "local git repo install from the filesystem with no metadata succeeds" {
   local name=acme-empty-v1.0.2-no-metadata
   create_git_package $name
   run -0 upkg add "$PACKAGE_FIXTURES/$name.git" "$GIT_COMMIT"
@@ -30,39 +30,38 @@ teardown_file() { common_teardown_file; }
   assert_snapshot_path
 }
 
-@test "local, filesystem, no metadata, git, rename" {
+@test "git repos can be aliased" {
   local name=acme-empty-v1.0.2-no-metadata
   create_git_package $name
-  run -0 upkg add "$PACKAGE_FIXTURES/$name.git#name=acme-empty" "$GIT_COMMIT"
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.git#alias=acme-empty" "$GIT_COMMIT"
   assert_snapshot_output
   assert_snapshot_path
 }
 
-@test "local, filesystem, metadata, tarball" {
+@test "local tarball install with metadata has name from package" {
   local name=acme-empty-v1.0.2-metadata
   create_tar_package $name
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
   assert_snapshot_output
-  assert_snapshot_path local-metadata-tarball
+  assert_snapshot_path metadata-tarball
+  assert_dir_exists .upkg/acme-empty
 }
 
-@test "local, remote, metadata, tarball" {
+@test "remote tarball install with metadata has name from package" {
   local name=acme-empty-v1.0.2-metadata
   create_tar_package $name
-  serve_file "$PACKAGE_FIXTURES/$name.tar"
+  serve_dir
   run -0 upkg add http://localhost:8080/$name.tar "$TAR_SHASUM"
   assert_snapshot_output
-  assert_snapshot_path local-metadata-tarball
+  assert_snapshot_path metadata-tarball
+  assert_dir_exists .upkg/acme-empty
 }
 
-@test "global, remote, metadata, git" {
-  run -0 upkg add -g https://github.com/orbit-online/records.sh 493ebb2c7c52dcf8f83a6fcaae6c7cbcfb2be736
-  assert_snapshot_output
-  assert_snapshot_path "" "$HOME/.local"
-}
-
-@test "global, remote, no metadata, tarball" {
-  run -0 upkg add -g 'https://s3-eu-west-1.amazonaws.com/orbit-binaries/orbit-cli-v0.1.3.tar.gz?AWSAccessKeyId=AKIAZVIOIP7XN4CAKZNT&Expires=2028891302&Signature=03Zofm0v1BcNK%2Bd6RzIlTUwuRsQ%3D'
+@test "remote git repo install succeeds" {
+  local name=acme-empty-v1.0.2-metadata
+  create_git_package $name
+  serve_dir
+  run -0 upkg add -g http://localhost:8080/$name.git "$GIT_COMMIT"
   assert_snapshot_output
   assert_snapshot_path "" "$HOME/.local"
 }
