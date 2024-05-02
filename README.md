@@ -1,7 +1,16 @@
 TODO:
 Describe meta package, depend on a bunch of binaries an symlink them out
-Use wait for dep install, instead of the sentinel mess
-test curl
+Add #no-link
+Add #update-cmd=
+Switch to fully structured
+Use https://github.com/dominictarr/JSON.sh as fallback
+Add zip support
+Check wget support in busybox & alpine
+Check mac support
+Check freebsd support
+name -> alias, unified replace, dedupname to pkgname or something
+Validate hash params
+Add test check that determines unused snapshots
 
 ## Testing
 
