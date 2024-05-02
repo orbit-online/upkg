@@ -59,7 +59,7 @@ PATH="$RESTRICTED_PATH" "%s" "$@"
   local cmd target required_commands=(
     bash jq
     basename dirname sort comm cut column # string commands
-    mv cp mkdir touch rm find ln chmod cat readlink # fs commands
+    mv cp mkdir touch rm ln chmod cat readlink # fs commands
     sleep flock # concurrency commands
     shasum git tar gzip xz bzip2 # archive commands
   )

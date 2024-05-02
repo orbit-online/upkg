@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # shellcheck disable=2059,2064
 set -Eeo pipefail
-shopt -s inherit_errexit
+shopt -s inherit_errexit nullglob
 
 upkg() {
   [[ ! $BASH_VERSION =~ ^[0-3]|^4\.[0-3] ]] || fatal "upkg requires bash >= v4.4"
@@ -152,7 +152,7 @@ upkg_list() {
       return 0
     fi
     local dedup_pkgpath dedup_dirname pkgalias checksum version upkgjsonpath version
-    while read -r -d $'\n' dedup_pkgpath; do
+    for dedup_pkgpath in $(upkg_resolve_links .upkg); do # Don't descend into .packages, we only want the top-level
       dedup_dirname=$(basename "$dedup_pkgpath")
       pkgalias=${dedup_dirname%@*}
       checksum=${dedup_dirname#*@}
@@ -160,7 +160,7 @@ upkg_list() {
       upkgjsonpath=.upkg/$dedup_pkgpath/upkg.json
       [[ ! -e "$upkgjsonpath" ]] || version=$(jq -r '.version // "no-version"' "$upkgjsonpath")
       printf "%s\t%s\t%s\n" "$pkgalias" "$version" "$checksum"
-    done < <(find .upkg -mindepth 1 -maxdepth 1 -not -name '.*' -exec readlink \{\} \;) # Don't descend into .packages, we only want the top-level
+    done
   ) | (
     # Allow nice formatting if `column` (from bsdextrautils) is installed
     if type column >/dev/null 2>&1; then
@@ -181,13 +181,13 @@ upkg_install() {
     local available_cmds global_cmds cmd
     available_cmds=$(upkg_list_available_cmds .upkg/.tmp/root | sort) # Full list of commands that should be linked
     global_cmds=$(upkg_list_global_referenced_cmds "$INSTALL_PREFIX" | sort) # Current list of commands that are linked
-    while read -r -d $'\n' cmd; do
+    for cmd in $(comm -23 <(printf "%s\n" "$available_cmds") <(printf "%s\n" "$global_cmds")); do # available - global = new links
       [[ -n $cmd ]] || continue # comm returns an empty string when comparing "\n" and "whatever\n" (for example when removing the last package with commands)
       # None of the new links should exist, if they do they don't point to upkg (otherwise they would be in the available list)
       [[ ! -e "$INSTALL_PREFIX/bin/$cmd" ]] || \
         fatal "conflict: the command '%s' already exists in '%s' but does not point to '%s'" \
           "$cmd" "$INSTALL_PREFIX/bin" "$INSTALL_PREFIX/lib/upkg"
-    done < <(comm -23 <(printf "%s\n" "$available_cmds") <(printf "%s\n" "$global_cmds")) # available - global = new links
+    done
   fi
 
   # Copy new packages and all symlinks from .upkg/.tmp
@@ -200,9 +200,9 @@ upkg_install() {
       cp -a .upkg/.tmp/root/.upkg ./
       # Remove all unreferenced packages
       local dep_pkgpath
-      while read -r -d $'\n' dep_pkgpath; do
+      for dep_pkgpath in $(comm -23 <(cd .upkg; for dedup_path in .packages/*; do echo "$dedup_path"; done | sort) <(upkg_list_referenced_pkgs . | sort)); do
         rm -rf ".upkg/$dep_pkgpath"
-      done < <(comm -23 <(upkg_list_all_pkgs . | sort) <(upkg_list_referenced_pkgs . | sort)) # all pkgs - referenced pkgs = unreferenced pkgs
+      done
     else
       # The install resulted in all deps being removed. Don't keep the .upkg/ dir around
       rm -rf .upkg
@@ -210,30 +210,29 @@ upkg_install() {
   else
     # Fail if dependencies have been removed. Though only at the top-level, the rest should/must be the same
     local dep_pkgpath
-    while read -r -d $'\n' dep_pkgpath; do
+    # current pkgs - installed pkgs = unreferenced pkgs
+    for dep_pkgpath in $(comm -23 <(upkg_resolve_links .upkg | sort) <(upkg_resolve_links .upkg/.tmp/root/.upkg | sort)); do
       fatal "'%s' should not be installed" "$(basename "$dep_pkgpath")"
-    done < <(comm -23 \
-      <(find .upkg -mindepth 1 -maxdepth 1 -not -name '.*' -exec readlink \{\} \; | sort) \
-      <(find .upkg/.tmp/root/.upkg -mindepth 1 -maxdepth 1 -not -name '.*' -exec readlink \{\} \; | sort) # current pkgs - installed pkgs = unreferenced pkgs
-    )
+    done
   fi
 
   # All packages copied successfully, symlink commands
   if [[ $PWD = "$INSTALL_PREFIX/lib/upkg" ]]; then
-    while read -r -d $'\n' cmd; do
+    # global - available = old links
+    for cmd in $(comm -23 <(printf "%s\n" "$available_cmds") <(printf "%s\n" "$global_cmds")); do
       [[ -n $cmd ]] || continue # See above
       # Same loop again, this time we are sure none of the new links exist
       ! $DRY_RUN || fatal "'%s' was not symlinked" "$INSTALL_PREFIX/bin/$cmd"
       processing "Linking '%s'" "$cmd"
       mkdir -p "$INSTALL_PREFIX/bin"
       ln -sT "../lib/upkg/.upkg/.bin/$cmd" "$INSTALL_PREFIX/bin/$cmd"
-    done < <(comm -23 <(printf "%s\n" "$available_cmds") <(printf "%s\n" "$global_cmds"))
-    while read -r -d $'\n' cmd; do
+    done
+    for cmd in $(comm -13 <(printf "%s\n" "$available_cmds") <(printf "%s\n" "$global_cmds")); do
       [[ -n $cmd ]] || continue # See above
       # Remove all old links
       ! $DRY_RUN || fatal "'%s' should not be symlinked" "$INSTALL_PREFIX/bin/$cmd"
       rm "$INSTALL_PREFIX/bin/$cmd"
-    done < <(comm -13 <(printf "%s\n" "$available_cmds") <(printf "%s\n" "$global_cmds")) # global - available = old links
+    done
   fi
 }
 
@@ -252,38 +251,39 @@ upkg_get_pkgurl() {
   fi
 }
 
-# List all directories in .upkg/.packages
-upkg_list_all_pkgs() {
-  local pkgpath=$1
-  (cd "$pkgpath/.upkg"; find .packages -mindepth 1 -maxdepth 1)
-}
-
 # Descend through dependencies and resolve the links to .upkg/.packages directories
 upkg_list_referenced_pkgs() {
   local pkgpath=$1 dep_pkgpath
-  while read -r -d $'\n' dep_pkgpath; do
+  for dep_pkgpath in $(upkg_resolve_links "$pkgpath/.upkg"); do
     printf "%s\n" "$dep_pkgpath"
     [[ ! -e "$pkgpath/.upkg/$dep_pkgpath/.upkg" ]] || \
-      find "$pkgpath/.upkg/$dep_pkgpath/.upkg" -mindepth 1 -maxdepth 1 -not -name '.*' -exec readlink \{\} \;
-  done < <(find "$pkgpath/.upkg" -mindepth 1 -maxdepth 1 -not -name '.*' -exec readlink \{\} \;)
+      upkg_resolve_links "$pkgpath/.upkg/$dep_pkgpath/.upkg"
+  done
 }
 
 # List all commands in .upkg/.bin
 upkg_list_available_cmds() {
   local pkgroot=$1 cmdpath
   [[ -e "$pkgroot/.upkg/.bin" ]] || return 0
-  while read -r -d $'\n' cmdpath; do
+  for cmdpath in "$pkgroot/.upkg/.bin"/*; do
     printf "%s\n" "$(basename "$cmdpath")"
-  done < <(find "$pkgroot/.upkg/.bin" -mindepth 1 -maxdepth 1)
+  done
 }
 
 # List all global commands that link to $install_prefix/lib/upkg/.upkg/.bin
 upkg_list_global_referenced_cmds() {
   local install_prefix=$1 cmdpath
   [[ -e "$install_prefix/bin" ]] || return 0
-  while read -r -d $'\n' cmdpath; do
+  for cmdpath in $(upkg_resolve_links "$install_prefix/bin"); do
     [[ $cmdpath != ../lib/upkg/.upkg/.bin/* ]] || printf "%s\n" "$(basename "$cmdpath")"
-  done < <(find "$install_prefix/bin" -mindepth 1 -maxdepth 1 -exec readlink \{\} \;)
+  done
+}
+
+upkg_resolve_links() {
+  local path=$1 link
+  for link in "$path"/*; do
+    readlink "$link"
+  done
 }
 
 # Install all dependencies of a package
@@ -306,31 +306,31 @@ upkg_install_deps() {
   # If the install fails they will create a file indicating the failure
   mkdir "$pkgpath/.upkg/.sentinels"
   local dep dep_pkgurl dep_checksum
-  while read -r -d $'\n' dep; do
+  for dep in $deps; do
     dep_pkgurl=$(jq -r .key <<<"$dep")
     dep_checksum=$(jq -r .value <<<"$dep")
     # Run through deps and install them concurrently
     upkg_install_pkg "$dep_pkgurl" "$dep_checksum" "$pkgpath" &
-  done <<<"$deps"
+  done
 
-  while read -r -d $'\n' dep; do
+  for dep in $deps; do
     dep_pkgurl=$(jq -r .key <<<"$dep")
     dep_checksum=$(jq -r .value <<<"$dep")
     # Wait for each lock sentinel to exist
     until [[ -e "$pkgpath/.upkg/.sentinels/$dep_checksum.lock" || -e "$pkgpath/.upkg/.sentinels/$dep_checksum.fail" ]]; do sleep .01; done
-  done <<<"$deps"
+  done
 
   # All install processes have acquired the shared lock, we can now wait for all shared locks to be released
   exec 8<>"$pkgpath/upkg.json"; flock -x 8
 
   # All processes have either succeeded or failed, check the result
-  while read -r -d $'\n' dep; do
+  for dep in $deps; do
     dep_pkgurl=$(jq -r .key <<<"$dep")
     dep_checksum=$(jq -r .value <<<"$dep")
     # Check that no processes failed
     [[ ! -e "$pkgpath/.upkg/.sentinels/$dep_checksum.fail" ]] || \
       fatal "An error occurred while installing '%s'" "$dep_pkgurl"
-  done <<<"$deps"
+  done
   rm -rf "$pkgpath/.upkg/.sentinels" # Done, remove the lock sentinels
 }
 
@@ -386,10 +386,11 @@ upkg_install_pkg() {
   if [[ -e "$deduplocation/bin" ]]; then
     # package has a bin/ dir, symlink the executable files in that directory
     mkdir -p "$parentpath/.upkg/.bin"
-    while read -r -d $'\n' command; do
+    for command in "$deduplocation/bin"/*; do
+      [[ -f "$command" && -x "$command" ]] || continue
       command=$(basename "$command")
       upkg_link_cmd "../$deduppath/bin/$command" "$parentpath/.upkg/.bin/$command"
-    done < <(find "$deduplocation/bin" -mindepth 1 -maxdepth 1 -type f -executable)
+    done
   elif [[ $pkgurl =~ \#bin(\#|$) ]]; then
     # pkgurl is an executable file (and has been chmod'ed and validated as such in upkg_download), symlink from bin
     mkdir -p "$parentpath/.upkg/.bin"
