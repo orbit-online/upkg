@@ -32,8 +32,10 @@ setup_suite() {
 }
 
 teardown_suite() {
-  kill -INT "$SERVE_PID" 2>/dev/null
-  wait "$SERVE_PID" || printf "Webserver exited with status code %d\n" "$?" >&2
+  if [[ -n $SERVE_PID ]]; then
+    kill -INT "$SERVE_PID" 2>/dev/null
+    wait "$SERVE_PID" || printf "Webserver exited with status code %d\n" "$?" >&2
+  fi
 }
 
 # Sets up a directory for upkg with only the barest of essentials and creates a upkg wrapper which overwrites PATH with it
@@ -62,7 +64,7 @@ PATH="$RESTRICTED_PATH" "%s" "$@"
     shasum git tar gzip xz bzip2 # archive commands
   )
   for cmd in "${required_commands[@]}"; do
-    target=$(which "$cmd") || fail "Unable to find required command '$cmd'"
+    target=$(which "$cmd") || { printf "Unable to find required command '%s'" "$cmd" >&2; return 1; }
     ln -sT "$target" "$RESTRICTED_PATH/$cmd"
   done
   if target=$(which wget 2>/dev/null); then
@@ -109,7 +111,7 @@ check_tar() {
 check_fixture_permissions() {
   local wrong_mode_paths
   if wrong_mode_paths=$(find "$BATS_TEST_DIRNAME/package-templates" -exec bash -c 'printf "%s %s\n" "$1" "$(stat -c %a "$1")"' -- \{\} \; | grep -v '644$\|755$'); then
-    fail "The following paths in tests/package-templates have incorrect permissions (fix with \`chmod -R u=rwX,g=rX,o=rX tests/package-templates\`):
-$wrong_mode_paths"
+    printf "The following paths in tests/package-templates have incorrect permissions (fix with \`chmod -R u=rwX,g=rX,o=rX tests/package-templates\`):\n%s" "$wrong_mode_paths" >&2
+    return 1
   fi
 }
