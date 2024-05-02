@@ -96,6 +96,7 @@ create_tar_package() {
   local tpl=$PACKAGE_TEMPLATES/$1 dest=$PACKAGE_FIXTURES/$1.tar
   [[ -z $PACKAGE_TEMPLATES_ERROR ]] || fail "$PACKAGE_TEMPLATES_ERROR"
   [[ -z $SKIP_TAR ]] || skip "$SKIP_TAR"
+  mkdir -p "$(dirname "$dest")"
   # https://reproducible-builds.org/docs/archives/
   [[ -e "$dest" ]] || tar \
     --sort=name \
@@ -109,6 +110,7 @@ create_tar_package() {
 create_git_package() {
   local tpl=$PACKAGE_TEMPLATES/$1 dest=$PACKAGE_FIXTURES/$1.git
   [[ -z $PACKAGE_TEMPLATES_ERROR ]] || fail "$PACKAGE_TEMPLATES_ERROR"
+  mkdir -p "$(dirname "$dest")"
   if [[ ! -e $dest ]]; then
     git init -q  "$dest"
     cp -r "$tpl/." "$dest/"
