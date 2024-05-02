@@ -2,7 +2,8 @@ FROM ubuntu:22.04
 SHELL ["/bin/bash", "-Eeo", "pipefail", "-c"]
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-  wget ca-certificates git ssh jq tree netcat-openbsd bsdextrautils psmisc shellcheck && \
+  ca-certificates jq wget curl git xz-utils bzip2 \
+  ssh tree netcat-openbsd bsdextrautils psmisc shellcheck && \
   rm -rf /var/lib/apt/lists/*
 RUN wget -qO /tmp/delta.deb https://github.com/dandavison/delta/releases/download/0.17.0/git-delta_0.17.0_amd64.deb; \
   dpkg -i /tmp/delta.deb && rm /tmp/delta.deb

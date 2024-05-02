@@ -4,7 +4,7 @@ set -Eeo pipefail
 shopt -s inherit_errexit
 
 upkg() {
-  [[ ! $(bash --version | head -n1) =~ version\ [34]\.[0-3] ]] || fatal "upkg requires bash >= v4.4"
+  [[ ! $BASH_VERSION =~ ^[0-3]|^4\.[0-3] ]] || fatal "upkg requires bash >= v4.4"
   # Make sure we have jq available, git and tar are optional and we let them fail once we get there
   type "jq" >/dev/null 2>&1 || fatal "command not found: 'jq'"
   export GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND=${GIT_SSH_COMMAND:-"ssh -oBatchMode=yes"}

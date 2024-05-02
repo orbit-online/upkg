@@ -15,7 +15,7 @@ main() {
   fi
   exec docker run --rm "${docker_opts[@]}" \
     --name upkg-tests \
-    -eUPDATE_SNAPSHOTS -eCREATE_SNAPSHOTS \
+    -eUPDATE_SNAPSHOTS -eCREATE_SNAPSHOTS -eRESTRICT_BIN \
     -v"$PKGROOT:/upkg:$mode" \
     "$shasum" "$@"
 }
