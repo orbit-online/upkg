@@ -91,9 +91,10 @@ setup_upkg_path_wrapper() {
   local real_upkg_path
   real_upkg_path=$(realpath "$BATS_TEST_DIRNAME/../bin/upkg")
   mkdir -p "$RESTRICTED_PATH" "$upkg_wrapper_bin"
+  # shellcheck disable=SC2016
   printf '#/usr/bin/env bash
-PATH="%s" "%s" "$@"
-' "$RESTRICTED_PATH" "$real_upkg_path" >"$upkg_wrapper_bin/upkg"
+PATH="$RESTRICTED_PATH" "%s" "$@"
+' "$real_upkg_path" >"$upkg_wrapper_bin/upkg"
   chmod +x "$upkg_wrapper_bin/upkg"
   # Make sure the wrapper is invoked when calling upkg
 
@@ -116,6 +117,16 @@ PATH="%s" "%s" "$@"
     fatal "Unable to find wget or curl"
   fi
   ln -sT "$real_upkg_path" "$RESTRICTED_PATH/upkg"
+}
+
+remove_commands() {
+  cp -r "$RESTRICTED_PATH" "$BATS_TEST_TMPDIR/restricted-path"
+  local cmd
+  for cmd in "$@"; do
+    # Don't fail if the command doesn't exist in the first place (e.g. optional dependency)
+    rm -f "$BATS_TEST_TMPDIR/restricted-path/$cmd"
+  done
+  RESTRICTED_PATH="$BATS_TEST_TMPDIR/restricted-path"
 }
 
 create_tar_package() {
