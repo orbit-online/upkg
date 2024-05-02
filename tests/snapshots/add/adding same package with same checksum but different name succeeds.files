@@ -7,7 +7,8 @@
 │   │       ├── [drwxr-xr-x]  bin
 │   │       │   └── [-rwxr-xr-x]  acme-empty-v1.0.2.bin
 │   │       └── [-rw-r--r--]  upkg.json
-│   └── [lrwxrwxrwx]  acme-empty -> .packages/acme-empty@ef8a1bc060bb699dd758cfb1482d20af721f6a37ec5b79e489a4a51f8329626c
+│   ├── [lrwxrwxrwx]  acme-empty -> .packages/acme-empty@ef8a1bc060bb699dd758cfb1482d20af721f6a37ec5b79e489a4a51f8329626c
+│   └── [lrwxrwxrwx]  acme-empty-2 -> .packages/acme-empty@ef8a1bc060bb699dd758cfb1482d20af721f6a37ec5b79e489a4a51f8329626c
 └── [-rw-r--r--]  upkg.json
 
-6 directories, 4 files
+7 directories, 4 files

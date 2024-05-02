@@ -25,7 +25,7 @@ teardown_file() { common_teardown_file; }
 }
 
 @test "add 1 -> add 2 -> remove 1" {
-  local name1=acme-empty-v1.0.2-metadata name2=acme-empty-v1.0.2-no-metadata
+  local name1=acme-empty-v1.0.2-metadata name2=no-executables
   create_tar_package $name1
   run -0 upkg add "$PACKAGE_FIXTURES/$name1.tar" "$TAR_SHASUM"
   create_tar_package $name2

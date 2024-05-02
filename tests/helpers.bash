@@ -6,7 +6,6 @@ bats_load_library bats-assert
 
 common_setup_file() {
   bats_require_minimum_version 1.5.0
-  # Use
   if [[ $(which upkg) != "$(realpath "$BATS_TEST_DIRNAME/../bin/upkg")" ]]; then
     # Setup path to upkg
     PATH=$(realpath "$BATS_TEST_DIRNAME/../bin"):$PATH
@@ -129,7 +128,7 @@ assert_snapshot_output() {
       # shellcheck disable=SC2001
       sed "s#$BATS_RUN_TMPDIR#\$BATS_RUN_TMPDIR#g" <<<"$output" > "$snapshot_path"
     else
-      fail "The snapshot ${snapshot_path%"$SNAPSHOTS"} does not exist, run with CREATE_SNAPSHOTS=true to create it"
+      fail "The snapshot '${snapshot_path%"$SNAPSHOTS"}' does not exist, run with CREATE_SNAPSHOTS=true to create it"
     fi
   elif ${UPDATE_SNAPSHOTS:-false}; then
     # shellcheck disable=SC2001
@@ -146,7 +145,7 @@ assert_snapshot_path() {
     if ${CREATE_SNAPSHOTS:-false}; then
       get_file_structure "$actual_path" > "$snapshot_path"
     else
-      fail "The snapshot ${snapshot_path%"$SNAPSHOTS"} does not exist, run with CREATE_SNAPSHOTS=true to create it"
+      fail "The snapshot '${snapshot_path%"$SNAPSHOTS"}' does not exist, run with CREATE_SNAPSHOTS=true to create it"
     fi
   elif ${UPDATE_SNAPSHOTS:-false}; then
     get_file_structure "$actual_path" > "$snapshot_path"

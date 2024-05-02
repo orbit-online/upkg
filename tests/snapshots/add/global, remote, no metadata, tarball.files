@@ -5,7 +5,7 @@
     └── [drwxr-xr-x]  upkg
         ├── [drwxr-xr-x]  .upkg
         │   ├── [drwxr-xr-x]  .bin
-        │   │   └── [lrwxrwxrwx]  orbit-cli -> ../orbit-cli-v0.1.3.tar.gz/bin/orbit-cli
+        │   │   └── [lrwxrwxrwx]  orbit-cli -> ../.packages/orbit-cli-v0.1.3.tar.gz@1d04b2b7e0d9edbb611bff4ea032de6d5dc98ccc77be6e7d1b51c175da299511/bin/orbit-cli
         │   ├── [drwxr-xr-x]  .packages
         │   │   └── [drwxr-xr-x]  orbit-cli-v0.1.3.tar.gz@1d04b2b7e0d9edbb611bff4ea032de6d5dc98ccc77be6e7d1b51c175da299511
         │   │       └── [drwxr-xr-x]  bin

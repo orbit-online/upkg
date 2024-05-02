@@ -62,7 +62,7 @@ Options:
     install)
       upkg_mktemp
       [[ -e "$PWD/upkg.json" ]] || fatal "No upkg.json found in '%s'" "$PWD"
-      ln -s "$PWD/upkg.json" ".upkg/.tmp/root/upkg.json"
+      ln -sT "$PWD/upkg.json" ".upkg/.tmp/root/upkg.json"
       if [[ $# -eq 1 && $1 = -n ]]; then DRY_RUN=true # upkg install -n
       elif [[ $# -ne 0 ]]; then upkg_usage; fi      # E_USAGE
       upkg_install "$PWD"
@@ -82,12 +82,17 @@ upkg_usage() {
 
 # Add a package from upkg.json (optionally determine its checksum) and run upkg_install
 upkg_add() {
-  local pkgurl=$1 checksum=$2
+  local pkgurl=$1 checksum=$2 existing_checksum
   local upkgjson={}
   [[ ! -e upkg.json ]] || upkgjson=$(cat upkg.json)
-  if jq -re --arg pkgurl "$pkgurl" '.dependencies[$pkgurl] // empty' <<<"$upkgjson" >/dev/null; then
-    # Package updates and the likes are not supported
-    fatal "The package has already been added, run \`upkg remove %s\` first if you want to update it" "$(basename "$pkgurl")"
+  if existing_checksum=$(jq -re --arg pkgurl "$pkgurl" '.dependencies[$pkgurl] // empty' <<<"$upkgjson"); then
+    if [[ -z $checksum || $checksum = "$existing_checksum" ]]; then
+      processing "The package has already been added"
+      return 0
+    else
+      # Package updates and the likes are not supported
+      fatal "The package has already been added with a different checksum, run \`upkg remove %s\` first if you want to update it" "$(basename "$pkgurl")"
+    fi
   fi
 
   local pkgtype whytype
@@ -168,7 +173,6 @@ upkg_list() {
 
 # Install all packages referenced upkg.json, remove existing ones that aren't, then do the same for their command symlinks
 upkg_install() {
-  DEDUPPATH=.upkg/.packages # The path to the non-temporary package dedup directory
   upkg_install_deps .upkg/.tmp/root
 
   # All deps installed, pre-flight check command symlinks
@@ -222,7 +226,7 @@ upkg_install() {
       ! $DRY_RUN || fatal "'%s' was not symlinked" "$INSTALL_PREFIX/bin/$cmd"
       processing "Linking '%s'" "$cmd"
       mkdir -p "$INSTALL_PREFIX/bin"
-      ln -s "../lib/upkg/.upkg/.bin/$cmd" "$INSTALL_PREFIX/bin/$cmd"
+      ln -sT "../lib/upkg/.upkg/.bin/$cmd" "$INSTALL_PREFIX/bin/$cmd"
     done < <(comm -23 <(printf "%s\n" "$available_cmds") <(printf "%s\n" "$global_cmds"))
     while read -r -d $'\n' cmd; do
       [[ -n $cmd ]] || continue # See above
@@ -294,7 +298,7 @@ upkg_install_deps() {
   if [[ $pkgpath = .upkg/.tmp/root ]]; then
     mkdir "$pkgpath/.upkg/.packages" # We are at the root, this should be a directory, and not just a link
   else
-    ln -s ../../ "$pkgpath/.upkg/.packages" # Deeper dependency, link to the parent dedup directory
+    ln -sT ../../ "$pkgpath/.upkg/.packages" # Deeper dependency, link to the parent dedup directory
   fi
 
   # Create sentinels dir where subprocesses create a file which indicates that
@@ -338,16 +342,18 @@ upkg_install_pkg() {
   else flock -ns 9; fi # Acquire a shared lock which is released once this process completes. Fail if we can't lock
   touch "$parentpath/.upkg/.sentinels/$checksum.lock" # Tell the parent process that the shared lock has been acquired
 
-  if [[ -e "$DEDUPPATH" ]] && dedupname=$(compgen -G "$DEDUPPATH/*@$checksum"); then
+  local deduplocation # The actual current physical location of the deduplicated package
+  if [[ -e ".upkg/packages" ]] && deduplocation=$(compgen -G ".upkg/packages/*@$checksum"); then
     # Package already exists in the destination, all we need is the deduppath so we can symlink it
     $DRY_RUN || processing "Skipping '%s'" "$pkgurl"
-    dedupname=${dedupname#"$DEDUPPATH/"}
+    dedupname=$(basename "$deduplocation")
     dedupname=${dedupname%@*}
     is_dedup=true
   else
     ! $DRY_RUN || fatal "'%s' is not installed" "$pkgurl"
     # Obtain package
     dedupname=$(upkg_download "$pkgurl" "$checksum")
+    deduplocation=.upkg/.tmp/root/.upkg/.packages/$dedupname@$checksum
   fi
 
   pkgalias=$dedupname
@@ -356,44 +362,55 @@ upkg_install_pkg() {
     pkgalias=${BASH_REMATCH[1]}
   fi
   [[ $pkgalias =~ ^[@/]+$ || $pkgalias != .* ]] ||
-    fatal "The package from '%s' has an invalid package name or name override \
+    fatal "The package from '%s' has an invalid package name or alias \
 ('@/' are disallowed, may not be empty or start with '.'): '%s'" "$pkgurl" "$pkgalias"
 
+  local deduppath=.packages/$dedupname@$checksum # The relative path to the deduplicated package from .upkg/
   # Atomic operation, if this fails there is a duplicate
-  if ! ln -s ".packages/$dedupname@$checksum" "$parentpath/.upkg/$pkgalias"; then
-    # TODO: Generate dependency tree from pkgpath
-    fatal "conflict: There is more than one package with the name '%s'" "$pkgalias"
+  if ! ln -sT "$deduppath" "$parentpath/.upkg/$pkgalias" 2>/dev/null; then
+    local otherpkg_dedupname
+    otherpkg_dedupname=$(basename "$(readlink "$parentpath/.upkg/$pkgalias")")
+    otherpkg_dedupname=${otherpkg_dedupname%@*}
+    fatal "conflict: There is more than one package with the alias '%s' ('%s' and '%s')" "$pkgalias" "$dedupname" "$otherpkg_dedupname"
   fi
-  local pkgpath="$parentpath/.upkg/$pkgalias" command cmdpath otherpkg
-  if [[ -e "$pkgpath/bin" ]]; then
+
+  if [[ -e "$deduplocation/bin" ]]; then
     # package has a bin/ dir, symlink the executable files in that directory
     mkdir -p "$parentpath/.upkg/.bin"
     while read -r -d $'\n' command; do
       command=$(basename "$command")
-      cmdpath="$parentpath/.upkg/.bin/$command"
-      # Atomic operation, if this fails there is a duplicate
-      if ! ln -s "../$pkgalias/bin/$command" "$cmdpath" 2>/dev/null; then
-        otherpkg=$(readlink "$cmdpath")
-        otherpkg=${otherpkg#'../'}
-        otherpkg=${otherpkg%%'/'*}
-        fatal "conflict: '%s' and '%s' both have a command named '%s'" "$pkgalias" "$otherpkg" "$command"
-      fi
-    done < <(find "$pkgpath/bin" -mindepth 1 -maxdepth 1 -type f -executable)
+      upkg_link_cmd "../$deduppath/bin/$command" "$parentpath/.upkg/.bin/$command"
+    done < <(find "$deduplocation/bin" -mindepth 1 -maxdepth 1 -type f -executable)
   elif [[ $pkgurl =~ \#bin(\#|$) ]]; then
-    # pkgurl is a file (and has been validated as such in upkg_download), symlink from bin
+    # pkgurl is an executable file (and has been chmod'ed and validated as such in upkg_download), symlink from bin
     mkdir -p "$parentpath/.upkg/.bin"
-    cmdpath="$parentpath/.upkg/.bin/$pkgalias"
-    # Atomic operation, if this fails there is a duplicate
-    if ! ln -s "../$pkgalias" "$cmdpath" 2>/dev/null; then
-      otherpkg=$(readlink "$cmdpath")
-      otherpkg=${otherpkg#'../'}
-      otherpkg=${otherpkg%%'/'*}
-      fatal "conflict: '%s' and '%s' both have a command named '%s'" "$pkgalias" "$otherpkg" "$pkgalias"
-    fi
+    upkg_link_cmd "../$deduppath" "$parentpath/.upkg/.bin/$pkgalias"
   fi
 
   # Recursively install deps of this package unless it is already dedup'ed
-  $is_dedup || upkg_install_deps "$pkgpath"
+  # Using the alias path instead of the dedup path allows us to create dependency tree without checksums
+  $is_dedup || upkg_install_deps "$parentpath/.upkg/$pkgalias"
+}
+
+upkg_link_cmd() {
+  local cmdtarget=$1 cmdpath=$2 other_deduppath
+  # Atomic operation. If this fails there is a duplicate command or the same package is depended upon under different names
+  if ! ln -sT "$cmdtarget" "$cmdpath" 2>/dev/null; then
+    other_deduppath=$(readlink "$cmdpath")
+    if [[ $cmdtarget = "$other_deduppath" ]]; then
+      # Same package different name, this is fine.
+      # Continue the loop though, the other install process might have failed on something we linked
+      return 0
+    fi
+    local targetpkg_dedupname otherpkg_dedupname
+    # ../.packages/$dedupname@checksum/bin/$command becomes $dedupname@checksum
+    targetpkg_dedupname=$(basename "$(dirname "$(dirname "$cmdtarget")")")
+    targetpkg_dedupname=${targetpkg_dedupname%@*}
+    # ../.packages/$otherpkg_dedupname@checksum/bin/$command becomes $otherpkg_dedupname@checksum
+    otherpkg_dedupname=$(basename "$(dirname "$(dirname "$other_deduppath")")")
+    otherpkg_dedupname=${otherpkg_dedupname%@*}
+    fatal "conflict: '%s' and '%s' both have a command named '%s'" "$targetpkg_dedupname" "$otherpkg_dedupname" "$(basename "$cmdpath")"
+  fi
 }
 
 # Copy, download, clone a package, check the checksum, maybe set a version, maybe calculate a package name, return the package name
@@ -508,7 +525,7 @@ upkg_download() (
   dedupname=${dedupname%%'?'*} # Remove query params
   dedupname=$(basename "$dedupname") # Remove path prefix
   dedupname=${dedupname//@/_} # Replace @ with _
-  dedupname=${dedupname#'.'/_} # Starting '.' with _
+  dedupname=${dedupname#'.'/_} # Replace starting '.' with _
 
   local upkgname
   if [[ -e "$pkgpath/upkg.json" ]] && upkgname=$(jq -re '.name // empty' "$pkgpath/upkg.json"); then

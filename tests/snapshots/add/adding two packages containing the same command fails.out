@@ -1,0 +1,2 @@
+upkg: conflict: 'acme-empty-v1.0.2-no-metadata.tar' and 'acme-empty' both have a command named 'acme-empty-v1.0.2.bin'
+upkg: An error occurred while installing '$BATS_RUN_TMPDIR/package-fixtures/acme-empty-v1.0.2-no-metadata.tar'

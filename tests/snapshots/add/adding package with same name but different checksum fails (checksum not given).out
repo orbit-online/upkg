@@ -1,0 +1,3 @@
+upkg: No checksum given for '$BATS_RUN_TMPDIR/package-fixtures/duplicates/acme-empty-v1.0.2-metadata.tar', determining now
+upkg: conflict: There is more than one package with the alias 'acme-empty' ('acme-empty' and 'acme-empty')
+upkg: An error occurred while installing '$BATS_RUN_TMPDIR/package-fixtures/duplicates/acme-empty-v1.0.2-metadata.tar'

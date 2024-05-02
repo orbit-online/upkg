@@ -83,3 +83,77 @@ teardown_file() { common_teardown_file; }
   assert_snapshot_output
   assert_snapshot_path
 }
+
+@test "adding same package with same name does nothing (checksum given)" {
+  local name=acme-empty-v1.0.2-no-metadata
+  create_tar_package $name
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
+  assert_snapshot_path "same package, same name"
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
+  assert_snapshot_output
+  assert_snapshot_path "same package, same name"
+}
+
+@test "adding same package does nothing (checksum not given)" {
+  local name=acme-empty-v1.0.2-no-metadata
+  create_tar_package $name
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
+  assert_snapshot_path "same package, same name"
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar"
+  assert_snapshot_output
+  assert_snapshot_path "same package, same name"
+}
+
+@test "adding package with same name but different checksum fails (checksum given)" {
+  local \
+    name1=acme-empty-v1.0.2-metadata
+    name2=duplicates/acme-empty-v1.0.2-metadata
+  create_tar_package $name1
+  run -0 upkg add "$PACKAGE_FIXTURES/$name1.tar" "$TAR_SHASUM"
+  assert_snapshot_path
+  run -1 upkg add "$PACKAGE_FIXTURES/$name2.tar" "$TAR_SHASUM"
+  assert_snapshot_output
+  assert_snapshot_path
+}
+
+@test "adding package with same name but different checksum fails (checksum not given)" {
+  local \
+    name1=acme-empty-v1.0.2-metadata
+    name2=duplicates/acme-empty-v1.0.2-metadata
+  create_tar_package $name1
+  run -0 upkg add "$PACKAGE_FIXTURES/$name1.tar" "$TAR_SHASUM"
+  assert_snapshot_path
+  create_tar_package $name2
+  run -1 upkg add "$PACKAGE_FIXTURES/$name2.tar"
+  assert_snapshot_output
+  assert_snapshot_path
+}
+
+@test "adding same package with same checksum but different name succeeds" {
+  local name=acme-empty-v1.0.2-metadata
+  create_tar_package $name
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar#alias=acme-empty-2" "$TAR_SHASUM"
+  assert_snapshot_output
+  assert_snapshot_path "$BATS_TEST_DESCRIPTION"
+}
+
+@test "adding two packages containing the same command fails" {
+  local \
+    name1=acme-empty-v1.0.2-metadata
+    name2=acme-empty-v1.0.2-no-metadata
+  create_tar_package $name1
+  run -0 upkg add "$PACKAGE_FIXTURES/$name1.tar" "$TAR_SHASUM"
+  assert_snapshot_path
+  create_tar_package $name2
+  run -1 upkg add "$PACKAGE_FIXTURES/$name2.tar" "$TAR_SHASUM"
+  assert_snapshot_output
+  assert_snapshot_path
+}
+
+@test ".upkg/.bin/ linked executable works" {
+  local name=acme-empty-v1.0.2-metadata
+  create_tar_package $name
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
+  run -0 .upkg/.bin/acme-empty-v1.0.2.bin
+}
