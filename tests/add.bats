@@ -50,7 +50,6 @@ teardown_file() { common_teardown_file; }
 @test "remote tarball install with metadata has name from package" {
   local name=acme-empty-v1.0.2-metadata
   create_tar_package $name
-  serve_dir
   run -0 upkg add http://localhost:8080/$name.tar "$TAR_SHASUM"
   assert_snapshot_output
   assert_snapshot_path metadata-tarball
@@ -60,7 +59,6 @@ teardown_file() { common_teardown_file; }
 @test "remote git repo install succeeds" {
   local name=acme-empty-v1.0.2-metadata
   create_git_package $name
-  serve_dir
   run -0 upkg add -g http://localhost:8080/$name.git "$GIT_COMMIT"
   assert_snapshot_output
   assert_snapshot_path "" "$HOME/.local"

@@ -26,7 +26,6 @@ teardown_file() { common_teardown_file; }
   remove_commands curl wget
   local name=acme-empty-v1.0.2-metadata
   create_tar_package $name
-  serve_dir
   run -1 upkg add http://localhost:8080/$name.tar
   assert_snapshot_output
 }
@@ -78,7 +77,6 @@ teardown_file() { common_teardown_file; }
   remove_commands curl
   local name=acme-empty-v1.0.2-metadata
   create_tar_package $name
-  serve_dir
   run -0 upkg add http://localhost:8080/$name.tar
   assert_snapshot_output
   assert_snapshot_path
@@ -88,7 +86,6 @@ teardown_file() { common_teardown_file; }
   type curl &>/dev/null || fail 'curl is not available'
   local name=acme-empty-v1.0.2-metadata
   create_tar_package $name
-  serve_dir
   run -0 upkg add http://localhost:8080/$name.tar
   assert_snapshot_output
   assert_snapshot_path
