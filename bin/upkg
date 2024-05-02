@@ -151,11 +151,11 @@ upkg_list() {
       processing "No packages are installed in '%s'" "$PWD"
       return 0
     fi
-    local dedup_pkgpath basename pkgalias checksum version upkgjsonpath version
+    local dedup_pkgpath dedup_dirname pkgalias checksum version upkgjsonpath version
     while read -r -d $'\n' dedup_pkgpath; do
-      basename=$(basename "$dedup_pkgpath")
-      pkgalias=${basename%@*}
-      checksum=${basename#*@}
+      dedup_dirname=$(basename "$dedup_pkgpath")
+      pkgalias=${dedup_dirname%@*}
+      checksum=${dedup_dirname#*@}
       version='no-version'
       upkgjsonpath=.upkg/$dedup_pkgpath/upkg.json
       [[ ! -e "$upkgjsonpath" ]] || version=$(jq -r '.version // "no-version"' "$upkgjsonpath")
@@ -273,7 +273,7 @@ upkg_list_available_cmds() {
   local pkgroot=$1 cmdpath
   [[ -e "$pkgroot/.upkg/.bin" ]] || return 0
   while read -r -d $'\n' cmdpath; do
-    printf "%s\n" "${cmdpath#"$pkgroot/.upkg/.bin/"}"
+    printf "%s\n" "$(basename "$cmdpath")"
   done < <(find "$pkgroot/.upkg/.bin" -mindepth 1 -maxdepth 1)
 }
 
@@ -282,7 +282,7 @@ upkg_list_global_referenced_cmds() {
   local install_prefix=$1 cmdpath
   [[ -e "$install_prefix/bin" ]] || return 0
   while read -r -d $'\n' cmdpath; do
-    [[ $cmdpath != ../lib/upkg/.upkg/.bin/* ]] || printf "%s\n" "${cmdpath#'../lib/upkg/.upkg/.bin/'}"
+    [[ $cmdpath != ../lib/upkg/.upkg/.bin/* ]] || printf "%s\n" "$(basename "$cmdpath")"
   done < <(find "$install_prefix/bin" -mindepth 1 -maxdepth 1 -exec readlink \{\} \;)
 }
 
@@ -431,7 +431,7 @@ upkg_download() (
     # The package has already been deduped
     processing "Already downloaded '%s'" "$pkgurl"
     # Get the dedupname from the dedup dir, output it, and exit early
-    dedupname=${dedupname#".upkg/.tmp/root/.upkg/.packages/"}
+    dedupname=$(basename "$dedupname")
     dedupname=${dedupname%@*}
     printf "%s\n" "$dedupname"
     return 0
