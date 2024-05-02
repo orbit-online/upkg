@@ -48,6 +48,14 @@ common_setup_file() {
   fi
   # Make sure the package-templates have the correct permissions (i.e. git checkout wasn't run with a 002 instead of 022 umask)
   export PACKAGE_TEMPLATES_ERROR=
+  if ${UPDATE_SNAPSHOTS:-false} || ${CREATE_SNAPSHOTS:-false} && [[ ! -e "$BATS_TEST_DIRNAME/snapshots/package-templates" ]]; then
+    local wrong_mode_paths
+    wrong_mode_paths=$(find tests/package-templates -perm /022)
+    if [[ -n $wrong_mode_paths ]]; then
+      fail "Refusing to create/update snapshot for package templates, group or other has write access to some files:
+$wrong_mode_paths"
+    fi
+  fi
   if ! (SNAPSHOTS=$BATS_TEST_DIRNAME/snapshots assert_snapshot_files "package-templates" "$BATS_TEST_DIRNAME/package-templates"); then
     PACKAGE_TEMPLATES_ERROR="The package templates do not match the stored snapshot, consult the README to see how to debug the issue"
   fi
