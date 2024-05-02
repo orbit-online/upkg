@@ -47,17 +47,10 @@ common_setup_file() {
     fi
   fi
   # Make sure the package-templates have the correct permissions (i.e. git checkout wasn't run with a 002 instead of 022 umask)
-  export PACKAGE_TEMPLATES_ERROR=
-  if ${UPDATE_SNAPSHOTS:-false} || ${CREATE_SNAPSHOTS:-false} && [[ ! -e "$BATS_TEST_DIRNAME/snapshots/package-templates" ]]; then
-    local wrong_mode_paths
-    wrong_mode_paths=$(find tests/package-templates -perm /022)
-    if [[ -n $wrong_mode_paths ]]; then
-      fail "Refusing to create/update snapshot for package templates, group or other has write access to some files:
+  local wrong_mode_paths
+  if wrong_mode_paths=$(find "$BATS_TEST_DIRNAME/package-templates" -exec bash -c 'printf "%s %s\n" "$1" "$(stat -c %a "$1")"' -- \{\} \; | grep -v '644$\|755$'); then
+    fail "The following paths in tests/package-templates have incorrect permissions (fix with \`chmod -R u=rwX,g=rX,o=rX tests/package-templates\`):
 $wrong_mode_paths"
-    fi
-  fi
-  if ! (SNAPSHOTS=$BATS_TEST_DIRNAME/snapshots assert_snapshot_path "package-templates" "$BATS_TEST_DIRNAME/package-templates"); then
-    PACKAGE_TEMPLATES_ERROR="The package templates do not match the stored snapshot, consult the README to see how to debug the issue"
   fi
 }
 
@@ -94,7 +87,6 @@ common_teardown_file() {
 
 create_tar_package() {
   local tpl=$PACKAGE_TEMPLATES/$1 dest=$PACKAGE_FIXTURES/$1.tar
-  [[ -z $PACKAGE_TEMPLATES_ERROR ]] || fail "$PACKAGE_TEMPLATES_ERROR"
   [[ -z $SKIP_TAR ]] || skip "$SKIP_TAR"
   mkdir -p "$(dirname "$dest")"
   # https://reproducible-builds.org/docs/archives/
@@ -109,7 +101,6 @@ create_tar_package() {
 
 create_git_package() {
   local tpl=$PACKAGE_TEMPLATES/$1 dest=$PACKAGE_FIXTURES/$1.git
-  [[ -z $PACKAGE_TEMPLATES_ERROR ]] || fail "$PACKAGE_TEMPLATES_ERROR"
   mkdir -p "$(dirname "$dest")"
   if [[ ! -e $dest ]]; then
     git init -q  "$dest"

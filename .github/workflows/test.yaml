@@ -29,9 +29,6 @@ jobs:
       uses: actions/checkout@v4
       with:
         path: upkg
-    - name: Check package template permissions
-      run: diff --color=always -u --label expected --label actual tests/snapshots/package-templates.files <(cd tests/package-templates; tree -n -p --charset=UTF-8 -a -I .git .)
-      working-directory: upkg
     - name: Run tests
       run: bats --formatter tap13 --filter-tags '!shellcheck' tests > tests/results.tap
       working-directory: upkg
