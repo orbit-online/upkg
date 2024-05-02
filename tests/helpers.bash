@@ -15,7 +15,7 @@ common_setup_file() {
   SNAPSHOTS=$BATS_TEST_DIRNAME/snapshots/$(basename "$BATS_TEST_FILENAME" .bats)
   PACKAGE_TEMPLATES=$BATS_TEST_DIRNAME/package-templates
   PACKAGE_FIXTURES=$BATS_RUN_TMPDIR/package-fixtures
-  mkdir -p "$SNAPSHOTS" "$PACKAGE_FIXTURES"
+  mkdir -p "$PACKAGE_FIXTURES"
   # Optionally show diff with delta
   export DELTA=cat
   if type delta &>/dev/null; then
@@ -125,6 +125,7 @@ assert_snapshot_output() {
   local snapshot_path=$SNAPSHOTS/$snapshot_name.out
   if [[ ! -e "$snapshot_path" ]]; then
     if ${CREATE_SNAPSHOTS:-false}; then
+      mkdir -p "$SNAPSHOTS"
       # shellcheck disable=SC2001
       sed "s#$BATS_RUN_TMPDIR#\$BATS_RUN_TMPDIR#g" <<<"$output" > "$snapshot_path"
     else
@@ -143,6 +144,7 @@ assert_snapshot_path() {
   local snapshot_path=$SNAPSHOTS/$snapshot_name.files
   if [[ ! -e "$snapshot_path" ]]; then
     if ${CREATE_SNAPSHOTS:-false}; then
+      mkdir -p "$SNAPSHOTS"
       get_file_structure "$actual_path" > "$snapshot_path"
     else
       fail "The snapshot '${snapshot_path%"$SNAPSHOTS"}' does not exist, run with CREATE_SNAPSHOTS=true to create it"
