@@ -1,4 +1,0 @@
-upkg: Package alias for '$BATS_RUN_TMPDIR/package-fixtures/acme-empty-v1.0.2-metadata.tar#alias=has
-in-name' contained newlines, they has been replaced with underscores (_)
-upkg: Added '$BATS_RUN_TMPDIR/package-fixtures/acme-empty-v1.0.2-metadata.tar#alias=has
-in-name'

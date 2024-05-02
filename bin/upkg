@@ -135,13 +135,13 @@ upkg_add() {
 
 # Remove a package from upkg.json and run upkg_install
 upkg_remove() {
-  local pkgalias=$1 pkgurl
-  pkgurl=$(upkg_get_pkgurl . "$pkgalias")
+  local pkgname=$1 pkgurl
+  pkgurl=$(upkg_get_pkgurl . "$pkgname")
   # Modify upkg.json, but only in the temp dir, so a failure doesn't change anything
   jq -r --arg pkgurl "$pkgurl" 'del(.dependencies[$pkgurl])' upkg.json >.upkg/.tmp/root/upkg.json
   upkg_install
   [[ ! -e .upkg ]] || cp .upkg/.tmp/root/upkg.json upkg.json
-  processing "Removed '%s'" "$pkgalias"
+  processing "Removed '%s'" "$pkgname"
 }
 
 # List all top-level installed packages. Not based on upkg.json, but the actually installed packages
@@ -151,15 +151,15 @@ upkg_list() {
       processing "No packages are installed in '%s'" "$PWD"
       return 0
     fi
-    local dedup_pkgpath dedup_dirname pkgalias checksum version upkgjsonpath version
+    local dedup_pkgpath dedup_dirname pkgname checksum version upkgjsonpath version
     for dedup_pkgpath in $(upkg_resolve_links .upkg); do # Don't descend into .packages, we only want the top-level
       dedup_dirname=$(basename "$dedup_pkgpath")
-      pkgalias=${dedup_dirname%@*}
+      pkgname=${dedup_dirname%@*}
       checksum=${dedup_dirname#*@}
       version='no-version'
       upkgjsonpath=.upkg/$dedup_pkgpath/upkg.json
       [[ ! -e "$upkgjsonpath" ]] || version=$(jq -r '.version // "no-version"' "$upkgjsonpath")
-      printf "%s\t%s\t%s\n" "$pkgalias" "$version" "$checksum"
+      printf "%s\t%s\t%s\n" "$pkgname" "$version" "$checksum"
     done
   ) | (
     # Allow nice formatting if `column` (from bsdextrautils) is installed
@@ -192,7 +192,7 @@ upkg_install() {
 
   # Copy new packages and all symlinks from .upkg/.tmp
   if ! $DRY_RUN; then
-    # .bin/ and all pkgalias symlinks are fully rebuilt during install, so we just remove it and copy it over
+    # .bin/ and all pkgname symlinks are fully rebuilt during install, so we just remove it and copy it over
     rm -rf .upkg/.bin
     rm -f .upkg/*
     if [[ -e .upkg/.tmp/root/.upkg ]]; then
@@ -238,16 +238,16 @@ upkg_install() {
 
 # Get the URL of a package via its package name
 upkg_get_pkgurl() {
-  local pkgpath=$1 pkgalias=$2 checksum
-  [[ -e "$pkgpath/.upkg/$pkgalias" ]] || fatal "Unable to find '%s' in '%s'" "$pkgalias" "$pkgpath/.upkg"
+  local pkgpath=$1 pkgname=$2 checksum
+  [[ -e "$pkgpath/.upkg/$pkgname" ]] || fatal "Unable to find '%s' in '%s'" "$pkgname" "$pkgpath/.upkg"
   # Use the .upkg/pkg symlink to get the .package path ...
-  checksum=$(readlink "$pkgpath/.upkg/$pkgalias")
+  checksum=$(readlink "$pkgpath/.upkg/$pkgname")
   checksum=$(basename "$checksum")
   # ... extract the checksum from that name ...
   checksum=${checksum#*@}
   # ... and then look it up in upkg.json
   if ! jq -re --arg checksum "$checksum" '.dependencies | to_entries[] | select(.value==$checksum) | .key // empty' "$pkgpath/upkg.json"; then
-    fatal "'%s' is not listed in '%s'" "$pkgalias" "$pkgpath/upkg.json"
+    fatal "'%s' is not listed in '%s'" "$pkgname" "$pkgpath/upkg.json"
   fi
 }
 
@@ -336,7 +336,7 @@ upkg_install_deps() {
 
 # Obtain (copy, download, clone, extract.. whatever) a package, symlink its commands and the install its dependencies
 upkg_install_pkg() {
-  local pkgurl=$1 checksum=$2 parentpath=$3 dedupname pkgalias is_dedup=false
+  local pkgurl=$1 checksum=$2 parentpath=$3 dedupname pkgname is_dedup=false
 
   trap "" EXIT # Clear parent process trap
   trap "touch \"$parentpath/.upkg/.sentinels/$checksum.fail\"" ERR # Inform parent process when an error occurs
@@ -359,28 +359,28 @@ upkg_install_pkg() {
     deduplocation=.upkg/.tmp/root/.upkg/.packages/$dedupname@$checksum
   fi
 
-  pkgalias=$dedupname
-  if [[ $pkgurl =~ \#alias=([^#]+)(\#|$) ]]; then
+  pkgname=$dedupname
+  if [[ $pkgurl =~ \#name=([^#]+)(\#|$) ]]; then
     # Package name override specified
-    pkgalias=${BASH_REMATCH[1]}
-    [[ $pkgalias != */* ]] || warning "Package alias for '%s' contained slashes (/), they have been replaced with underscores (_)" "$pkgurl"
-    [[ $pkgalias != *$'\n'* ]] || warning "Package alias for '%s' contained newlines, they has been replaced with underscores (_)" "$pkgurl"
-    [[ $pkgalias != .* ]] || warning "Package alias for '%s' starts with a dot (.), it has been replaced with an underscore (_)" "$pkgurl"
-    pkgalias=${pkgalias//'/'/_} # Replace '/' with _
-    pkgalias=${pkgalias//$'\n'/_} # Replace newline with _
-    pkgalias=${pkgalias#'.'/_} # Replace starting '.' with _
+    pkgname=${BASH_REMATCH[1]}
+    [[ $pkgname != */* ]] || warning "Package name for '%s' contained slashes (/), they have been replaced with underscores (_)" "$pkgurl"
+    [[ $pkgname != *$'\n'* ]] || warning "Package name for '%s' contained newlines, they have been replaced with underscores (_)" "$pkgurl"
+    [[ $pkgname != .* ]] || warning "Package name for '%s' starts with a dot (.), it has been replaced with an underscore (_)" "$pkgurl"
+    pkgname=${pkgname//'/'/_} # Replace '/' with _
+    pkgname=${pkgname//$'\n'/_} # Replace newline with _
+    pkgname=${pkgname#'.'/_} # Replace starting '.' with _
   fi
-  [[ $pkgalias =~ ^[@/]+$ || $pkgalias != .* ]] ||
-    fatal "The package from '%s' has an invalid package name or alias \
-('@/' are disallowed, may not be empty or start with '.'): '%s'" "$pkgurl" "$pkgalias"
+  [[ $pkgname =~ ^[@/]+$ || $pkgname != .* ]] ||
+    fatal "The package from '%s' has an invalid package name \
+('@/' are disallowed, may not be empty or start with '.'): '%s'" "$pkgurl" "$pkgname"
 
   local deduppath=.packages/$dedupname@$checksum # The relative path to the deduplicated package from .upkg/
   # Atomic operation, if this fails there is a duplicate
-  if ! ln -sT "$deduppath" "$parentpath/.upkg/$pkgalias" 2>/dev/null; then
+  if ! ln -sT "$deduppath" "$parentpath/.upkg/$pkgname" 2>/dev/null; then
     local otherpkg_dedupname
-    otherpkg_dedupname=$(basename "$(readlink "$parentpath/.upkg/$pkgalias")")
+    otherpkg_dedupname=$(basename "$(readlink "$parentpath/.upkg/$pkgname")")
     otherpkg_dedupname=${otherpkg_dedupname%@*}
-    fatal "conflict: There is more than one package with the alias '%s' ('%s' and '%s')" "$pkgalias" "$dedupname" "$otherpkg_dedupname"
+    fatal "conflict: There is more than one package with the name '%s' ('%s' and '%s')" "$pkgname" "$dedupname" "$otherpkg_dedupname"
   fi
 
   if [[ -e "$deduplocation/bin" ]]; then
@@ -394,12 +394,12 @@ upkg_install_pkg() {
   elif [[ $pkgurl =~ \#bin(\#|$) ]]; then
     # pkgurl is an executable file (and has been chmod'ed and validated as such in upkg_download), symlink from bin
     mkdir -p "$parentpath/.upkg/.bin"
-    upkg_link_cmd "../$deduppath" "$parentpath/.upkg/.bin/$pkgalias"
+    upkg_link_cmd "../$deduppath" "$parentpath/.upkg/.bin/$pkgname"
   fi
 
   # Recursively install deps of this package unless it is already dedup'ed
-  # Using the alias path instead of the dedup path allows us to create dependency tree without checksums
-  $is_dedup || upkg_install_deps "$parentpath/.upkg/$pkgalias"
+  # Using the pkgname path instead of the dedup path allows us to create dependency tree without checksums
+  $is_dedup || upkg_install_deps "$parentpath/.upkg/$pkgname"
 }
 
 upkg_link_cmd() {
@@ -595,7 +595,7 @@ upkg_get_pkgtype() {
   if [[ $pkgtype != file && $pkgurl =~ \#bin(\#|$) ]]; then
     fatal "'%s' has been marked with #bin to be an executable, but the URL does not seem to point at a binary because %s" "$pkgurl" "$whytype"
   fi
-  [[ $pkgurl =~ (\#alias=([^.][^#@/]+)(\#|$))? ]] || \
+  [[ $pkgurl =~ (\#name=([^.][^#@/]+)(\#|$))? ]] || \
     fatal "The package URL '%s' specifies an invalid package name override (contains @ or /, is empty or starts with '.')'" "$pkgurl"
   printf "%s\n%s" "$pkgtype" "$whytype"
 }

@@ -14,10 +14,10 @@ teardown_file() { common_teardown_file; }
   assert_snapshot_path
 }
 
-@test "tarballs can be aliased" {
+@test "tarballs can be renamed" {
   local name=acme-empty-v1.0.2-no-metadata
   create_tar_package $name
-  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar#alias=acme-empty" "$TAR_SHASUM"
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar#name=acme-empty" "$TAR_SHASUM"
   assert_snapshot_output
   assert_snapshot_path
 }
@@ -30,10 +30,10 @@ teardown_file() { common_teardown_file; }
   assert_snapshot_path
 }
 
-@test "git repos can be aliased" {
+@test "git repos can be renamed" {
   local name=acme-empty-v1.0.2-no-metadata
   create_git_package $name
-  run -0 upkg add "$PACKAGE_FIXTURES/$name.git#alias=acme-empty" "$GIT_COMMIT"
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.git#name=acme-empty" "$GIT_COMMIT"
   assert_snapshot_output
   assert_snapshot_path
 }
@@ -121,7 +121,7 @@ teardown_file() { common_teardown_file; }
   local name=acme-empty-v1.0.2-metadata
   create_tar_package $name
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
-  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar#alias=acme-empty-2" "$TAR_SHASUM"
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar#name=acme-empty-2" "$TAR_SHASUM"
   assert_snapshot_output
   assert_snapshot_path "$BATS_TEST_DESCRIPTION"
 }

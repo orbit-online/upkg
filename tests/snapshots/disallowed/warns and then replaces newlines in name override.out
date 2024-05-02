@@ -1,0 +1,4 @@
+upkg: Package name for '$BATS_RUN_TMPDIR/package-fixtures/acme-empty-v1.0.2-metadata.tar#name=has
+in-name' contained newlines, they have been replaced with underscores (_)
+upkg: Added '$BATS_RUN_TMPDIR/package-fixtures/acme-empty-v1.0.2-metadata.tar#name=has
+in-name'
