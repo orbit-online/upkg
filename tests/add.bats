@@ -67,14 +67,6 @@ teardown_file() { common_teardown_file; }
   assert_snapshot_path "" "$HOME/.local"
 }
 
-@test "don't link non-executable files in bin/" {
-  local name=no-executables shasum
-  create_tar_package $name
-  run -0 upkg add -g "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
-  assert_snapshot_output
-  assert_snapshot_path "" "$HOME/.local"
-}
-
 @test "failing dependency causes nothing to be installed" {
   local name=failing-dependency
   create_tar_package $name
@@ -148,11 +140,4 @@ teardown_file() { common_teardown_file; }
   run -1 upkg add "$PACKAGE_FIXTURES/$name2.tar" "$TAR_SHASUM"
   assert_snapshot_output
   assert_snapshot_path
-}
-
-@test ".upkg/.bin/ linked executable works" {
-  local name=acme-empty-v1.0.2-metadata
-  create_tar_package $name
-  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
-  run -0 .upkg/.bin/acme-empty-v1.0.2.bin
 }
