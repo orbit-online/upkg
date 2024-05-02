@@ -47,9 +47,9 @@ common_setup_file() {
     fi
   fi
   # Make sure the package-templates have the correct permissions (i.e. git checkout wasn't run with a 002 instead of 022 umask)
-  export SKIP_PACKAGE_TEMPLATES=
+  export PACKAGE_TEMPLATES_ERROR=
   if ! (SNAPSHOTS=$BATS_TEST_DIRNAME/snapshots assert_snapshot_files "package-templates" "$BATS_TEST_DIRNAME/package-templates"); then
-    SKIP_PACKAGE_TEMPLATES="The package templates do not match the stored snapshot, consult the README to see how to debug the issue"
+    PACKAGE_TEMPLATES_ERROR="The package templates do not match the stored snapshot, consult the README to see how to debug the issue"
   fi
 }
 
@@ -86,7 +86,7 @@ common_teardown_file() {
 
 create_tar_package() {
   local tpl=$PACKAGE_TEMPLATES/$1 dest=$PACKAGE_FIXTURES/$1.tar
-  [[ -z $SKIP_PACKAGE_TEMPLATES ]] || skip "$SKIP_PACKAGE_TEMPLATES"
+  [[ -z $PACKAGE_TEMPLATES_ERROR ]] || fail "$PACKAGE_TEMPLATES_ERROR"
   [[ -z $SKIP_TAR ]] || skip "$SKIP_TAR"
   # https://reproducible-builds.org/docs/archives/
   [[ -e "$dest" ]] || tar \
@@ -100,7 +100,7 @@ create_tar_package() {
 
 create_git_package() {
   local tpl=$PACKAGE_TEMPLATES/$1 dest=$PACKAGE_FIXTURES/$1.git
-  [[ -z $SKIP_PACKAGE_TEMPLATES ]] || skip "$SKIP_PACKAGE_TEMPLATES"
+  [[ -z $PACKAGE_TEMPLATES_ERROR ]] || fail "$PACKAGE_TEMPLATES_ERROR"
   if [[ ! -e $dest ]]; then
     git init -q  "$dest"
     cp -r "$tpl/." "$dest/"
