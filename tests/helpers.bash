@@ -60,17 +60,14 @@ common_setup() {
   # Don't let upkg run installs in parallel, this results in non-deterministic ouput
   export UPKG_SEQUENTIAL=true
   mkdir "$HOME" "$GLOBAL_INSTALL_PREFIX" "$PROJECT_ROOT"
-  SERVE_PIDS=()
   cd "$PROJECT_ROOT"
 }
 
 common_teardown() {
-  if (( ${#SERVE_PIDS} != 0 )); then
-    kill "${SERVE_PIDS[@]}" 2>/dev/null
-    local pid
-    for pid in "${SERVE_PIDS[@]}"; do
-      wait "$pid"
-    done
+  if [[ -n $SERVE_PID ]]; then
+    kill "$SERVE_PID" 2>/dev/null
+    wait "$SERVE_PID"
+    cat "$SERVER_LOG" >&2
   fi
   if [[ -n $(jobs -p) ]]; then
     fail "There were unterminated background jobs after test completion"
@@ -144,13 +141,16 @@ create_tar_package() {
 }
 
 create_git_package() {
-  local tpl=$PACKAGE_TEMPLATES/$1 dest=$PACKAGE_FIXTURES/$1.git
+  local tpl=$PACKAGE_TEMPLATES/$1 working_copy=$PACKAGE_FIXTURES/$1.git-tmp dest=$PACKAGE_FIXTURES/$1.git
   mkdir -p "$(dirname "$dest")"
   if [[ ! -e $dest ]]; then
-    git init -q  "$dest"
-    cp -r "$tpl/." "$dest/"
-    git -C "$dest" add -A
-    git -C "$dest" commit -q --no-gpg-sign -m 'Initial import'
+    mkdir "$working_copy"
+    git init -q  "$working_copy"
+    cp -r "$tpl/." "$working_copy/"
+    git -C "$working_copy" add -A
+    git -C "$working_copy" commit -q --no-gpg-sign -m 'Initial import'
+    git clone --bare "$working_copy" "$dest"
+    git -C "$dest" --bare update-server-info
   fi
   # shellcheck disable=SC2034
   GIT_COMMIT=$(git -C "$dest" rev-parse HEAD)
@@ -205,10 +205,10 @@ get_file_structure() (
   tree -n -p --charset=UTF-8 -a -I .git . 2>&1
 )
 
-serve_file() {
-  nc -l 8080 < <(
-    printf -- 'HTTP/1.1 200 OK\r\nDate: %s\r\nContent-Length: %d\r\n\r\n' \
-      "$(date -R)" "$(stat --format='%s' "$1")"
-    cat "$1"
-  ) &>/dev/null & SERVE_PIDS+=($!)
+serve_dir() {
+  [[ -z $SERVER_LOG ]] || fail "Already serving"
+  export SERVER_LOG=$BATS_TEST_TMPDIR/httpd.log
+  (cd "${1:-$PACKAGE_FIXTURES}"; exec python3 -m http.server 8080 &>"$SERVER_LOG") & SERVE_PID=$!
+  until wget -qO/dev/null localhost:8080; do sleep .01; done
+  true >"$SERVER_LOG" # Clear log before returning
 }
