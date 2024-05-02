@@ -151,13 +151,13 @@ upkg_list() {
       processing "No packages are installed in '%s'" "$PWD"
       return 0
     fi
-    local dedup_pkgpath dedup_dirname pkgname checksum version upkgjsonpath version
-    for dedup_pkgpath in $(upkg_resolve_links .upkg); do # Don't descend into .packages, we only want the top-level
-      dedup_dirname=$(basename "$dedup_pkgpath")
-      pkgname=${dedup_dirname%@*}
-      checksum=${dedup_dirname#*@}
+    local deduppath dedupdirname pkgname checksum version upkgjsonpath version
+    for deduppath in $(upkg_resolve_links .upkg); do # Don't descend into .packages, we only want the top-level
+      dedupdirname=$(basename "$deduppath")
+      pkgname=${dedupdirname%@*}
+      checksum=${dedupdirname#*@}
       version='no-version'
-      upkgjsonpath=.upkg/$dedup_pkgpath/upkg.json
+      upkgjsonpath=.upkg/$deduppath/upkg.json
       [[ ! -e "$upkgjsonpath" ]] || version=$(jq -r '.version // "no-version"' "$upkgjsonpath")
       printf "%s\t%s\t%s\n" "$pkgname" "$version" "$checksum"
     done
@@ -427,10 +427,10 @@ upkg_link_cmd() {
 upkg_download() (
   local pkgurl=$1 checksum=$2 dedupname
   mkdir -p .upkg/.tmp/download
-  local pkgpath=.upkg/.tmp/download/$checksum
+  local downloadpath=.upkg/.tmp/download/$checksum
 
   # Create a lock so we never download a package more than once, and so other processes can wait for the download to finish
-  exec 9<>"$pkgpath.lock"
+  exec 9<>"$downloadpath.lock"
   local already_downloading=false
   if ! flock -nx 9; then # Try getting an exclusive lock, if we can we are either the first, or the very last where everybody else is done
     already_downloading=true # Didn't get it, somebody is already downloading
@@ -448,7 +448,7 @@ upkg_download() (
   elif $already_downloading; then
     # Download failure. Don't try anything, just fail
     return 1
-  elif ! mkdir "$pkgpath" 2>/dev/null; then
+  elif ! mkdir "$downloadpath" 2>/dev/null; then
     # Download failure, but the lock has already been released. Don't try anything, just fail
     return 1
   fi
@@ -473,7 +473,7 @@ upkg_download() (
 
   if [[ $pkgtype = tar ]]; then
     [[ ${prefetchpath:-$pkgurl} =~ (\.tar(\.[^.?#/]+)?)([?#]|$) ]]
-    local filepath=${pkgpath}${BASH_REMATCH[1]}
+    local filepath=${downloadpath}${BASH_REMATCH[1]}
 
     if [[ -e "$prefetchpath" ]]; then
       # file was already downloaded by upkg_add to generate a checksum, reuse it
@@ -486,51 +486,51 @@ upkg_download() (
     fi
 
     shasum -a 256 -c <(printf "%s  %s" "$checksum" "$filepath") >/dev/null
-    tar -xf "$filepath" -C "$pkgpath"
+    tar -xf "$filepath" -C "$downloadpath"
 
   elif [[ $pkgtype = file ]]; then
-    local filepath=$pkgpath
+    local filepath=$downloadpath
 
     if [[ -e "$prefetchpath" ]]; then
       # file was already downloaded by upkg_add to generate a checksum, reuse it
       filepath=$prefetchpath
-      pkgpath=$filepath
+      downloadpath=$filepath
     elif [[ -e ${pkgurl%%'#'*} ]]; then
       # file exists on the filesystem, copy it so it can be moved later on
-      filepath=$pkgpath.file
-      pkgpath=$filepath
-      cp "${pkgurl%%'#'*}" "$pkgpath"
+      filepath=$downloadpath.file
+      downloadpath=$filepath
+      cp "${pkgurl%%'#'*}" "$downloadpath"
     else
       # don't download to $filepath (which is a directory)
-      filepath=$pkgpath.file
-      pkgpath=$filepath
+      filepath=$downloadpath.file
+      downloadpath=$filepath
       upkg_fetch "$pkgurl" "$filepath"
     fi
 
     shasum -a 256 -c <(printf "%s  %s" "$checksum" "$filepath") >/dev/null
     if [[ $pkgurl =~ \#bin(\#|$) ]]; then # file has been marked as an executable, chmod
-      chmod +x "$pkgpath"
+      chmod +x "$downloadpath"
     fi
 
   else
     processing 'Cloning %s' "$pkgurl"
     local out
-    out=$(git clone -q "${pkgurl%%'#'*}" "$pkgpath" 2>&1) || \
+    out=$(git clone -q "${pkgurl%%'#'*}" "$downloadpath" 2>&1) || \
       fatal "Unable to clone '%s'. Error:\n%s" "$pkgurl" "$out"
-    out=$(git -C "$pkgpath" checkout -q "$checksum" -- 2>&1) || \
+    out=$(git -C "$downloadpath" checkout -q "$checksum" -- 2>&1) || \
       fatal "Unable to checkout '%s' from '%s'. Error:\n%s" "$checksum" "$pkgurl" "$out"
 
-    if [[ -e "$pkgpath/upkg.json" ]]; then
+    if [[ -e "$downloadpath/upkg.json" ]]; then
       # Add a version property to upkg.json
       local version upkgjson
-      version=$(git -C "$pkgpath" describe 2>/dev/null) || version=$checksum
-      upkgjson=$(jq --arg version "$version" '.version = $version' <"$pkgpath/upkg.json") || \
+      version=$(git -C "$downloadpath" describe 2>/dev/null) || version=$checksum
+      upkgjson=$(jq --arg version "$version" '.version = $version' <"$downloadpath/upkg.json") || \
         fatal "The package from '%s' does not contain a valid upkg.json" "$pkgurl"
-      printf "%s\n" "$upkgjson" >"$pkgpath/upkg.json"
+      printf "%s\n" "$upkgjson" >"$downloadpath/upkg.json"
     fi
   fi
 
-  if [[ -e "$pkgpath/upkg.json" ]] && dedupname=$(jq -re '.name // empty' "$pkgpath/upkg.json"); then
+  if [[ -e "$downloadpath/upkg.json" ]] && dedupname=$(jq -re '.name // empty' "$downloadpath/upkg.json"); then
     # upkg.json is supplied, validate the name property or keep the generated one
     if [[ ! $dedupname =~ ^[^@/\n]+$ || $dedupname = .* ]]; then
       warning "The package from '%s' specifies the package name '%s' which contains '@', '/' or a newline, is empty, or starts with '.'. The invalid characters have been replaced with an underscore: '%s'" "$pkgurl" "$dedupname"
@@ -550,7 +550,7 @@ upkg_download() (
   fi
 
   # Move to dedup path
-  mv "$pkgpath" ".upkg/.tmp/root/.upkg/.packages/$dedupname@$checksum"
+  mv "$downloadpath" ".upkg/.tmp/root/.upkg/.packages/$dedupname@$checksum"
   printf "%s\n" "$dedupname"
 )
 
