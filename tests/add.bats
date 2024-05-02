@@ -23,7 +23,7 @@ teardown_file() { common_teardown_file; }
 }
 
 @test "local, filesystem, no metadata, git" {
-  local name=acme-empty-v1.0.2-no-metadata shasum
+  local name=acme-empty-v1.0.2-no-metadata
   create_git_package $name
   run -0 upkg add "$PACKAGE_FIXTURES/$name.git" "$GIT_COMMIT"
   assert_snapshot_output
@@ -31,7 +31,7 @@ teardown_file() { common_teardown_file; }
 }
 
 @test "local, filesystem, no metadata, git, rename" {
-  local name=acme-empty-v1.0.2-no-metadata shasum
+  local name=acme-empty-v1.0.2-no-metadata
   create_git_package $name
   run -0 upkg add "$PACKAGE_FIXTURES/$name.git#name=acme-empty" "$GIT_COMMIT"
   assert_snapshot_output
@@ -47,11 +47,10 @@ teardown_file() { common_teardown_file; }
 }
 
 @test "local, remote, metadata, tarball" {
-  local name=acme-empty-v1.0.2-metadata shasum
+  local name=acme-empty-v1.0.2-metadata
   create_tar_package $name
-  shasum=$TAR_SHASUM
   serve_file "$PACKAGE_FIXTURES/$name.tar"
-  run -0 upkg add http://localhost:8080/$name.tar "$shasum"
+  run -0 upkg add http://localhost:8080/$name.tar "$TAR_SHASUM"
   assert_snapshot_output
   assert_snapshot_path local-metadata-tarball
 }
@@ -77,7 +76,7 @@ teardown_file() { common_teardown_file; }
 }
 
 @test "failing dependency causes nothing to be installed" {
-  local name=failing-dependency shasum
+  local name=failing-dependency
   create_tar_package $name
   run -1 upkg add "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
   assert_snapshot_output
