@@ -360,6 +360,14 @@ upkg_install_pkg() {
   if [[ $pkgurl =~ \#alias=([^#]+)(\#|$) ]]; then
     # Package name override specified
     pkgalias=${BASH_REMATCH[1]}
+    if [[ $pkgalias = */* ]]; then
+      warning "Package alias for '%s' contained slashes (/), they have been replaced with underscore (_)" "$pkgurl"
+    fi
+    if [[ $pkgalias = .* ]]; then
+      warning "Package alias for '%s' starts with a dot (.), it has been replaced with an underscore (_)" "$pkgurl"
+    fi
+    pkgalias=${pkgalias//'/'/_} # Replace '/' with _
+    pkgalias=${pkgalias#'.'/_} # Replace starting '.' with _
   fi
   [[ $pkgalias =~ ^[@/]+$ || $pkgalias != .* ]] ||
     fatal "The package from '%s' has an invalid package name or alias \
@@ -479,7 +487,7 @@ upkg_download() (
     tar -xf "$filepath" -C "$pkgpath"
 
   elif [[ $pkgtype = file ]]; then
-    local filepath=${pkgpath}
+    local filepath=$pkgpath
 
     if [[ -e "$prefetchpath" ]]; then
       # file was already downloaded by upkg_add to generate a checksum, reuse it
@@ -520,21 +528,22 @@ upkg_download() (
     fi
   fi
 
-  # Generate a dedupname
-  dedupname=${pkgurl%%'#'*} # Remove trailing anchor
-  dedupname=${dedupname%%'?'*} # Remove query params
-  dedupname=$(basename "$dedupname") # Remove path prefix
-  dedupname=${dedupname//@/_} # Replace @ with _
-  dedupname=${dedupname#'.'/_} # Replace starting '.' with _
-
-  local upkgname
-  if [[ -e "$pkgpath/upkg.json" ]] && upkgname=$(jq -re '.name // empty' "$pkgpath/upkg.json"); then
+  if [[ -e "$pkgpath/upkg.json" ]] && dedupname=$(jq -re '.name // empty' "$pkgpath/upkg.json"); then
     # upkg.json is supplied, validate the name property or keep the generated one
-    if [[ $upkgname =~ ^[@/]+$ || $upkgname != .* ]]; then
-      dedupname=$upkgname
-    else
-      warning "The package from '%s' specifies an invalid package name (contains @ or /, is empty or starts with '.'): '%s'" "$pkgurl" "$upkgname"
+    if [[ ! $dedupname =~ ^[^@/]+$ || $dedupname = .* ]]; then
+      warning "The package from '%s' specifies the package name '%s' which contains @ or /, is empty, or starts with '.'. The invalid characters have been replaced with an underscore: '%s'" "$pkgurl" "$dedupname"
     fi
+    dedupname=${dedupname//'@'/_} # Replace @ with _
+    dedupname=${dedupname//'/'/_} # Replace @ with _
+    dedupname=${dedupname#'.'/_} # Replace starting '.' with _
+  else
+    # Generate a dedupname
+    dedupname=${pkgurl%%'#'*} # Remove trailing anchor
+    dedupname=${dedupname%%'?'*} # Remove query params
+    dedupname=$(basename "$dedupname") # Remove path prefix
+    dedupname=${dedupname//'@'/_} # Replace @ with _
+    # dedupname=${dedupname//$'\n'/_} # Replace @ with _
+    dedupname=${dedupname#'.'/_} # Replace starting '.' with _
   fi
 
   # Move to dedup path

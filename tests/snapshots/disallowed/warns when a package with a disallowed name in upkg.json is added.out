@@ -1,0 +1,2 @@
+upkg: The package from '$BATS_RUN_TMPDIR/package-fixtures/disallowed/with-at-in-name.tar' specifies the package name 'with@in-name' which contains @ or /, is empty, or starts with '.', the invalid characters have been replaced with an underscore: ''
+upkg: Added '$BATS_RUN_TMPDIR/package-fixtures/disallowed/with-at-in-name.tar'

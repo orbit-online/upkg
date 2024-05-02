@@ -1,0 +1,9 @@
+[drwxr-xr-x]  .
+├── [drwxr-xr-x]  .upkg
+│   ├── [drwxr-xr-x]  .packages
+│   │   └── [drwxr-xr-x]  with_in-name.tar@7968a50a25bd7e5ca8148dbfb4657ef1147ae8e2c3240597d4936cafb9cd1591
+│   │       └── [-rw-r--r--]  empty
+│   └── [lrwxrwxrwx]  with_in-name.tar -> .packages/with_in-name.tar@7968a50a25bd7e5ca8148dbfb4657ef1147ae8e2c3240597d4936cafb9cd1591
+└── [-rw-r--r--]  upkg.json
+
+4 directories, 2 files
