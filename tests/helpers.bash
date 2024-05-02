@@ -127,15 +127,15 @@ assert_snapshot_output() {
     if ${CREATE_SNAPSHOTS:-false}; then
       mkdir -p "$SNAPSHOTS"
       # shellcheck disable=SC2001
-      sed "s#$BATS_RUN_TMPDIR#\$BATS_RUN_TMPDIR#g" <<<"$output" > "$snapshot_path"
+      sed "s#$BATS_TEST_TMPDIR#\$BATS_TEST_TMPDIR#g" <<<"$output" | sed "s#$BATS_RUN_TMPDIR#\$BATS_RUN_TMPDIR#g" > "$snapshot_path"
     else
       fail "The snapshot '${snapshot_path%"$SNAPSHOTS"}' does not exist, run with CREATE_SNAPSHOTS=true to create it"
     fi
   elif ${UPDATE_SNAPSHOTS:-false}; then
     # shellcheck disable=SC2001
-    sed "s#$BATS_RUN_TMPDIR#\$BATS_RUN_TMPDIR#g" <<<"$output" >"$snapshot_path"
+    sed "s#$BATS_TEST_TMPDIR#\$BATS_TEST_TMPDIR#g" <<<"$output" | sed "s#$BATS_RUN_TMPDIR#\$BATS_RUN_TMPDIR#g" > "$snapshot_path"
   fi
-  assert_equals_diff "$(sed "s#\$BATS_RUN_TMPDIR#$BATS_RUN_TMPDIR#g" "$snapshot_path")" "$actual"
+  assert_equals_diff "$(sed "s#\$BATS_TEST_TMPDIR#$BATS_TEST_TMPDIR#g" "$snapshot_path" | sed "s#\$BATS_RUN_TMPDIR#$BATS_RUN_TMPDIR#g")" "$actual"
 }
 
 assert_snapshot_path() {

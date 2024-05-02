@@ -1,1 +1,1 @@
-upkg: conflict: the command 'acme-empty-v1.0.2.bin' already exists in '$BATS_RUN_TMPDIR/test/4/home/.local/bin' but does not point to '$BATS_RUN_TMPDIR/test/4/home/.local/lib/upkg'
+upkg: conflict: the command 'acme-empty-v1.0.2.bin' already exists in '$BATS_TEST_TMPDIR/home/.local/bin' but does not point to '$BATS_TEST_TMPDIR/home/.local/lib/upkg'
