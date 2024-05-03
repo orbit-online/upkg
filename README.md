@@ -9,6 +9,7 @@ Check wget support in busybox & alpine
 Check mac support
 Check freebsd support
 name -> alias, unified replace, dedupname to pkgname or something
+Make "upkg add" able to replace packages
 Validate hash params
 Add test check that determines unused snapshots
 Kill running dep installs when first error is discovered
@@ -19,6 +20,8 @@ Make a #no-bin to prevent package symlinking when there is a known conflict
 Test naming clash after rename
 We need sort **-u** when using comm
 Maybe rethink install_prefix
+Replace '[[...]] ||' with '[[...]] &&'
+Test duplicate checksum dep install
 
 ## Testing
 

@@ -17,7 +17,7 @@ teardown_file() { common_teardown_file; }
 @test "tarballs can be renamed" {
   local name=acme-empty-v1.0.2-no-metadata
   create_tar_package $name
-  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar#name=acme-empty" "$TAR_SHASUM"
+  run -0 upkg add -p acme-empty "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
   assert_snapshot_output
   assert_snapshot_path
 }
@@ -25,7 +25,7 @@ teardown_file() { common_teardown_file; }
 @test "local git repo install from the filesystem with no metadata succeeds" {
   local name=acme-empty-v1.0.2-no-metadata
   create_git_package $name
-  run -0 upkg add "$PACKAGE_FIXTURES/$name.git" "$GIT_COMMIT"
+  run -0 upkg add -t git "$PACKAGE_FIXTURES/$name.git" "$GIT_COMMIT"
   assert_snapshot_output
   assert_snapshot_path
 }
@@ -33,7 +33,7 @@ teardown_file() { common_teardown_file; }
 @test "git repos can be renamed" {
   local name=acme-empty-v1.0.2-no-metadata
   create_git_package $name
-  run -0 upkg add "$PACKAGE_FIXTURES/$name.git#name=acme-empty" "$GIT_COMMIT"
+  run -0 upkg add -t git -p acme-empty "$PACKAGE_FIXTURES/$name.git" "$GIT_COMMIT"
   assert_snapshot_output
   assert_snapshot_path
 }
@@ -59,7 +59,7 @@ teardown_file() { common_teardown_file; }
 @test "remote git repo install succeeds" {
   local name=acme-empty-v1.0.2-metadata
   create_git_package $name
-  run -0 upkg add -g http://localhost:8080/$name.git "$GIT_COMMIT"
+  run -0 upkg add -t git -g http://localhost:8080/$name.git "$GIT_COMMIT"
   assert_snapshot_output
   assert_snapshot_path "" "$HOME/.local"
 }
@@ -121,7 +121,7 @@ teardown_file() { common_teardown_file; }
   local name=acme-empty-v1.0.2-metadata
   create_tar_package $name
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
-  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar#name=acme-empty-2" "$TAR_SHASUM"
+  run -0 upkg add -p acme-empty-2 "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
   assert_snapshot_output
   assert_snapshot_path "$BATS_TEST_DESCRIPTION"
 }

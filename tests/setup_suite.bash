@@ -41,40 +41,13 @@ teardown_suite() {
 # Sets up a directory for upkg with only the barest of essentials and creates a upkg wrapper which overwrites PATH with it
 setup_upkg_path_wrapper() {
   ${RESTRICT_BIN:-true} || return 0
-  export RESTRICTED_PATH=$BATS_RUN_TMPDIR/restricted-path
-  local upkg_wrapper_bin
-  upkg_wrapper_bin=$BATS_RUN_TMPDIR/upkg-wrapper-bin
-  PATH=$upkg_wrapper_bin:$PATH
-  [[ ! -e "$BATS_RUN_TMPDIR/restricted-path" ]] || return 0
-  local real_upkg_path
-  real_upkg_path=$(realpath "$BATS_TEST_DIRNAME/../bin/upkg")
-  mkdir -p "$RESTRICTED_PATH" "$upkg_wrapper_bin"
-  # shellcheck disable=SC2016
-  printf '#/usr/bin/env bash
-PATH="$RESTRICTED_PATH" "%s" "$@"
-' "$real_upkg_path" >"$upkg_wrapper_bin/upkg"
-  chmod +x "$upkg_wrapper_bin/upkg"
-  # Make sure the wrapper is invoked when calling upkg
-
-  local cmd target required_commands=(
-    bash jq
-    basename dirname sort comm cut column # string commands
-    mv cp mkdir touch rm ln chmod cat readlink # fs commands
-    sleep flock # concurrency commands
-    shasum git tar gzip xz bzip2 # archive commands
-  )
-  for cmd in "${required_commands[@]}"; do
-    target=$(which "$cmd") || { printf "Unable to find required command '%s'" "$cmd" >&2; return 1; }
-    ln -sT "$target" "$RESTRICTED_PATH/$cmd"
-  done
-  if target=$(which wget 2>/dev/null); then
-    ln -sT "$target" "$RESTRICTED_PATH/wget"
-  elif target=$(which curl 2>/dev/null); then
-    ln -sT "$target" "$RESTRICTED_PATH/curl"
+  if [[ -e /restricted/restricted-bin ]]; then
+    export RESTRICTED_BIN=/restricted/restricted-bin
   else
-    fatal "Unable to find wget or curl"
+    export RESTRICTED_BIN=$BATS_RUN_TMPDIR/restricted-bin
+    PATH=$BATS_RUN_TMPDIR/upkg-wrapper-bin:$PATH
+    "$BATS_TEST_DIRNAME/setup-upkg-path-wrapper.sh" "$(realpath "$BATS_TEST_DIRNAME/../bin/upkg")" "$BATS_RUN_TMPDIR"
   fi
-  ln -sT "$real_upkg_path" "$RESTRICTED_PATH/upkg"
 }
 
 setup_reproducible_vars() {

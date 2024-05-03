@@ -20,6 +20,10 @@ wget -qO- https://github.com/bats-core/bats-file/archive/refs/tags/v0.4.0.tar.gz
 EOINSTALL
 ENV BATS_LIB_PATH=/usr/local/bats/lib
 
+RUN mkdir /restricted
+COPY tests/setup-upkg-path-wrapper.sh /restricted/
+RUN /restricted/setup-upkg-path-wrapper.sh /upkg/bin/upkg /restricted
+
 ARG USER
 ARG UID
 RUN <<EOUSERSETUP
@@ -31,7 +35,7 @@ COPY <<EOF /etc/sudoers.d/nopass
 $USER ALL=(ALL) NOPASSWD:ALL
 EOF
 USER "$USER"
-ENV PATH=/upkg/bin/:$PATH
+ENV PATH=/restricted/upkg-wrapper-bin:$PATH
 ENV SSH_AUTH_SOCK=/ssh_auth
 
 WORKDIR /upkg

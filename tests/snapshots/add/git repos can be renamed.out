@@ -1,2 +1,2 @@
-upkg: Cloning $BATS_RUN_TMPDIR/package-fixtures/acme-empty-v1.0.2-no-metadata.git#name=acme-empty
-upkg: Added '$BATS_RUN_TMPDIR/package-fixtures/acme-empty-v1.0.2-no-metadata.git#name=acme-empty'
+upkg: Cloning $BATS_RUN_TMPDIR/package-fixtures/acme-empty-v1.0.2-no-metadata.git
+upkg: Added '$BATS_RUN_TMPDIR/package-fixtures/acme-empty-v1.0.2-no-metadata.git'
