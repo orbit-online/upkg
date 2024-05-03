@@ -11,6 +11,14 @@ Check freebsd support
 name -> alias, unified replace, dedupname to pkgname or something
 Validate hash params
 Add test check that determines unused snapshots
+Kill running dep installs when first error is discovered
+install should not install deps on dry-run
+Run through snapshots and detect same files
+Remove `find` dependency
+Make a #no-bin to prevent package symlinking when there is a known conflict
+Test naming clash after rename
+We need sort **-u** when using comm
+Maybe rethink install_prefix
 
 ## Testing
 
