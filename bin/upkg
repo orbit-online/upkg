@@ -24,13 +24,15 @@ upkg() {
   export GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND=${GIT_SSH_COMMAND:-"ssh -oBatchMode=yes"}
   DOC="μpkg - A minimalist package manager
 Usage:
-  upkg install [-n]
-  upkg add [-ngBXp PKGNAME -t PKGTYPE] (URL|PATH) [SHA]
-  upkg remove [-ng] PKGNAME
-  upkg list [-g] -- COLUMNOPTS...
+  upkg install [-nqv]
+  upkg add [-nqvgBXp PKGNAME -t PKGTYPE] (URL|PATH) [SHA]
+  upkg remove [-nqvg] PKGNAME
+  upkg list [-qvg] -- COLUMNOPTS...
 
 Options:
   -n --dry-run       Dry run, \$?=1 if install/upgrade is required
+  -q --quiet         Log only fatal errors
+  -v --verbose       Output verbose logs and disable writing to the same line
   -g --global        Act globally
   -B --no-bin        Do not link executables to .upkg/.bin
   -X --no-exec       Do not chmod +x the file
@@ -41,32 +43,37 @@ Options:
 # docopt parser below, refresh this parser with `docopt.sh upkg`
 # shellcheck disable=2016,1090,1091,2034,2154
 docopt() { source "$PKGROOT/.upkg/docopt-lib.sh" '1.0.0' || { ret=$?
-printf -- "exit %d\n" "$ret"; exit "$ret"; }; set -e; trimmed_doc=${DOC:0:530}
-usage=${DOC:36:144}; digest=2b181; shorts=(-n -g -B -X -p -t)
-longs=(--dry-run --global --no-bin --no-exec --pkgname --pkgtype)
-argcounts=(0 0 0 0 1 1); node_0(){ switch __dry_run 0; }; node_1(){
-switch __global 1; }; node_2(){ switch __no_bin 2; }; node_3(){
-switch __no_exec 3; }; node_4(){ value __pkgname 4; }; node_5(){
-value __pkgtype 5; }; node_6(){ value URL a; }; node_7(){ value PATH a; }
-node_8(){ value SHA a; }; node_9(){ value PKGNAME a; }; node_10(){
-value COLUMNOPTS a true; }; node_11(){ _command install; }; node_12(){
-_command add; }; node_13(){ _command remove; }; node_14(){ _command list; }
-node_15(){ _command __ --; }; node_16(){ optional 0; }; node_17(){
-required 11 16; }; node_18(){ optional 0 1 2 3 4 5; }; node_19(){ either 6 7; }
-node_20(){ required 19; }; node_21(){ optional 8; }; node_22(){
-required 12 18 20 21; }; node_23(){ optional 0 1; }; node_24(){ required 13 23 9
-}; node_25(){ optional 1; }; node_26(){ oneormore 10; }; node_27(){
-required 14 25 15 26; }; node_28(){ either 17 22 24 27; }; node_29(){
-required 28; }; cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
-printf "%s\n" "${DOC:36:144}" >&2; exit 1; }'; unset var___dry_run \
-var___global var___no_bin var___no_exec var___pkgname var___pkgtype var_URL \
-var_PATH var_SHA var_PKGNAME var_COLUMNOPTS var_install var_add var_remove \
-var_list var___; parse 29 "$@"; local prefix=${DOCOPT_PREFIX:-''}
-unset "${prefix}__dry_run" "${prefix}__global" "${prefix}__no_bin" \
-"${prefix}__no_exec" "${prefix}__pkgname" "${prefix}__pkgtype" "${prefix}URL" \
-"${prefix}PATH" "${prefix}SHA" "${prefix}PKGNAME" "${prefix}COLUMNOPTS" \
-"${prefix}install" "${prefix}add" "${prefix}remove" "${prefix}list" \
-"${prefix}__"; eval "${prefix}"'__dry_run=${var___dry_run:-false}'
+printf -- "exit %d\n" "$ret"; exit "$ret"; }; set -e; trimmed_doc=${DOC:0:659}
+usage=${DOC:36:152}; digest=0a91c; shorts=(-n -q -v -g -B -X -p -t)
+longs=(--dry-run --quiet --verbose --global --no-bin --no-exec --pkgname --pkgtype)
+argcounts=(0 0 0 0 0 0 1 1); node_0(){ switch __dry_run 0; }; node_1(){
+switch __quiet 1; }; node_2(){ switch __verbose 2; }; node_3(){
+switch __global 3; }; node_4(){ switch __no_bin 4; }; node_5(){
+switch __no_exec 5; }; node_6(){ value __pkgname 6; }; node_7(){
+value __pkgtype 7; }; node_8(){ value URL a; }; node_9(){ value PATH a; }
+node_10(){ value SHA a; }; node_11(){ value PKGNAME a; }; node_12(){
+value COLUMNOPTS a true; }; node_13(){ _command install; }; node_14(){
+_command add; }; node_15(){ _command remove; }; node_16(){ _command list; }
+node_17(){ _command __ --; }; node_18(){ optional 0 1 2; }; node_19(){
+required 13 18; }; node_20(){ optional 0 1 2 3 4 5 6 7; }; node_21(){ either 8 9
+}; node_22(){ required 21; }; node_23(){ optional 10; }; node_24(){
+required 14 20 22 23; }; node_25(){ optional 0 1 2 3; }; node_26(){
+required 15 25 11; }; node_27(){ optional 1 2 3; }; node_28(){ oneormore 12; }
+node_29(){ required 16 27 17 28; }; node_30(){ either 19 24 26 29; }; node_31(){
+required 30; }; cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
+printf "%s\n" "${DOC:36:152}" >&2; exit 1; }'; unset var___dry_run var___quiet \
+var___verbose var___global var___no_bin var___no_exec var___pkgname \
+var___pkgtype var_URL var_PATH var_SHA var_PKGNAME var_COLUMNOPTS var_install \
+var_add var_remove var_list var___; parse 31 "$@"
+local prefix=${DOCOPT_PREFIX:-''}; unset "${prefix}__dry_run" \
+"${prefix}__quiet" "${prefix}__verbose" "${prefix}__global" \
+"${prefix}__no_bin" "${prefix}__no_exec" "${prefix}__pkgname" \
+"${prefix}__pkgtype" "${prefix}URL" "${prefix}PATH" "${prefix}SHA" \
+"${prefix}PKGNAME" "${prefix}COLUMNOPTS" "${prefix}install" "${prefix}add" \
+"${prefix}remove" "${prefix}list" "${prefix}__"
+eval "${prefix}"'__dry_run=${var___dry_run:-false}'
+eval "${prefix}"'__quiet=${var___quiet:-false}'
+eval "${prefix}"'__verbose=${var___verbose:-false}'
 eval "${prefix}"'__global=${var___global:-false}'
 eval "${prefix}"'__no_bin=${var___no_bin:-false}'
 eval "${prefix}"'__no_exec=${var___no_exec:-false}'
@@ -83,10 +90,11 @@ eval "${prefix}"'remove=${var_remove:-false}'
 eval "${prefix}"'list=${var_list:-false}'; eval "${prefix}"'__=${var___:-false}'
 local docopt_i=1; [[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2
 for ((;docopt_i>0;docopt_i--)); do declare -p "${prefix}__dry_run" \
-"${prefix}__global" "${prefix}__no_bin" "${prefix}__no_exec" \
-"${prefix}__pkgname" "${prefix}__pkgtype" "${prefix}URL" "${prefix}PATH" \
-"${prefix}SHA" "${prefix}PKGNAME" "${prefix}COLUMNOPTS" "${prefix}install" \
-"${prefix}add" "${prefix}remove" "${prefix}list" "${prefix}__"; done; }
+"${prefix}__quiet" "${prefix}__verbose" "${prefix}__global" \
+"${prefix}__no_bin" "${prefix}__no_exec" "${prefix}__pkgname" \
+"${prefix}__pkgtype" "${prefix}URL" "${prefix}PATH" "${prefix}SHA" \
+"${prefix}PKGNAME" "${prefix}COLUMNOPTS" "${prefix}install" "${prefix}add" \
+"${prefix}remove" "${prefix}list" "${prefix}__"; done; }
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib.sh"' upkg`
   DOCOPT_PREFIX=_
   eval "$(docopt "$@")"
@@ -105,8 +113,19 @@ for ((;docopt_i>0;docopt_i--)); do declare -p "${prefix}__dry_run" \
     INSTALL_PREFIX=$HOME/.local
     [[ $EUID != 0 ]] || INSTALL_PREFIX=/usr/local
   fi
+
+  if $___quiet && $___verbose; then
+    fatal "--quiet and --verbose are mutually exclusive"
+  fi
+
   DRY_RUN=false
   ! $___dry_run || DRY_RUN=true
+  VERBOSE=false
+  # shellcheck disable=SC2034
+  ! $___verbose || VERBOSE=true
+  QUIET=false
+  # shellcheck disable=SC2034
+  ! $___quiet || QUIET=true
 
   if $_install; then
     upkg_mktemp
@@ -115,7 +134,7 @@ for ((;docopt_i>0;docopt_i--)); do declare -p "${prefix}__dry_run" \
     upkg_install "$PWD"
     if $DRY_RUN; then processing 'All dependencies are up-to-date'
     else processing 'Installed all dependencies'; fi
-    [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";} # Add a newline after the processing lines
+    trailing_newline
   elif $_add; then
     if $___global; then
       if [[ ! -e "$INSTALL_PREFIX/lib/upkg" ]]; then
@@ -138,7 +157,6 @@ for ((;docopt_i>0;docopt_i--)); do declare -p "${prefix}__dry_run" \
     local pkgtype=$___pkgtype
     if [[ -z $pkgtype ]]; then
       pkgtype=$(upkg_guess_pkgtype "$_URL" "$_SHA")
-      processing "No pkgtype provided, guessing it is '%s'" "$pkgtype"
     fi
     if [[ $pkgtype != file ]]; then
       ! $___no_exec || docopt_exit "upkg: --no-exec is only valid for files"
@@ -151,7 +169,7 @@ for ((;docopt_i>0;docopt_i--)); do declare -p "${prefix}__dry_run" \
 
     upkg_mktemp
     upkg_add "$pkgtype" "$_URL" "$_SHA" "$(clean_pkgname "$___pkgname")" "$bin" "$exec"
-    [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";}
+    trailing_newline
   elif $_remove; then
     if $___global; then
       [[ -e "$INSTALL_PREFIX/lib/upkg" ]] || return 0
@@ -159,7 +177,7 @@ for ((;docopt_i>0;docopt_i--)); do declare -p "${prefix}__dry_run" \
     fi
     upkg_mktemp
     upkg_remove "$(clean_pkgname "$_PKGNAME")"
-    [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";}
+    trailing_newline
   elif $_list; then
     if $___global; then
       [[ -e "$INSTALL_PREFIX/lib/upkg" ]] || return 0
