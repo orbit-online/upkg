@@ -22,6 +22,10 @@ We need sort **-u** when using comm
 Maybe rethink install_prefix
 Replace '[[...]] ||' with '[[...]] &&'
 Test duplicate checksum dep install
+update script should update itself first
+update script: pass all arguments as env vars, make the upkg.json entry a single string
+tar: auto-detect whether to --strip-components 1, add strip-components to upkg.json
+"bin": Make default "bin/" and allow sepcifying a different path. False is still false
 
 ## Testing
 
