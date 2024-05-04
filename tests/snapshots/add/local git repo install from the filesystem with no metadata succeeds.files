@@ -8,5 +8,3 @@
 │   │           └── [-rwxr-xr-x]  acme-empty-v1.0.2.bin
 │   └── [lrwxrwxrwx]  acme-empty-v1.0.2-no-metadata.git -> .packages/acme-empty-v1.0.2-no-metadata.git@ea82f0b9fbce993deb1f969a2472d14b077e8842
 └── [-rw-r--r--]  upkg.json
-
-6 directories, 3 files

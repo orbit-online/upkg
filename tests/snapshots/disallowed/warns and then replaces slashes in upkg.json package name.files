@@ -5,5 +5,3 @@
 │   │       └── [-rw-r--r--]  upkg.json
 │   └── [lrwxrwxrwx]  with_in-name -> .packages/with_in-name@05ff5475938529515bff9b5a98b543963590aac8686006841efccf48651a9423
 └── [-rw-r--r--]  upkg.json
-
-4 directories, 2 files

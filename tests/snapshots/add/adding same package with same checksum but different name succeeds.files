@@ -10,5 +10,3 @@
 │   ├── [lrwxrwxrwx]  acme-empty -> .packages/acme-empty@ef8a1bc060bb699dd758cfb1482d20af721f6a37ec5b79e489a4a51f8329626c
 │   └── [lrwxrwxrwx]  acme-empty-2 -> .packages/acme-empty@ef8a1bc060bb699dd758cfb1482d20af721f6a37ec5b79e489a4a51f8329626c
 └── [-rw-r--r--]  upkg.json
-
-7 directories, 4 files

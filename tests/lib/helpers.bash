@@ -147,10 +147,10 @@ replace_vars() {
   (if [[ -n $REMOTE_ADDR ]]; then sed "s#\$REMOTE_ADDR#$REMOTE_ADDR#g"; else cat; fi)
 }
 
-get_file_structure() (
-  [[ -z $1 ]] || cd "$1"
-  tree -n -p --charset=UTF-8 -a -I .git . 2>&1
-)
+get_file_structure() {
+  # tree counts differently depending on the version, so we cut off the summary
+  (cd "${1:-.}"; tree -n -p --charset=UTF-8 -a -I .git . | head -n-1) 2>&1
+}
 
 has_tag() {
   contains_element "$1" "${BATS_TEST_TAGS[@]}"

@@ -8,5 +8,3 @@
 │   │           └── [-rw-r--r--]  non-executable.sh
 │   └── [lrwxrwxrwx]  no-executables.tar -> .packages/no-executables.tar@e982460b5aa08f8916fdb8a11f15b7f1b3c87506ada001c8617795b31253b64a
 └── [-rw-r--r--]  upkg.json
-
-6 directories, 3 files
