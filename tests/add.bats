@@ -46,7 +46,7 @@ teardown_file() { common_teardown_file; }
 }
 
 # bats test_tags=tar
-@test "local tarball install with metadata has name from package" {
+@test "local tarball install with metadata has name from package" { # TODO: rename
   local name=acme-empty-v1.0.2-metadata
   create_tar_package $name
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
@@ -56,7 +56,7 @@ teardown_file() { common_teardown_file; }
 }
 
 # bats test_tags=remote,tar
-@test "remote tarball install with metadata has name from package" {
+@test "remote tarball install with metadata has name from package" { # TODO: rename
   local name=acme-empty-v1.0.2-metadata
   create_tar_package $name
   run -0 upkg add $REMOTE_ADDR/$name.tar $TAR_SHASUM
