@@ -11,7 +11,7 @@ teardown_file() { common_teardown_file; }
 
 # bats test_tags=tar
 @test ".upkg/.bin/ linked executable works" {
-  local name=acme-empty-v1.0.2-metadata
+  local name=default/acme-empty-v1.0.2-metadata
   create_tar_package $name
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   run -0 .upkg/.bin/acme-empty-v1.0.2.bin
@@ -19,7 +19,7 @@ teardown_file() { common_teardown_file; }
 
 # bats test_tags=tar
 @test ".local/.bin/ linked executable works" {
-  local name=acme-empty-v1.0.2-metadata
+  local name=default/acme-empty-v1.0.2-metadata
   create_tar_package $name
   run -0 upkg add -g "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   run -0 "$HOME/.local/bin/acme-empty-v1.0.2.bin"
@@ -27,7 +27,7 @@ teardown_file() { common_teardown_file; }
 
 # bats test_tags=tar
 @test "don't link non-executable files in bin/" {
-  local name=no-executables
+  local name=default/no-executables
   create_tar_package $name
   run -0 upkg add -g "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_output
@@ -39,7 +39,7 @@ teardown_file() { common_teardown_file; }
   mkdir -p "$HOME/.local/bin"
   touch "$HOME/.local/bin/acme-empty-v1.0.2.bin"
   chmod +x "$HOME/.local/bin/acme-empty-v1.0.2.bin"
-  local name=acme-empty-v1.0.2-metadata
+  local name=default/acme-empty-v1.0.2-metadata
   create_tar_package $name
   run -1 upkg add -g "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_output

@@ -11,7 +11,7 @@ teardown_file() { common_teardown_file; }
 
 # bats test_tags=tar
 @test "local tarball install from the filesystem with no metadata succeeds" {
-  local name=acme-empty-v1.0.2-no-metadata
+  local name=default/acme-empty-v1.0.2-no-metadata
   create_tar_package $name
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_output
@@ -20,7 +20,7 @@ teardown_file() { common_teardown_file; }
 
 # bats test_tags=tar
 @test "tarballs can be renamed" {
-  local name=acme-empty-v1.0.2-no-metadata
+  local name=default/acme-empty-v1.0.2-no-metadata
   create_tar_package $name
   run -0 upkg add -p acme-empty "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_output
@@ -29,7 +29,7 @@ teardown_file() { common_teardown_file; }
 
 # bats test_tags=git
 @test "local git repo install from the filesystem with no metadata succeeds" {
-  local name=acme-empty-v1.0.2-no-metadata
+  local name=default/acme-empty-v1.0.2-no-metadata
   create_git_package $name
   run -0 upkg add -t git "$PACKAGE_FIXTURES/$name.git" $GIT_COMMIT
   assert_snapshot_output
@@ -38,7 +38,7 @@ teardown_file() { common_teardown_file; }
 
 # bats test_tags=git
 @test "git repos can be renamed" {
-  local name=acme-empty-v1.0.2-no-metadata
+  local name=default/acme-empty-v1.0.2-no-metadata
   create_git_package $name
   run -0 upkg add -t git -p acme-empty "$PACKAGE_FIXTURES/$name.git" $GIT_COMMIT
   assert_snapshot_output
@@ -47,7 +47,7 @@ teardown_file() { common_teardown_file; }
 
 # bats test_tags=tar
 @test "local tarball install with metadata has name from package" { # TODO: rename
-  local name=acme-empty-v1.0.2-metadata
+  local name=default/acme-empty-v1.0.2-metadata
   create_tar_package $name
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_output
@@ -57,7 +57,7 @@ teardown_file() { common_teardown_file; }
 
 # bats test_tags=remote,tar
 @test "remote tarball install with metadata has name from package" { # TODO: rename
-  local name=acme-empty-v1.0.2-metadata
+  local name=default/acme-empty-v1.0.2-metadata
   create_tar_package $name
   run -0 upkg add $REMOTE_ADDR/$name.tar $TAR_SHASUM
   assert_snapshot_output
@@ -67,7 +67,7 @@ teardown_file() { common_teardown_file; }
 
 # bats test_tags=remote,git
 @test "remote git repo install succeeds" {
-  local name=acme-empty-v1.0.2-metadata
+  local name=default/acme-empty-v1.0.2-metadata
   create_git_package $name
   run -0 upkg add -t git -g $REMOTE_ADDR/$name.git $GIT_COMMIT
   assert_snapshot_output
@@ -76,7 +76,7 @@ teardown_file() { common_teardown_file; }
 
 # bats test_tags=tar
 @test "failing dependency causes nothing to be installed" {
-  local name=failing-dependency
+  local name=negative/failing-dependency
   create_tar_package $name
   run -1 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_output
@@ -85,7 +85,7 @@ teardown_file() { common_teardown_file; }
 
 # bats test_tags=tar
 @test "adding same package with same name does nothing (checksum given)" {
-  local name=acme-empty-v1.0.2-no-metadata
+  local name=default/acme-empty-v1.0.2-no-metadata
   create_tar_package $name
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_path "same package, same name"
@@ -96,7 +96,7 @@ teardown_file() { common_teardown_file; }
 
 # bats test_tags=tar
 @test "adding same package does nothing (checksum not given)" {
-  local name=acme-empty-v1.0.2-no-metadata
+  local name=default/acme-empty-v1.0.2-no-metadata
   create_tar_package $name
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_path "same package, same name"
@@ -134,7 +134,7 @@ teardown_file() { common_teardown_file; }
 
 # bats test_tags=tar
 @test "adding same package with same checksum but different name succeeds" {
-  local name=acme-empty-v1.0.2-metadata
+  local name=default/acme-empty-v1.0.2-metadata
   create_tar_package $name
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   run -0 upkg add -p acme-empty-2 "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM

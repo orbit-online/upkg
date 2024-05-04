@@ -1,2 +1,2 @@
-upkg: Downloading $REMOTE_ADDR/acme-empty-v1.0.2-metadata.tar
-upkg: Added '$REMOTE_ADDR/acme-empty-v1.0.2-metadata.tar'
+upkg: Downloading $REMOTE_ADDR/default/acme-empty-v1.0.2-metadata.tar
+upkg: Added '$REMOTE_ADDR/default/acme-empty-v1.0.2-metadata.tar'

@@ -11,7 +11,7 @@ teardown_file() { common_teardown_file; }
 
 # bats test_tags=tar
 @test "no metadata, global" {
-  local name=acme-empty-v1.0.2-no-metadata
+  local name=default/acme-empty-v1.0.2-no-metadata
   create_tar_package $name
   run -0 upkg add -g "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   run -0 upkg remove -g $name.tar
@@ -21,7 +21,7 @@ teardown_file() { common_teardown_file; }
 
 # bats test_tags=tar
 @test "metadata, global" {
-  local name=acme-empty-v1.0.2-metadata
+  local name=default/acme-empty-v1.0.2-metadata
   create_tar_package $name
   run -0 upkg add -g "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   run -0 upkg remove -g acme-empty

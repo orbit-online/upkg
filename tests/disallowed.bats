@@ -29,7 +29,7 @@ teardown_file() { common_teardown_file; }
 
 # bats test_tags=tar
 @test "allows name override to contain @" {
-  local name=acme-empty-v1.0.2-metadata
+  local name=default/acme-empty-v1.0.2-metadata
   create_tar_package $name
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar#name=has@in-name" $TAR_SHASUM
   assert_snapshot_output
@@ -47,7 +47,7 @@ teardown_file() { common_teardown_file; }
 
 # bats test_tags=tar
 @test "warns and then replaces slashes in name override" {
-  local name=acme-empty-v1.0.2-metadata
+  local name=default/acme-empty-v1.0.2-metadata
   create_tar_package $name
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar#name=has/in-name" $TAR_SHASUM
   assert_snapshot_output
@@ -56,7 +56,7 @@ teardown_file() { common_teardown_file; }
 
 # bats test_tags=tar
 @test "warns and then replaces newlines in name override" {
-  local name=acme-empty-v1.0.2-metadata
+  local name=default/acme-empty-v1.0.2-metadata
   create_tar_package $name
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar#name=has"$'\n'"in-name" $TAR_SHASUM
   assert_snapshot_output
