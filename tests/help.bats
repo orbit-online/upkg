@@ -1,6 +1,9 @@
 #!/usr/bin/env bats
 
-load 'helpers'
+# shellcheck source=lib/shellcheck-defs.sh
+source "$BATS_TEST_DIRNAME/lib/empty-file.sh"
+
+load 'lib/helpers'
 setup_file() { common_setup_file; }
 setup() { common_setup; }
 teardown() { common_teardown; }

@@ -1,3 +1,3 @@
-upkg: Cloning http://localhost:8080/acme-empty-v1.0.2-metadata.git
+upkg: Cloning $REMOTE_ADDR/acme-empty-v1.0.2-metadata.git
 upkg: Linking 'acme-empty-v1.0.2.bin'
-upkg: Added 'http://localhost:8080/acme-empty-v1.0.2-metadata.git'
+upkg: Added '$REMOTE_ADDR/acme-empty-v1.0.2-metadata.git'

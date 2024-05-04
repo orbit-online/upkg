@@ -11,6 +11,13 @@ common_setup_file() {
 }
 
 common_setup() {
+  if has_tag remote; then
+    [[ -z $SKIP_REMOTE ]] || skip "$SKIP_REMOTE"
+  else
+    unset REMOTE_ADDR
+  fi
+  ! has_tag tar || [[ -z $SKIP_TAR ]] || skip "$SKIP_TAR"
+  ! has_tag git || [[ -z $SKIP_GIT ]] || skip "$SKIP_GIT"
   export \
     HOME=$BATS_TEST_TMPDIR/home \
     GLOBAL_INSTALL_PREFIX=$BATS_TEST_TMPDIR/usr \
@@ -27,9 +34,12 @@ common_teardown() {
   if [[ -n $(jobs -p) ]]; then
     fail "There were unterminated background jobs after test completion"
   fi
-  # Output and log after every test returning
-  cat "$SERVER_LOG" >&2
-  true >"$SERVER_LOG"
+  if has_tag remote; then
+    # Output and clear server log after every test
+    printf -- "-- webserver logs --\n" >&2
+    cat "$REMOTE_LOG" >&2
+    true >"$REMOTE_LOG"
+  fi
 }
 
 common_teardown_file() {
@@ -47,8 +57,8 @@ remove_commands() {
 }
 
 create_tar_package() {
+  has_tag tar || fatal "create_tar_package is used, but the test is not tagged with 'tar'"
   local tpl=$PACKAGE_TEMPLATES/$1 dest=$PACKAGE_FIXTURES/$1.tar
-  [[ -z $SKIP_TAR ]] || skip "$SKIP_TAR"
   mkdir -p "$(dirname "$dest")"
   # https://reproducible-builds.org/docs/archives/
   [[ -e "$dest" ]] || tar \
@@ -61,6 +71,7 @@ create_tar_package() {
 }
 
 create_git_package() {
+  has_tag git || fatal "create_git_package is used, but the test is not tagged with 'git'"
   local tpl=$PACKAGE_TEMPLATES/$1 working_copy=$PACKAGE_FIXTURES/$1.git-tmp dest=$PACKAGE_FIXTURES/$1.git
   mkdir -p "$(dirname "$dest")"
   if [[ ! -e $dest ]]; then
@@ -80,7 +91,7 @@ assert_equals_diff() {
   local expected=${1:-} actual=${2:-} out
   # Preserving trailing newlines is super cumbersome, let's hope we don't need it
   if ! out=$(diff --label=expected --label=actual -su <(printf -- "%s\n" "$expected") <(printf -- "%s\n" "$actual") | $DELTA); then
-    printf -- "-- output differs --\n%s" "${out#$'\n'}" | fail
+    printf -- "-- output differs --\n%s\n" "${out#$'\n'}" | fail
   fi
 }
 
@@ -92,15 +103,15 @@ assert_snapshot_output() {
     if ${CREATE_SNAPSHOTS:-false}; then
       mkdir -p "$SNAPSHOTS"
       # shellcheck disable=SC2001
-      sed "s#$BATS_TEST_TMPDIR#\$BATS_TEST_TMPDIR#g" <<<"$output" | sed "s#$BATS_RUN_TMPDIR#\$BATS_RUN_TMPDIR#g" > "$snapshot_path"
+      replace_values <<<"$output" > "$snapshot_path"
     else
       fail "The snapshot '${snapshot_path%"$SNAPSHOTS"}' does not exist, run with CREATE_SNAPSHOTS=true to create it"
     fi
   elif ${UPDATE_SNAPSHOTS:-false}; then
     # shellcheck disable=SC2001
-    sed "s#$BATS_TEST_TMPDIR#\$BATS_TEST_TMPDIR#g" <<<"$output" | sed "s#$BATS_RUN_TMPDIR#\$BATS_RUN_TMPDIR#g" > "$snapshot_path"
+    replace_values <<<"$output" > "$snapshot_path"
   fi
-  assert_equals_diff "$(sed "s#\$BATS_TEST_TMPDIR#$BATS_TEST_TMPDIR#g" "$snapshot_path" | sed "s#\$BATS_RUN_TMPDIR#$BATS_RUN_TMPDIR#g")" "$actual"
+  assert_equals_diff "$(replace_vars "$snapshot_path")" "$actual"
 }
 
 assert_snapshot_path() {
@@ -120,7 +131,33 @@ assert_snapshot_path() {
   assert_equals_diff "$(cat "$snapshot_path")" "$(get_file_structure "$actual_path")"
 }
 
+# shellcheck disable=SC2120
+replace_values() {
+  (if [[ -n $1 ]]; then cat "$1"; else cat; fi) | \
+  sed "s#$BATS_TEST_TMPDIR#\$BATS_TEST_TMPDIR#g" | \
+  sed "s#$BATS_RUN_TMPDIR#\$BATS_RUN_TMPDIR#g" | \
+  (if [[ -n $REMOTE_ADDR ]]; then sed "s#$REMOTE_ADDR#\$REMOTE_ADDR#g"; else cat; fi)
+}
+
+# shellcheck disable=SC2120
+replace_vars() {
+  (if [[ -n $1 ]]; then cat "$1"; else cat; fi) | \
+  sed "s#\$BATS_TEST_TMPDIR#$BATS_TEST_TMPDIR#g" | \
+  sed "s#\$BATS_RUN_TMPDIR#$BATS_RUN_TMPDIR#g" | \
+  (if [[ -n $REMOTE_ADDR ]]; then sed "s#\$REMOTE_ADDR#$REMOTE_ADDR#g"; else cat; fi)
+}
+
 get_file_structure() (
   [[ -z $1 ]] || cd "$1"
   tree -n -p --charset=UTF-8 -a -I .git . 2>&1
 )
+
+has_tag() {
+  contains_element "$1" "${BATS_TEST_TAGS[@]}"
+}
+
+contains_element() {
+  local e match="$1"; shift
+  for e; do [[ "$e" == "$match" ]] && return 0; done
+  return 1
+}

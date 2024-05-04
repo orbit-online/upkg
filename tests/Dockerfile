@@ -19,7 +19,7 @@ wget -qO- https://github.com/bats-core/bats-file/archive/refs/tags/v0.4.0.tar.gz
 EOINSTALL
 
 RUN mkdir /restricted
-COPY tests/setup-upkg-path-wrapper.sh /restricted/
+COPY tests/lib/setup-upkg-path-wrapper.sh /restricted/
 RUN /restricted/setup-upkg-path-wrapper.sh /upkg/bin/upkg /restricted
 
 ARG USER

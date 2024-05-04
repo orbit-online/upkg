@@ -1,115 +1,130 @@
 #!/usr/bin/env bats
 
-load 'helpers'
+# shellcheck source=lib/shellcheck-defs.sh
+source "$BATS_TEST_DIRNAME/lib/empty-file.sh"
+
+load 'lib/helpers'
 setup_file() { common_setup_file; }
 setup() { common_setup; }
 teardown() { common_teardown; }
 teardown_file() { common_teardown_file; }
 
+# bats test_tags=tar
 @test "local tarball install from the filesystem with no metadata succeeds" {
   local name=acme-empty-v1.0.2-no-metadata
   create_tar_package $name
-  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_output
   assert_snapshot_path
 }
 
+# bats test_tags=tar
 @test "tarballs can be renamed" {
   local name=acme-empty-v1.0.2-no-metadata
   create_tar_package $name
-  run -0 upkg add -p acme-empty "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
+  run -0 upkg add -p acme-empty "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_output
   assert_snapshot_path
 }
 
+# bats test_tags=git
 @test "local git repo install from the filesystem with no metadata succeeds" {
   local name=acme-empty-v1.0.2-no-metadata
   create_git_package $name
-  run -0 upkg add -t git "$PACKAGE_FIXTURES/$name.git" "$GIT_COMMIT"
+  run -0 upkg add -t git "$PACKAGE_FIXTURES/$name.git" $GIT_COMMIT
   assert_snapshot_output
   assert_snapshot_path
 }
 
+# bats test_tags=git
 @test "git repos can be renamed" {
   local name=acme-empty-v1.0.2-no-metadata
   create_git_package $name
-  run -0 upkg add -t git -p acme-empty "$PACKAGE_FIXTURES/$name.git" "$GIT_COMMIT"
+  run -0 upkg add -t git -p acme-empty "$PACKAGE_FIXTURES/$name.git" $GIT_COMMIT
   assert_snapshot_output
   assert_snapshot_path
 }
 
+# bats test_tags=tar
 @test "local tarball install with metadata has name from package" {
   local name=acme-empty-v1.0.2-metadata
   create_tar_package $name
-  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_output
   assert_snapshot_path metadata-tarball
   assert_dir_exists .upkg/acme-empty
 }
 
+# bats test_tags=remote,tar
 @test "remote tarball install with metadata has name from package" {
   local name=acme-empty-v1.0.2-metadata
   create_tar_package $name
-  run -0 upkg add http://localhost:8080/$name.tar "$TAR_SHASUM"
+  run -0 upkg add $REMOTE_ADDR/$name.tar $TAR_SHASUM
   assert_snapshot_output
   assert_snapshot_path metadata-tarball
   assert_dir_exists .upkg/acme-empty
 }
 
+# bats test_tags=remote,git
 @test "remote git repo install succeeds" {
   local name=acme-empty-v1.0.2-metadata
   create_git_package $name
-  run -0 upkg add -t git -g http://localhost:8080/$name.git "$GIT_COMMIT"
+  run -0 upkg add -t git -g $REMOTE_ADDR/$name.git $GIT_COMMIT
   assert_snapshot_output
   assert_snapshot_path "" "$HOME/.local"
 }
 
+# bats test_tags=tar
 @test "failing dependency causes nothing to be installed" {
   local name=failing-dependency
   create_tar_package $name
-  run -1 upkg add "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
+  run -1 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_output
   assert_snapshot_path
 }
 
+# bats test_tags=tar
 @test "adding same package with same name does nothing (checksum given)" {
   local name=acme-empty-v1.0.2-no-metadata
   create_tar_package $name
-  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_path "same package, same name"
-  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_output
   assert_snapshot_path "same package, same name"
 }
 
+# bats test_tags=tar
 @test "adding same package does nothing (checksum not given)" {
   local name=acme-empty-v1.0.2-no-metadata
   create_tar_package $name
-  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_path "same package, same name"
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar"
   assert_snapshot_output
   assert_snapshot_path "same package, same name"
 }
 
+# bats test_tags=tar
 @test "adding package with same name but different checksum fails (checksum given)" {
   local \
     name1=acme-empty-v1.0.2-metadata
     name2=duplicates/acme-empty-v1.0.2-metadata
   create_tar_package $name1
-  run -0 upkg add "$PACKAGE_FIXTURES/$name1.tar" "$TAR_SHASUM"
+  run -0 upkg add "$PACKAGE_FIXTURES/$name1.tar" $TAR_SHASUM
   assert_snapshot_path
-  run -1 upkg add "$PACKAGE_FIXTURES/$name2.tar" "$TAR_SHASUM"
+  run -1 upkg add "$PACKAGE_FIXTURES/$name2.tar" $TAR_SHASUM
   assert_snapshot_output
   assert_snapshot_path
 }
 
+# bats test_tags=tar
 @test "adding package with same name but different checksum fails (checksum not given)" {
   local \
     name1=acme-empty-v1.0.2-metadata
     name2=duplicates/acme-empty-v1.0.2-metadata
   create_tar_package $name1
-  run -0 upkg add "$PACKAGE_FIXTURES/$name1.tar" "$TAR_SHASUM"
+  run -0 upkg add "$PACKAGE_FIXTURES/$name1.tar" $TAR_SHASUM
   assert_snapshot_path
   create_tar_package $name2
   run -1 upkg add "$PACKAGE_FIXTURES/$name2.tar"
@@ -117,24 +132,26 @@ teardown_file() { common_teardown_file; }
   assert_snapshot_path
 }
 
+# bats test_tags=tar
 @test "adding same package with same checksum but different name succeeds" {
   local name=acme-empty-v1.0.2-metadata
   create_tar_package $name
-  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
-  run -0 upkg add -p acme-empty-2 "$PACKAGE_FIXTURES/$name.tar" "$TAR_SHASUM"
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
+  run -0 upkg add -p acme-empty-2 "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_output
   assert_snapshot_path "$BATS_TEST_DESCRIPTION"
 }
 
+# bats test_tags=tar
 @test "adding two packages containing the same command fails" {
   local \
     name1=acme-empty-v1.0.2-metadata
     name2=acme-empty-v1.0.2-no-metadata
   create_tar_package $name1
-  run -0 upkg add "$PACKAGE_FIXTURES/$name1.tar" "$TAR_SHASUM"
+  run -0 upkg add "$PACKAGE_FIXTURES/$name1.tar" $TAR_SHASUM
   assert_snapshot_path
   create_tar_package $name2
-  run -1 upkg add "$PACKAGE_FIXTURES/$name2.tar" "$TAR_SHASUM"
+  run -1 upkg add "$PACKAGE_FIXTURES/$name2.tar" $TAR_SHASUM
   assert_snapshot_output
   assert_snapshot_path
 }

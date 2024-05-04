@@ -17,24 +17,13 @@ setup_suite() {
   setup_reproducible_vars
   check_tar
   check_fixture_permissions
-
-  export SERVER_LOG=$BATS_RUN_TMPDIR/httpd.log
-  (cd "${1:-$PACKAGE_FIXTURES}"; exec python3 -m http.server 8080 &>"$SERVER_LOG") & SERVE_PID=$!
-  wait_timeout=1000
-  until wget -qO/dev/null localhost:8080; do
-    sleep .01
-    if ((wait_timeout-- <= 0)); then
-      printf "Timed out waiting for the webserver to become available. Logs:\n%s" "$(cat "$SERVER_LOG")"
-      exit 1
-    fi
-  done
-  true >"$SERVER_LOG" # Clear log before returning
+  setup_remote
 }
 
 teardown_suite() {
-  if [[ -n $SERVE_PID ]]; then
-    kill -INT "$SERVE_PID" 2>/dev/null
-    wait "$SERVE_PID" || printf "Webserver exited with status code %d\n" "$?" >&2
+  if [[ -n $REMOTE_PID ]]; then
+    kill -INT "$REMOTE_PID" 2>/dev/null
+    wait "$REMOTE_PID" || printf "Webserver exited with status code %d\n" "$?" >&2
   fi
 }
 
@@ -46,7 +35,7 @@ setup_upkg_path_wrapper() {
   else
     export RESTRICTED_BIN=$BATS_RUN_TMPDIR/restricted-bin
     PATH=$BATS_RUN_TMPDIR/upkg-wrapper-bin:$PATH
-    "$BATS_TEST_DIRNAME/setup-upkg-path-wrapper.sh" "$(realpath "$BATS_TEST_DIRNAME/../bin/upkg")" "$BATS_RUN_TMPDIR"
+    "$BATS_TEST_DIRNAME/lib/setup-upkg-path-wrapper.sh" "$(realpath "$BATS_TEST_DIRNAME/../bin/upkg")" "$BATS_RUN_TMPDIR"
   fi
 }
 
@@ -86,5 +75,52 @@ check_fixture_permissions() {
   if wrong_mode_paths=$(find "$BATS_TEST_DIRNAME/package-templates" -exec bash -c 'printf "%s %s\n" "$1" "$(stat -c %a "$1")"' -- \{\} \; | grep -v '644$\|755$'); then
     printf "The following paths in tests/package-templates have incorrect permissions (fix with \`chmod -R u=rwX,g=rX,o=rX tests/package-templates\`):\n%s" "$wrong_mode_paths" >&2
     return 1
+  fi
+}
+
+setup_package_fixture_templates() {
+  # Global dirs
+  export PACKAGE_TEMPLATES PACKAGE_FIXTURES
+  PACKAGE_TEMPLATES=$BATS_RUN_TMPDIR/package-templates
+  PACKAGE_FIXTURES=$BATS_RUN_TMPDIR/package-fixtures
+  mkdir -p "$PACKAGE_FIXTURES"
+  cp -r "$BATS_TEST_DIRNAME/package-templates" "$PACKAGE_TEMPLATES"
+  local group template
+  for group in "$PACKAGE_TEMPLATES"/*; do
+    for template in "$group"/*; do
+      if [[ -f $template/upkg.json ]]; then
+        sed -i "s#\$BATS_RUN_TMPDIR#$BATS_RUN_TMPDIR#g" "$template/upkg.json"
+        sed -i "s#\$REMOTE_ADDR#$REMOTE_ADDR#g" "$template/upkg.json"
+      fi
+    done
+  done
+}
+
+# Setup webserver to serve package fixtures
+setup_package_fixtures_remote() {
+  export REMOTE_LOG=$BATS_RUN_TMPDIR/httpd.log
+  local python
+  python=$(which python 2>/dev/null || which python3 2>/dev/null)
+  if [[ -n $python ]]; then
+    (cd "$PACKAGE_FIXTURES"; exec $python -u -m http.server -b localhost 0 &>"$REMOTE_LOG") & REMOTE_PID=$!
+    local listening_line
+    wait_timeout=1000
+    until [[ -n $listening_line ]]; do
+      sleep .01
+      listening_line=$(head -n1 "$REMOTE_LOG")
+      if ((wait_timeout-- <= 0)); then
+        export SKIP_REMOTE="Timed out waiting for the webserver to become available."
+        return 0
+      fi
+    done
+    if [[ $listening_line =~ \((http:\/\/[^\)]+)\/\) ]]; then
+      export REMOTE_ADDR=${BASH_REMATCH[1]}
+      true >"$REMOTE_LOG" # Clear log before returning
+    else
+      kill -INT "$REMOTE_PID" 2>/dev/null
+      export SKIP_REMOTE="Unable to determine server listening port from first log line: $listening_line"
+    fi
+  else
+    export SKIP_REMOTE='python is not available, unable to mock a webserver'
   fi
 }
