@@ -1,13 +1,8 @@
 #!/usr/bin/env bash
-set -Eeo pipefail; shopt -s inherit_errexit
+set -Eeo pipefail; shopt -s inherit_errexit nullglob
 
 setup_suite() {
   bats_require_minimum_version 1.5.0
-  # Global dirs
-  export PACKAGE_TEMPLATES PACKAGE_FIXTURES
-  PACKAGE_TEMPLATES=$BATS_TEST_DIRNAME/package-templates
-  PACKAGE_FIXTURES=$BATS_RUN_TMPDIR/package-fixtures
-  mkdir -p "$PACKAGE_FIXTURES"
   setup_upkg_path_wrapper
   # Optionally show diff with delta
   export DELTA=cat
@@ -16,8 +11,13 @@ setup_suite() {
   fi
   setup_reproducible_vars
   check_tar
-  check_fixture_permissions
-  setup_remote
+  check_git
+  export PACKAGE_FIXTURES
+  PACKAGE_FIXTURES=$BATS_RUN_TMPDIR/package-fixtures
+  mkdir -p "$PACKAGE_FIXTURES"
+  setup_package_fixtures_remote
+  check_package_fixture_template_permissions
+  setup_package_fixture_templates
 }
 
 teardown_suite() {
@@ -56,21 +56,28 @@ setup_reproducible_vars() {
     GIT_COMMITTER_DATE="$SOURCE_DATE_EPOCH+0000"
 }
 
-# Setup TAR to allow skipping tests with a message
+# Check tar availability and version to allow skipping tests with a message
 check_tar() {
-  export SKIP_TAR='tar is not available, use tests/run.sh to run this test in a container'
+  export SKIP_TAR
   if type tar &>/dev/null; then
     local tar_actual_version tar_expected_version='tar (GNU tar) 1.34'
     tar_actual_version=$(tar --version | head -n1)
-    SKIP_TAR=
     if [[ $tar_actual_version != "$tar_expected_version" ]]; then
-      SKIP_TAR="tar reported version ${tar_actual_version#tar (GNU tar) }. Only ${tar_expected_version#tar (GNU tar) } is supported, use tests/run.sh to run this test in a container"
+      SKIP_TAR="tar reported version ${tar_actual_version#tar (GNU tar) }. Only ${tar_expected_version#tar (GNU tar) } is supported, use tests/run.sh to run the tests in a container"
     fi
+  else
+    SKIP_TAR='tar is not available, use tests/run.sh to run the tests in a container'
   fi
 }
 
+# Check git availability to allow skipping tests with a message
+check_git() {
+  export SKIP_GIT=
+  type git &>/dev/null || SKIP_GIT='git is not available, use tests/run.sh to run the tests in a container'
+}
+
 # Make sure the package-templates have the correct permissions (i.e. git checkout wasn't run with a 002 instead of 022 umask)
-check_fixture_permissions() {
+check_package_fixture_template_permissions() {
   local wrong_mode_paths
   if wrong_mode_paths=$(find "$BATS_TEST_DIRNAME/package-templates" -exec bash -c 'printf "%s %s\n" "$1" "$(stat -c %a "$1")"' -- \{\} \; | grep -v '644$\|755$'); then
     printf "The following paths in tests/package-templates have incorrect permissions (fix with \`chmod -R u=rwX,g=rX,o=rX tests/package-templates\`):\n%s" "$wrong_mode_paths" >&2
@@ -80,10 +87,8 @@ check_fixture_permissions() {
 
 setup_package_fixture_templates() {
   # Global dirs
-  export PACKAGE_TEMPLATES PACKAGE_FIXTURES
+  export PACKAGE_TEMPLATES
   PACKAGE_TEMPLATES=$BATS_RUN_TMPDIR/package-templates
-  PACKAGE_FIXTURES=$BATS_RUN_TMPDIR/package-fixtures
-  mkdir -p "$PACKAGE_FIXTURES"
   cp -r "$BATS_TEST_DIRNAME/package-templates" "$PACKAGE_TEMPLATES"
   local group template
   for group in "$PACKAGE_TEMPLATES"/*; do
@@ -121,6 +126,6 @@ setup_package_fixtures_remote() {
       export SKIP_REMOTE="Unable to determine server listening port from first log line: $listening_line"
     fi
   else
-    export SKIP_REMOTE='python is not available, unable to mock a webserver'
+    export SKIP_REMOTE='python is not available, use tests/run.sh to run the tests in a container'
   fi
 }
