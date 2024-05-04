@@ -47,13 +47,13 @@ common_teardown_file() {
 }
 
 remove_commands() {
-  cp -r "$RESTRICTED_PATH" "$BATS_TEST_TMPDIR/restricted-path"
+  cp -r "$RESTRICTED_BIN" "$BATS_TEST_TMPDIR/restricted-bin"
   local cmd
   for cmd in "$@"; do
     # Don't fail if the command doesn't exist in the first place (e.g. optional dependency)
-    rm -f "$BATS_TEST_TMPDIR/restricted-path/$cmd"
+    rm -f "$BATS_TEST_TMPDIR/restricted-bin/$cmd"
   done
-  RESTRICTED_PATH="$BATS_TEST_TMPDIR/restricted-path"
+  RESTRICTED_BIN="$BATS_TEST_TMPDIR/restricted-bin"
 }
 
 create_tar_package() {
