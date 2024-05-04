@@ -125,7 +125,7 @@ for ((;docopt_i>0;docopt_i--)); do declare -p "${prefix}__dry_run" \
       cd "$INSTALL_PREFIX/lib/upkg"
     fi
     if $___no_exec && $___no_bin; then
-      docopt_exit "--no-exec implies --no-bin. Do not specify --no-bin"
+      docopt_exit "upkg: --no-exec implies --no-bin. Do not specify --no-bin"
     fi
     # Rename and invert "--no-*" args
     local bin=true exec=true
@@ -137,12 +137,11 @@ for ((;docopt_i>0;docopt_i--)); do declare -p "${prefix}__dry_run" \
     fi
     local pkgtype=$___pkgtype
     if [[ -z $pkgtype ]]; then
-      processing "No pkgtype provided, guessing..."
       pkgtype=$(upkg_guess_pkgtype "$_URL" "$_SHA")
-      processing "Guessed %s" "$pkgtype"
+      processing "No pkgtype provided, guessing it is '%s'" "$pkgtype"
     fi
     if [[ $pkgtype != file ]]; then
-      ! $___no_exec || docopt_exit "--no-exec is only valid for files"
+      ! $___no_exec || docopt_exit "upkg: --no-exec is only valid for files"
     fi
     if [[ $pkgtype = git ]]; then
       [[ -z $_SHA || $_SHA =~ ^[a-z0-9]{40}$ ]] || fatal "A git sha1 commit hash must be 40 hexchars"
@@ -151,7 +150,7 @@ for ((;docopt_i>0;docopt_i--)); do declare -p "${prefix}__dry_run" \
     fi
 
     upkg_mktemp
-    upkg_add "$pkgtype" "$_URL" "${_SHA256:-SHA1}" "$(clean_pkgname "$___pkgname")" "$bin" "$exec"
+    upkg_add "$pkgtype" "$_URL" "$_SHA" "$(clean_pkgname "$___pkgname")" "$bin" "$exec"
     [[ ! -t 2 ]] || { ${UPKG_SILENT:-false} || printf "\n";}
   elif $_remove; then
     if $___global; then

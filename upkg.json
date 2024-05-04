@@ -6,7 +6,7 @@
       "file": "https://raw.githubusercontent.com/andsens/docopt.sh/0447a7834ecb5120c112456d961f7fdb23e7bdef/docopt-lib.sh",
       "sha256": "ed7ec6722fdce042cb3e7e03a89f365769dec937b9b5d640ef20807401afb946",
       "name": "docopt-lib.sh",
-      "executable": false
+      "exec": false
     }
   ]
 }

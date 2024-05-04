@@ -49,7 +49,8 @@ upkg_download() {
       filepath=$pkgurl
     else
       # file does not exist on the filesystem, download it
-      upkg_fetch "$pkgurl" "${downloadpath}$(get_tar_suffix "$pkgurl")"
+      filepath="${downloadpath}$(get_tar_suffix "$pkgurl")"
+      upkg_fetch "$pkgurl" "$filepath"
     fi
 
     sha256 "$filepath" "$checksum"

@@ -73,7 +73,7 @@ upkg_install_deps() {
 
   # Loads of early returns here
   [[ -e "$pkgpath/upkg.json" ]] || return 0 # No upkg.json -> no deps -> nothing to do
-  deps=$(jq -rc '(.dependencies[] // empty)' "$pkgpath/upkg.json")
+  deps=$(jq -rc '(.dependencies // [])[]' "$pkgpath/upkg.json")
   [[ -n $deps ]] || return 0 # No deps -> nothing to do
   mkdir "$pkgpath/.upkg" 2>/dev/null || return 0 # .upkg exists -> another process is already installing the deps
   if [[ $pkgpath = .upkg/.tmp/root ]]; then
