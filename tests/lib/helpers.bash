@@ -57,7 +57,7 @@ remove_commands() {
 }
 
 create_tar_package() {
-  has_tag tar || fatal "create_tar_package is used, but the test is not tagged with 'tar'"
+  has_tag tar || fail "create_tar_package is used, but the test is not tagged with 'tar'"
   local tpl=$PACKAGE_TEMPLATES/$1 dest=$PACKAGE_FIXTURES/$1.tar
   mkdir -p "$(dirname "$dest")"
   # https://reproducible-builds.org/docs/archives/
@@ -71,7 +71,7 @@ create_tar_package() {
 }
 
 create_git_package() {
-  has_tag git || fatal "create_git_package is used, but the test is not tagged with 'git'"
+  has_tag git || fail "create_git_package is used, but the test is not tagged with 'git'"
   local tpl=$PACKAGE_TEMPLATES/$1 working_copy=$PACKAGE_FIXTURES/$1.git-tmp dest=$PACKAGE_FIXTURES/$1.git
   mkdir -p "$(dirname "$dest")"
   if [[ ! -e $dest ]]; then
