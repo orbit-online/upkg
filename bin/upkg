@@ -25,7 +25,7 @@ upkg() {
   DOC="μpkg - A minimalist package manager
 Usage:
   upkg install [-n]
-  upkg add [-ngBEp PKGNAME -t PKGTYPE] (URL|PATH) [SHA]
+  upkg add [-ngBXp PKGNAME -t PKGTYPE] (URL|PATH) [SHA]
   upkg remove [-ng] PKGNAME
   upkg list [-g] -- COLUMNOPTS...
 
@@ -33,7 +33,7 @@ Options:
   -n --dry-run       Dry run, \$?=1 if install/upgrade is required
   -g --global        Act globally
   -B --no-bin        Do not link executables to .upkg/.bin
-  -E --no-exec       Do not chmod +x the file
+  -X --no-exec       Do not chmod +x the file
   -t --pkgtype=TYPE  Explicitly set the package type (tar, file, or git)
   -p --pkgname=NAME  Override the package name link in .upkg/
 "
@@ -42,7 +42,7 @@ Options:
 # shellcheck disable=2016,1090,1091,2034,2154
 docopt() { source "$PKGROOT/.upkg/docopt-lib.sh" '1.0.0' || { ret=$?
 printf -- "exit %d\n" "$ret"; exit "$ret"; }; set -e; trimmed_doc=${DOC:0:530}
-usage=${DOC:36:144}; digest=99eda; shorts=(-n -g -B -E -p -t)
+usage=${DOC:36:144}; digest=2b181; shorts=(-n -g -B -X -p -t)
 longs=(--dry-run --global --no-bin --no-exec --pkgname --pkgtype)
 argcounts=(0 0 0 0 1 1); node_0(){ switch __dry_run 0; }; node_1(){
 switch __global 1; }; node_2(){ switch __no_bin 2; }; node_3(){
