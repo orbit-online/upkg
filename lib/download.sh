@@ -66,7 +66,7 @@ upkg_download() {
       # file exists on the filesystem, copy it so it can be moved later on
       filepath=$downloadpath.file
       downloadpath=$filepath
-      cp "${pkgurl%%'#'*}" "$downloadpath"
+      cp "$pkgurl" "$downloadpath"
     else
       # file does not exist on the filesystem, download it
       # but don't download to $filepath (which is a directory)
