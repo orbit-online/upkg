@@ -3,4 +3,4 @@ Usage:
   upkg install [-nqv]
   upkg add [-nqvgXB -b PATH... -p PKGNAME -t PKGTYPE] (URL|PATH) [SHA]
   upkg remove [-nqvg] PKGNAME
-  upkg list [-qvg] -- COLUMNOPTS..
+  upkg list [-qvg] [-- COLUMNOPTS...

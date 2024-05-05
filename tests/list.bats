@@ -9,6 +9,7 @@ setup() { common_setup; }
 teardown() { common_teardown; }
 teardown_file() { common_teardown_file; }
 
+# bats test_tags=tar
 @test "global, dep installed" {
   local name=default/acme-empty-v1.0.2-metadata
   create_tar_package "$name"
@@ -17,6 +18,7 @@ teardown_file() { common_teardown_file; }
   assert_snapshot_output acme-metadata-installed
 }
 
+# bats test_tags=tar
 @test "local, dep installed" {
   local name=default/acme-empty-v1.0.2-metadata
   create_tar_package "$name"
