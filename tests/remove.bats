@@ -14,7 +14,7 @@ teardown_file() { common_teardown_file; }
   local name=default/acme-empty-v1.0.2-no-metadata
   create_tar_package $name
   run -0 upkg add -g "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
-  run -0 upkg remove -g $name.tar
+  run -0 upkg remove -g "$(basename "$name").tar"
   assert_snapshot_output
   assert_snapshot_path "" "$HOME/.local"
 }
