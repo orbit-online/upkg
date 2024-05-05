@@ -1,0 +1,18 @@
+μpkg - A minimalist package manager
+Usage:
+  upkg install [-nqv]
+  upkg add [-nqvgXB -b PATH... -p PKGNAME -t PKGTYPE] (URL|PATH) [SHA]
+  upkg remove [-nqvg] PKGNAME
+  upkg list [-qvg] -- COLUMNOPTS...
+
+Options:
+  -n --dry-run       Dry run, $?=1 if install/upgrade is required
+  -q --quiet         Log only fatal errors
+  -v --verbose       Output verbose logs and disable writing to the same line
+  -g --global        Act globally
+  -X --no-exec       Do not chmod +x the file (implies --no-bin)
+  -B --no-bin        Do not link executables in package bin/ to .upkg/.bin
+  -b --bin=PATH      Link specified executables or contents of specified
+                     directory to .upkg/.bin (default: bin/)
+  -t --pkgtype=TYPE  Explicitly set the package type (tar, file, or git)
+  -p --pkgname=NAME  Override the package name link in .upkg
