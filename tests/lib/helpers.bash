@@ -18,6 +18,8 @@ common_setup() {
   fi
   ! has_tag tar || [[ -z $SKIP_TAR ]] || skip "$SKIP_TAR"
   ! has_tag git || [[ -z $SKIP_GIT ]] || skip "$SKIP_GIT"
+  ! has_tag wget || [[ -z $SKIP_WGET ]] || skip "$SKIP_WGET"
+  ! has_tag curl || [[ -z $SKIP_CURL ]] || skip "$SKIP_CURL"
   export \
     HOME=$BATS_TEST_TMPDIR/home \
     GLOBAL_INSTALL_PREFIX=$BATS_TEST_TMPDIR/usr \

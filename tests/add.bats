@@ -74,7 +74,7 @@ teardown_file() { common_teardown_file; }
   assert_snapshot_path "" "$HOME/.local"
 }
 
-# bats test_tags=tar,remote
+# bats test_tags=tar,remote,wget
 @test "failing dependency causes nothing to be installed" {
   local name=negative/failing-dependency
   create_tar_package $name

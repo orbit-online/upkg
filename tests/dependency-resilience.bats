@@ -9,18 +9,16 @@ setup() { common_setup; }
 teardown() { common_teardown; }
 teardown_file() { common_teardown_file; }
 
-# bats test_tags=tar
+# bats test_tags=tar,wget
 @test "uses wget when curl is not available" {
-  type wget &>/dev/null || skip 'wget is not available'
   remove_commands wget
   local name=default/acme-empty-v1.0.2-no-metadata
   create_tar_package $name
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
 }
 
-# bats test_tags=tar
+# bats test_tags=tar,curl
 @test "falls back to curl when wget is not available" {
-  type curl &>/dev/null || fail 'curl is not available'
   remove_commands curl
   local name=default/acme-empty-v1.0.2-no-metadata
   create_tar_package $name

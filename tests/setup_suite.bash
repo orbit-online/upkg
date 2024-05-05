@@ -10,8 +10,7 @@ setup_suite() {
     DELTA="delta --hunk-header-style omit"
   fi
   setup_reproducible_vars
-  check_tar
-  check_git
+  check_commands
   export PACKAGE_FIXTURES
   PACKAGE_FIXTURES=$BATS_RUN_TMPDIR/package-fixtures
   mkdir -p "$PACKAGE_FIXTURES"
@@ -56,8 +55,9 @@ setup_reproducible_vars() {
     GIT_COMMITTER_DATE="$SOURCE_DATE_EPOCH+0000"
 }
 
-# Check tar availability and version to allow skipping tests with a message
-check_tar() {
+# Check availability of various commands and set $SKIP_* vars whose values are skip messages
+check_commands() {
+  # Check tar availability and version
   export SKIP_TAR
   if type tar &>/dev/null; then
     local tar_actual_version tar_expected_version='tar (GNU tar) 1.34'
@@ -68,12 +68,12 @@ check_tar() {
   else
     SKIP_TAR='tar is not available, use tests/run.sh to run the tests in a container'
   fi
-}
-
-# Check git availability to allow skipping tests with a message
-check_git() {
   export SKIP_GIT=
   type git &>/dev/null || SKIP_GIT='git is not available, use tests/run.sh to run the tests in a container'
+  export SKIP_WGET=
+  type wget &>/dev/null || SKIP_WGET='wget is not available, use tests/run.sh to run the tests in a container'
+  export SKIP_CURL=
+  type curl &>/dev/null || SKIP_CURL='curl is not available, use tests/run.sh to run the tests in a container'
 }
 
 # Make sure the package-templates have the correct permissions (i.e. git checkout wasn't run with a 002 instead of 022 umask)
