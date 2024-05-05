@@ -33,7 +33,7 @@ dep_pkgtype() {
         if has ("git") then
           "git"
         else
-          null
+          empty
         end
       end
     end' <<<"$dep"
@@ -41,17 +41,18 @@ dep_pkgtype() {
 
 dep_pkgurl() {
   local dep=$1
-  jq -re '.file // .tar // .git' <<<"$dep"
+  jq -re '.file // .tar // .git // empty' <<<"$dep"
 }
 
 dep_checksum() {
   local dep=$1
-  jq -re '. | if has("git") then .sha1 else .sha256 end' <<<"$dep"
+  jq -re '(if has("git") then .sha1 else .sha256 end) // empty' <<<"$dep"
 }
 
 dep_name() {
-  local dep=$1
-  jq -re '.name' <<<"$dep" | clean_pkgname
+  local dep=$1 pkgname
+  pkgname="$(jq -re '.name // empty' <<<"$dep")" || return 1
+  clean_pkgname "$pkgname"
 }
 
 # Whether the dependency should be linked to .upkg/.bin/
