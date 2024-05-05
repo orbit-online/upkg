@@ -131,7 +131,7 @@ upkg_fetch() {
 
 upkg_head() {
   local url="$1"
-  processing "Downloading %s" "$url"
+  verbose "Performing a HEAD request to %s" "$url"
   if type wget >/dev/null 2>&1; then
     wget --spider -T "${UPKG_TIMEOUT:-10}" -t "${UPKG_FETCH_RETRIES:-2}" -q "$url" &>/dev/null
   elif type curl >/dev/null 2>&1; then
