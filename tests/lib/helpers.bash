@@ -117,7 +117,7 @@ assert_snapshot_output() {
 }
 
 assert_snapshot_path() {
-  local snapshot_name=${1:-$BATS_TEST_DESCRIPTION} actual_path=$2
+  local snapshot_name=${1:-$BATS_TEST_DESCRIPTION} actual_path=${2:-.}
   snapshot_name=${snapshot_name//'/'/_}
   local snapshot_path=$SNAPSHOTS/$snapshot_name.files
   if [[ ! -e "$snapshot_path" ]]; then
@@ -151,7 +151,7 @@ replace_vars() {
 
 get_file_structure() {
   # tree counts differently depending on the version, so we cut off the summary
-  (cd "${1:-.}"; tree -n -p --charset=UTF-8 -a -I .git . | head -n-1) 2>&1
+  (cd "${1:?}"; tree -n -p --charset=UTF-8 -a -I .git . | head -n-1) 2>&1
 }
 
 has_tag() {
