@@ -31,7 +31,7 @@ teardown_file() { common_teardown_file; }
 
 # bats test_tags=tar
 @test "add 1 -> add 2 -> remove 1" {
-  local name1=acme-empty-v1.0.2-metadata name2=no-executables
+  local name1=default/acme-empty-v1.0.2-metadata name2=default/no-executables
   create_tar_package $name1
   run -0 upkg add "$PACKAGE_FIXTURES/$name1.tar" $TAR_SHASUM
   create_tar_package $name2
