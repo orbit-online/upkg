@@ -1,5 +1,4 @@
 upkg: Downloading $REMOTE_ADDR/negative/non-existent-dep.tar
 upkg: Error while downloading '$REMOTE_ADDR/negative/non-existent-dep.tar', server response:
-
-upkg: An error occurred while installing '$REMOTE_ADDR/negative/non-existent-dep.tar'
-upkg: An error occurred while installing '$BATS_RUN_TMPDIR/package-fixtures/negative/failing-dependency.tar'
+  HTTP/1.0 404 File not found
+  
