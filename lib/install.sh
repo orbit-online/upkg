@@ -160,11 +160,9 @@ upkg_install_dep() {
 
   if [[ -f $dedup_location && -x $dedup_location ]]; then
     # pkgurl is an executable file (and has been chmod'ed and validated as such in upkg_download), symlink from bin
-    mkdir -p "$parent_pkgpath/.upkg/.bin"
     upkg_link_cmd "../$dedup_path" "$parent_pkgpath/.upkg/.bin/$pkgname"
 
   else
-    mkdir -p "$parent_pkgpath/.upkg/.bin"
     local binpath binpaths=() binpaths_is_default=true
     readarray -t binpaths < <(dep_bin "$dep")
     if [[ ${#binpaths[@]} -eq 0 ]]; then
@@ -205,6 +203,7 @@ upkg_install_dep() {
 
 upkg_link_cmd() {
   local cmdtarget=$1 cmdpath=$2 other_dedup_path
+  mkdir -p "$(dirname "$cmdpath")"
   # Atomic operation. If this fails there is a duplicate command or the same package is depended upon under different names
   if ! ln -sT "$cmdtarget" "$cmdpath" 2>/dev/null; then
     other_dedup_path=$(readlink "$cmdpath")
