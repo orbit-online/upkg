@@ -29,6 +29,9 @@ jobs:
       uses: actions/checkout@v4
       with:
         path: upkg
+    - name: Install dependencies
+      run: mkdir .upkg; wget -qO.upkg/docopt-lib.sh https://raw.githubusercontent.com/andsens/docopt.sh/0447a7834ecb5120c112456d961f7fdb23e7bdef/docopt-lib.sh
+      working-directory: upkg
     - name: Run tests
       run: bats --formatter tap13 --filter-tags '!shellcheck' tests > tests/results.tap
       working-directory: upkg
