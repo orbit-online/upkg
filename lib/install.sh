@@ -173,9 +173,12 @@ upkg_install_dep() {
     fi
 
     for binpath in "${binpaths[@]}"; do
+      if [[ ! -e "$dedup_location/$binpath" ]]; then
+        $binpaths_is_default || warning "bin path '%s' in package '%s' does not exist, ignoring"
+        continue
+      fi
       local abs_binpath
       abs_binpath=$(realpath "$dedup_location/$binpath")
-
       if [[ $abs_binpath != "$(realpath "$dedup_location")"/* ]]; then
         warning "bin path '%s' must be a subpath of the package '%s', ignoring" "$binpath" "$pkgname"
         continue
@@ -184,14 +187,12 @@ upkg_install_dep() {
       if [[ -f $binpath ]]; then
         command=$(basename "$command")
         upkg_link_cmd "../$dedup_path/$binpath" "$parent_pkgpath/.upkg/.bin/$command"
-      elif [[ -d $dedup_location/$binpath ]]; then
+      else
         for command in "$dedup_location/$binpath"/*; do
           [[ -f "$command" && -x "$command" ]] || continue
           command=$(basename "$command")
           upkg_link_cmd "../$dedup_path/$binpath/$command" "$parent_pkgpath/.upkg/.bin/$command"
         done
-      elif ! $binpaths_is_default; then
-        warning "The bin path '%s' does not exist, ignoring"
       fi
     done
   fi
