@@ -158,20 +158,42 @@ upkg_install_dep() {
     fatal "conflict: There is more than one package with the name '%s' ('%s' and '%s')" "$pkgname" "$dedup_pkgname" "$otherpkg_dedup_pkgname"
   fi
 
-  if dep_bin "$dep"; then
-    if [[ -e "$dedup_location/bin" ]]; then
-      # package has a bin/ dir, symlink the executable files in that directory
-      mkdir -p "$parent_pkgpath/.upkg/.bin"
-      for command in "$dedup_location/bin"/*; do
-        [[ -f "$command" && -x "$command" ]] || continue
-        command=$(basename "$command")
-        upkg_link_cmd "../$dedup_path/bin/$command" "$parent_pkgpath/.upkg/.bin/$command"
-      done
-    elif [[ $(dep_pkgtype "$dep") = file ]]; then
-      # pkgurl is an executable file (and has been chmod'ed and validated as such in upkg_download), symlink from bin
-      mkdir -p "$parent_pkgpath/.upkg/.bin"
-      upkg_link_cmd "../$dedup_path" "$parent_pkgpath/.upkg/.bin/$pkgname"
+  if [[ -f $dedup_location && -x $dedup_location ]]; then
+    # pkgurl is an executable file (and has been chmod'ed and validated as such in upkg_download), symlink from bin
+    mkdir -p "$parent_pkgpath/.upkg/.bin"
+    upkg_link_cmd "../$dedup_path" "$parent_pkgpath/.upkg/.bin/$pkgname"
+
+  else
+    mkdir -p "$parent_pkgpath/.upkg/.bin"
+    local binpath binpaths=() binpaths_is_default=true
+    readarray -t binpaths < <(dep_bin "$dep")
+    if [[ ${#binpaths[@]} -eq 0 ]]; then
+      binpaths_is_default=true
+      binpaths=(bin)
     fi
+
+    for binpath in "${binpaths[@]}"; do
+      local abs_binpath
+      abs_binpath=$(realpath "$dedup_location/$binpath")
+
+      if [[ $abs_binpath != "$(realpath "$dedup_location")"/* ]]; then
+        warning "bin path '%s' must be a subpath of the package '%s', ignoring" "$binpath" "$pkgname"
+        continue
+      fi
+
+      if [[ -f $binpath ]]; then
+        command=$(basename "$command")
+        upkg_link_cmd "../$dedup_path/$binpath" "$parent_pkgpath/.upkg/.bin/$command"
+      elif [[ -d $dedup_location/$binpath ]]; then
+        for command in "$dedup_location/$binpath"/*; do
+          [[ -f "$command" && -x "$command" ]] || continue
+          command=$(basename "$command")
+          upkg_link_cmd "../$dedup_path/$binpath/$command" "$parent_pkgpath/.upkg/.bin/$command"
+        done
+      elif ! $binpaths_is_default; then
+        warning "The bin path '%s' does not exist, ignoring"
+      fi
+    done
   fi
 
   ! $DRY_RUN || return 0 # All dependencies of dependencies are locked with checksums, so if we haven't failed already, we won't do if we go deeper
@@ -187,7 +209,8 @@ upkg_link_cmd() {
     other_dedup_path=$(readlink "$cmdpath")
     if [[ $cmdtarget = "$other_dedup_path" ]]; then
       # Same package different name, this is fine.
-      # Continue the loop though, the other install process might have failed on something we linked
+      # Continue the loop though, the other install process might have failed on something we linked earlier on
+      # Bailing might cause some executables to not be linked
       return 0
     fi
     local targetpkg_dedup_pkgname otherpkg_dedup_pkgname

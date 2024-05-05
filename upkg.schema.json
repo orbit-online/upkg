@@ -23,11 +23,14 @@
       "pattern": "^[^.][^/\\n]*$"
     },
     "update": {
-      "description": "Path (relative to this upkg.json) and args to an executable that returns the path or URL to a newer version of this package.\nDefault: None",
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
+      "description": "Path (relative to this upkg.json) to an executable that returns the path or URL to a newer version of this package.\nDefault: None",
+      "type": "string",
+      "pattern": "^[^\\n\\0/]+[^\\n\\0]*$"
+    },
+    "relpath": {
+      "description": "A relative path without newlines or nulbytes",
+      "type": "string",
+      "pattern": "^[^\\n\\0/]+[^\\n\\0]*$"
     },
     "sha256": {
       "type": "string",
@@ -36,6 +39,13 @@
     "sha1": {
       "type": "string",
       "pattern": "^[0-9a-f]{40}$"
+    },
+    "bin": {
+      "description": "Paths relative to the package root to directories containing executables files or directly to executable files that should be linked to from .upkg/.bin (and /usr/local/bin or $HOME/.local/bin when installing globally).\nDefault: [bin/]",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/relpath"
+      }
     },
     "dependency": {
       "anyOf": [
@@ -61,11 +71,7 @@
           "description": "A name override for the extracted archive directory.\nThis will become the directory link name in .upkg/ of the parent package.\nA starting period (.), slashes (/), and newlines (\\n) will silently be replaced with underscore (_).\n\nDefault: The basename of the path or URL",
           "$ref": "#/definitions/name"
         },
-        "bin": {
-          "description": "Whether there should be placed links in .upkg/.bin (and /usr/local/bin or $HOME/.local/bin when installing globally) to all executable files found in the bin/ directory of the package.\nDefault: true",
-          "const": false,
-          "type": "boolean"
-        },
+        "bin": { "$ref": "#/definitions/bin" },
         "update": { "$ref": "#/definitions/update" }
       }
     },
@@ -86,9 +92,9 @@
           "$ref": "#/definitions/name"
         },
         "bin": {
-          "description": "Whether the file should be linked to from .upkg/.bin (and /usr/local/bin or $HOME/.local/bin when installing globally)\nDefault: true",
-          "const": false,
-          "type": "boolean"
+          "description": "Set to [] to prevent the file from being linked to from .upkg/.bin (and /usr/local/bin or $HOME/.local/bin when installing globally)\nDefault: None",
+          "const": [],
+          "type": "array"
         },
         "update": { "$ref": "#/definitions/update" }
       },
@@ -111,7 +117,7 @@
           "$ref": "#/definitions/name"
         },
         "exec": {
-          "description": "false implies link=false. Whether the file should be made executable (chmod +x).\nDefault: true",
+          "description": "false implies bin=[]. Whether the file should be made executable (chmod +x).\nDefault: true",
           "const": false,
           "type": "boolean"
         },
@@ -131,11 +137,7 @@
           "description": "A name override for the cloned repository.\nThis will become the directory link name in .upkg/ of the parent package.\nA starting period (.), slashes (/), and newlines (\\n) will silently be replaced with underscore (_).\nDefault: The basename of the path or URL",
           "$ref": "#/definitions/name"
         },
-        "bin": {
-          "description": "Whether there should be placed links in .upkg/.bin (and /usr/local/bin or $HOME/.local/bin when installing globally) to all executable files found in the bin/ directory of the package.\nDefault: true",
-          "const": false,
-          "type": "boolean"
-        },
+        "bin": { "$ref": "#/definitions/bin" },
         "sha1": {
           "description": "The SHA-1 git commit hash to checkout\nRequired",
           "$ref": "#/definitions/sha1"

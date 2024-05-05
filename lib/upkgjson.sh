@@ -57,23 +57,13 @@ dep_name() {
 # Whether the dependency should be linked to .upkg/.bin/
 dep_bin() {
   local dep=$1
-  jq -re '
-    if has("exec") then
-      false
-    else
-      .bin // true
-    end' <<<"$dep" >/dev/null
+  jq -r '(.bin // [])[]' <<<"$dep" >/dev/null
 }
 
 # Whether the dependency should be executable
 dep_exec() {
   local dep=$1
-  jq -re '. |
-    if has("bin") then
-      true
-    else
-      .exec // true
-    end' <<<"$dep" >/dev/null
+  jq -re '.exec // true' <<<"$dep" >/dev/null
 }
 
 upkg_validate_upkgjson() {

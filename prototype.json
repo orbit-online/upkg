@@ -1,15 +1,15 @@
 {
   "$schema": "./upkg.schema.json",
   "name": "bitwarden-tools",
-  "update": ["tools/update-upkg.sh"],
+  "update": "tools/update-upkg.sh",
   "version": "1.0.0",
   "dependencies": [
     {
       "git": "git@github.com:orbit-online/records.sh",
       "name": "records",
       "sha1": "493ebb2c7c52dcf8f83a6fcaae6c7cbcfb2be736",
-      "update": [".upkg/..."],
-      "bin": false
+      "update": ".upkg/...",
+      "bin": ["a", "b", "c"]
     },
     {
       "file": "http://github.com/orbit-online/records.sh",
@@ -19,13 +19,13 @@
       "file": "http://github.com/orbit-online/records.sh",
       "name": "records",
       "sha256": "493ebb2c7c52dcf8f83a6fcaae6c7cbcfb2be736caae6c7cbcfb2be7367361ab",
-      "update": [".upkg/..."]
+      "update": ".upkg/..."
     },
     {
       "file": "http://github.com/orbit-online/records.sh",
       "name": "records",
       "sha256": "493ebb2c7c52dcf8f83a6fcaae6c7cbcfb2be736caae6c7cbcfb2be7367361ab",
-      "update": [".upkg/..."],
+      "update": ".upkg/...",
       "exec": false
     },
     {

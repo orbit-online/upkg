@@ -25,7 +25,7 @@ upkg() {
   DOC="μpkg - A minimalist package manager
 Usage:
   upkg install [-nqv]
-  upkg add [-nqvgBXp PKGNAME -t PKGTYPE] (URL|PATH) [SHA]
+  upkg add [-nqvgXB -b PATH... -p PKGNAME -t PKGTYPE] (URL|PATH) [SHA]
   upkg remove [-nqvg] PKGNAME
   upkg list [-qvg] -- COLUMNOPTS...
 
@@ -34,8 +34,10 @@ Options:
   -q --quiet         Log only fatal errors
   -v --verbose       Output verbose logs and disable writing to the same line
   -g --global        Act globally
-  -B --no-bin        Do not link executables to .upkg/.bin
-  -X --no-exec       Do not chmod +x the file
+  -X --no-exec       Do not chmod +x the file (implies --no-bin)
+  -B --no-bin        Do not link executables in package bin/ to .upkg/.bin
+  -b --bin=PATH      Link specified executables or contents of specified
+                     directory to .upkg/.bin (default: bin/)
   -t --pkgtype=TYPE  Explicitly set the package type (tar, file, or git)
   -p --pkgname=NAME  Override the package name link in .upkg/
 "
@@ -43,31 +45,32 @@ Options:
 # docopt parser below, refresh this parser with `docopt.sh upkg`
 # shellcheck disable=2016,1090,1091,2034,2154
 docopt() { source "$PKGROOT/.upkg/docopt-lib.sh" '1.0.0' || { ret=$?
-printf -- "exit %d\n" "$ret"; exit "$ret"; }; set -e; trimmed_doc=${DOC:0:659}
-usage=${DOC:36:152}; digest=0a91c; shorts=(-n -q -v -g -B -X -p -t)
-longs=(--dry-run --quiet --verbose --global --no-bin --no-exec --pkgname --pkgtype)
-argcounts=(0 0 0 0 0 0 1 1); node_0(){ switch __dry_run 0; }; node_1(){
+printf -- "exit %d\n" "$ret"; exit "$ret"; }; set -e; trimmed_doc=${DOC:0:841}
+usage=${DOC:36:165}; digest=886de; shorts=(-n -q -v -g -X -B -b -p -t)
+longs=(--dry-run --quiet --verbose --global --no-exec --no-bin --bin --pkgname --pkgtype)
+argcounts=(0 0 0 0 0 0 1 1 1); node_0(){ switch __dry_run 0; }; node_1(){
 switch __quiet 1; }; node_2(){ switch __verbose 2; }; node_3(){
-switch __global 3; }; node_4(){ switch __no_bin 4; }; node_5(){
-switch __no_exec 5; }; node_6(){ value __pkgname 6; }; node_7(){
-value __pkgtype 7; }; node_8(){ value URL a; }; node_9(){ value PATH a; }
-node_10(){ value SHA a; }; node_11(){ value PKGNAME a; }; node_12(){
-value COLUMNOPTS a true; }; node_13(){ _command install; }; node_14(){
-_command add; }; node_15(){ _command remove; }; node_16(){ _command list; }
-node_17(){ _command __ --; }; node_18(){ optional 0 1 2; }; node_19(){
-required 13 18; }; node_20(){ optional 0 1 2 3 4 5 6 7; }; node_21(){ either 8 9
-}; node_22(){ required 21; }; node_23(){ optional 10; }; node_24(){
-required 14 20 22 23; }; node_25(){ optional 0 1 2 3; }; node_26(){
-required 15 25 11; }; node_27(){ optional 1 2 3; }; node_28(){ oneormore 12; }
-node_29(){ required 16 27 17 28; }; node_30(){ either 19 24 26 29; }; node_31(){
-required 30; }; cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
-printf "%s\n" "${DOC:36:152}" >&2; exit 1; }'; unset var___dry_run var___quiet \
-var___verbose var___global var___no_bin var___no_exec var___pkgname \
+switch __global 3; }; node_4(){ switch __no_exec 4; }; node_5(){
+switch __no_bin 5; }; node_6(){ value __bin 6 true; }; node_7(){
+value __pkgname 7; }; node_8(){ value __pkgtype 8; }; node_9(){ value URL a; }
+node_10(){ value PATH a; }; node_11(){ value SHA a; }; node_12(){
+value PKGNAME a; }; node_13(){ value COLUMNOPTS a true; }; node_14(){
+_command install; }; node_15(){ _command add; }; node_16(){ _command remove; }
+node_17(){ _command list; }; node_18(){ _command __ --; }; node_19(){
+optional 0 1 2; }; node_20(){ required 14 19; }; node_21(){ oneormore 6; }
+node_22(){ optional 0 1 2 3 4 5 21 7 8; }; node_23(){ either 9 10; }; node_24(){
+required 23; }; node_25(){ optional 11; }; node_26(){ required 15 22 24 25; }
+node_27(){ optional 0 1 2 3; }; node_28(){ required 16 27 12; }; node_29(){
+optional 1 2 3; }; node_30(){ oneormore 13; }; node_31(){ required 17 29 18 30
+}; node_32(){ either 20 26 28 31; }; node_33(){ required 32; }
+cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
+printf "%s\n" "${DOC:36:165}" >&2; exit 1; }'; unset var___dry_run var___quiet \
+var___verbose var___global var___no_exec var___no_bin var___bin var___pkgname \
 var___pkgtype var_URL var_PATH var_SHA var_PKGNAME var_COLUMNOPTS var_install \
-var_add var_remove var_list var___; parse 31 "$@"
+var_add var_remove var_list var___; parse 33 "$@"
 local prefix=${DOCOPT_PREFIX:-''}; unset "${prefix}__dry_run" \
 "${prefix}__quiet" "${prefix}__verbose" "${prefix}__global" \
-"${prefix}__no_bin" "${prefix}__no_exec" "${prefix}__pkgname" \
+"${prefix}__no_exec" "${prefix}__no_bin" "${prefix}__bin" "${prefix}__pkgname" \
 "${prefix}__pkgtype" "${prefix}URL" "${prefix}PATH" "${prefix}SHA" \
 "${prefix}PKGNAME" "${prefix}COLUMNOPTS" "${prefix}install" "${prefix}add" \
 "${prefix}remove" "${prefix}list" "${prefix}__"
@@ -75,8 +78,10 @@ eval "${prefix}"'__dry_run=${var___dry_run:-false}'
 eval "${prefix}"'__quiet=${var___quiet:-false}'
 eval "${prefix}"'__verbose=${var___verbose:-false}'
 eval "${prefix}"'__global=${var___global:-false}'
-eval "${prefix}"'__no_bin=${var___no_bin:-false}'
 eval "${prefix}"'__no_exec=${var___no_exec:-false}'
+eval "${prefix}"'__no_bin=${var___no_bin:-false}'
+if declare -p var___bin >/dev/null 2>&1; then
+eval "${prefix}"'__bin=("${var___bin[@]}")'; else eval "${prefix}"'__bin=()'; fi
 eval "${prefix}"'__pkgname=${var___pkgname:-}'
 eval "${prefix}"'__pkgtype=${var___pkgtype:-}'
 eval "${prefix}"'URL=${var_URL:-}'; eval "${prefix}"'PATH=${var_PATH:-}'
@@ -91,7 +96,7 @@ eval "${prefix}"'list=${var_list:-false}'; eval "${prefix}"'__=${var___:-false}'
 local docopt_i=1; [[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2
 for ((;docopt_i>0;docopt_i--)); do declare -p "${prefix}__dry_run" \
 "${prefix}__quiet" "${prefix}__verbose" "${prefix}__global" \
-"${prefix}__no_bin" "${prefix}__no_exec" "${prefix}__pkgname" \
+"${prefix}__no_exec" "${prefix}__no_bin" "${prefix}__bin" "${prefix}__pkgname" \
 "${prefix}__pkgtype" "${prefix}URL" "${prefix}PATH" "${prefix}SHA" \
 "${prefix}PKGNAME" "${prefix}COLUMNOPTS" "${prefix}install" "${prefix}add" \
 "${prefix}remove" "${prefix}list" "${prefix}__"; done; }
@@ -146,13 +151,8 @@ for ((;docopt_i>0;docopt_i--)); do declare -p "${prefix}__dry_run" \
     if $___no_exec && $___no_bin; then
       docopt_exit "upkg: --no-exec implies --no-bin. Do not specify --no-bin"
     fi
-    # Rename and invert "--no-*" args
-    local bin=true exec=true
-    if $___no_exec; then
-      bin=false
-      exec=false
-    elif $___no_bin; then
-      bin=false
+    if $___no_bin; then
+      [[ ${#___bin[@]} -eq 0 ]] || docopt_exit "upkg: --no-bin and --bin are mutually exclusive"
     fi
     local pkgtype=$___pkgtype
     if [[ -z $pkgtype ]]; then
@@ -160,6 +160,7 @@ for ((;docopt_i>0;docopt_i--)); do declare -p "${prefix}__dry_run" \
     fi
     if [[ $pkgtype != file ]]; then
       ! $___no_exec || docopt_exit "upkg: --no-exec is only valid for files"
+      [[ ${#___bin[@]} -eq 0 ]] || docopt_exit "upkg: You cannot specify bin paths for a file. It will be linked by default, unless you use --no-exec."
     fi
     if [[ $pkgtype = git ]]; then
       [[ -z $_SHA || $_SHA =~ ^[a-z0-9]{40}$ ]] || fatal "A git sha1 commit hash must be 40 hexchars"
@@ -168,7 +169,7 @@ for ((;docopt_i>0;docopt_i--)); do declare -p "${prefix}__dry_run" \
     fi
 
     upkg_mktemp
-    upkg_add "$pkgtype" "$_URL" "$_SHA" "$(clean_pkgname "$___pkgname")" "$bin" "$exec"
+    upkg_add "$pkgtype" "$_URL" "$_SHA" "$(clean_pkgname "$___pkgname")" "$___no_exec" "$___no_bin" "${___bin[@]}"
     trailing_newline
   elif $_remove; then
     if $___global; then
