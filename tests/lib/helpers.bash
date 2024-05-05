@@ -103,13 +103,13 @@ assert_snapshot_output() {
     if ${CREATE_SNAPSHOTS:-false}; then
       mkdir -p "$SNAPSHOTS"
       # shellcheck disable=SC2001
-      replace_values <<<"$output" > "$snapshot_path"
+      replace_values <<<"$actual" > "$snapshot_path"
     else
       fail "The snapshot '${snapshot_path%"$SNAPSHOTS"}' does not exist, run with CREATE_SNAPSHOTS=true to create it"
     fi
   elif ${UPDATE_SNAPSHOTS:-false}; then
     # shellcheck disable=SC2001
-    replace_values <<<"$output" > "$snapshot_path"
+    replace_values <<<"$actual" > "$snapshot_path"
   fi
   assert_equals_diff "$(replace_vars "$snapshot_path")" "$actual"
 }
