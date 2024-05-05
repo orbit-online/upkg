@@ -5,14 +5,24 @@ set -Eeo pipefail; shopt -s inherit_errexit nullglob
 # Install all packages referenced upkg.json, remove existing ones that aren't, then do the same for their command symlinks
 upkg_install() {
   upkg_install_deps .upkg/.tmp/root
+  local is_global=false
+  if [[ $PWD = "$INSTALL_PREFIX/lib/upkg" ]]; then
+    is_global=true
+    local \
+      available_cmds \
+      global_cmds \
+      new_links=() \
+      removed_links=() \
+      cmd
+  fi
 
   # All deps installed, pre-flight check command symlinks
-  if [[ $PWD = "$INSTALL_PREFIX/lib/upkg" ]]; then
+  if $is_global; then
     # Check that any global bin/ symlinks would not conflict with existing ones
-    local available_cmds global_cmds cmd
     available_cmds=$(upkg_list_available_cmds .upkg/.tmp/root | sort) # Full list of commands that should be linked
     global_cmds=$(upkg_list_global_referenced_cmds "$INSTALL_PREFIX" | sort) # Current list of commands that are linked
-    for cmd in $(comm -23 <(printf "%s\n" "$available_cmds") <(printf "%s\n" "$global_cmds")); do # available - global = new links
+    readarray -t -d $'\n' new_links < <(comm -23 <(printf "%s\n" "$available_cmds") <(printf "%s\n" "$global_cmds"))
+    for cmd in "${new_links[@]}"; do
       [[ -n $cmd ]] || continue # comm returns an empty string when comparing "\n" and "whatever\n" (for example when removing the last package with commands)
       # None of the new links should exist, if they do they don't point to upkg (otherwise they would be in the available list)
       [[ ! -e "$INSTALL_PREFIX/bin/$cmd" ]] || \
@@ -40,17 +50,22 @@ upkg_install() {
     fi
   else
     # Fail if dependencies have been removed. Though only at the top-level, the rest should/must be the same
-    local dep_pkgpath
+    local dep_pkgpath unreferenced_pkgs=()
     # current pkgs - installed pkgs = unreferenced pkgs
-    for dep_pkgpath in $(comm -23 <(upkg_resolve_links .upkg | sort) <(upkg_resolve_links .upkg/.tmp/root/.upkg | sort)); do
+    readarray -t -d $'\n' unreferenced_pkgs < <(comm -23 <(upkg_resolve_links .upkg | sort) <(upkg_resolve_links .upkg/.tmp/root/.upkg | sort))
+    for dep_pkgpath in "${unreferenced_pkgs[@]}"; do
       fatal "'%s' should not be installed" "$(basename "$dep_pkgpath")"
     done
   fi
 
   # All packages copied successfully, symlink commands
-  if [[ $PWD = "$INSTALL_PREFIX/lib/upkg" ]]; then
-    # global - available = old links
-    for cmd in $(comm -23 <(printf "%s\n" "$available_cmds") <(printf "%s\n" "$global_cmds")); do
+  if $is_global; then
+    # Recalculate the available commands after install
+    available_cmds=$(upkg_list_available_cmds .upkg/.tmp/root | sort) # Full list of commands that should be linked
+    # global - available = new links
+    local new_links=()
+    readarray -t -d $'\n' new_links < <(comm -23 <(printf "%s\n" "$available_cmds") <(printf "%s\n" "$global_cmds"))
+    for cmd in "${new_links[@]}"; do
       [[ -n $cmd ]] || continue # See above
       # Same loop again, this time we are sure none of the new links exist
       ! $DRY_RUN || fatal "'%s' was not symlinked" "$INSTALL_PREFIX/bin/$cmd"
@@ -58,7 +73,10 @@ upkg_install() {
       mkdir -p "$INSTALL_PREFIX/bin"
       ln -sT "../lib/upkg/.upkg/.bin/$cmd" "$INSTALL_PREFIX/bin/$cmd"
     done
-    for cmd in $(comm -13 <(printf "%s\n" "$available_cmds") <(printf "%s\n" "$global_cmds")); do
+    # available - global = old links
+    local removed_links=()
+    readarray -t -d $'\n' removed_links < <(comm -13 <(printf "%s\n" "$available_cmds") <(printf "%s\n" "$global_cmds"))
+    for cmd in "${removed_links[@]}"; do
       [[ -n $cmd ]] || continue # See above
       # Remove all old links
       ! $DRY_RUN || fatal "'%s' should not be symlinked" "$INSTALL_PREFIX/bin/$cmd"
@@ -69,12 +87,12 @@ upkg_install() {
 
 # Install all dependencies of a package
 upkg_install_deps() {
-  local pkgpath=$1 deps
+  local pkgpath=$1 deps=()
 
   # Loads of early returns here
   [[ -e "$pkgpath/upkg.json" ]] || return 0 # No upkg.json -> no deps -> nothing to do
-  deps=$(jq -rc '(.dependencies // [])[]' "$pkgpath/upkg.json")
-  [[ -n $deps ]] || return 0 # No deps -> nothing to do
+  readarray -t -d $'\n' deps < <(jq -rc '(.dependencies // [])[]' "$pkgpath/upkg.json")
+  [[ ${#deps[@]} -gt 0 ]] || return 0 # No deps -> nothing to do
   mkdir "$pkgpath/.upkg" 2>/dev/null || return 0 # .upkg exists -> another process is already installing the deps
   if [[ $pkgpath = .upkg/.tmp/root ]]; then
     mkdir "$pkgpath/.upkg/.packages" # We are at the root, this should be a directory, and not just a link
@@ -89,14 +107,14 @@ upkg_install_deps() {
 
   local dep dep_idx=0
   # Run through deps and install them concurrently
-  for dep in $deps; do
+  for dep in "${deps[@]}"; do
     upkg_install_dep "$pkgpath" "$dep" "$dep_idx" &
     # checksums are not unique across dependencies, so we use the dependencies array order as a key instead
     : $((dep_idx++))
   done
 
   dep_idx=0
-  for dep in $deps; do
+  for dep in "${deps[@]}"; do
     # Wait for each lock sentinel to exist
     until [[ -e "$pkgpath/.upkg/.sentinels/$dep_idx.lock" || -e "$pkgpath/.upkg/.sentinels/$dep_idx.fail" ]]; do sleep .01; done
     : $((dep_idx++))
@@ -107,7 +125,7 @@ upkg_install_deps() {
 
   # All processes have either succeeded or failed, check the result
   dep_idx=0
-  for dep in $deps; do
+  for dep in "${deps[@]}"; do
     # Check that no processes failed
     [[ ! -e "$pkgpath/.upkg/.sentinels/$dep_idx.fail" ]] || \
       fatal "An error occurred while installing '%s'" "$(dep_pkgurl "$dep")"
@@ -164,7 +182,7 @@ upkg_install_dep() {
 
   else
     local binpath binpaths=() binpaths_is_default=true
-    readarray -t binpaths < <(dep_bin "$dep")
+    readarray -t -d $'\n' binpaths < <(dep_bin "$dep")
     if [[ ${#binpaths[@]} -eq 0 ]]; then
       binpaths_is_default=true
       binpaths=(bin)
