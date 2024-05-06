@@ -3,7 +3,7 @@ SHELL ["/bin/bash", "-Eeo", "pipefail", "-c"]
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
   ca-certificates jq wget curl git xz-utils bzip2 \
-  ssh tree bsdextrautils psmisc shellcheck python3 && \
+  ssh tree bsdextrautils psmisc shellcheck python3 gettext openssh-server && \
   rm -rf /var/lib/apt/lists/*
 RUN wget -qO /tmp/delta.deb https://github.com/dandavison/delta/releases/download/0.17.0/git-delta_0.17.0_amd64.deb; \
   dpkg -i /tmp/delta.deb && rm /tmp/delta.deb
@@ -25,16 +25,16 @@ RUN /restricted/setup-upkg-path-wrapper.sh /upkg/bin/upkg /restricted
 ARG USER
 ARG UID
 RUN <<EOUSERSETUP
-mkdir -p /upkg/sandbox
-useradd --uid "${UID}" -d /upkg/sandbox "${USER}"
+mkdir -p /upkg/tests/user-home
+useradd --uid "$UID" -d /upkg/tests/user-home "$USER"
 adduser "$USER" sudo
 EOUSERSETUP
 COPY <<EOF /etc/sudoers.d/nopass
 $USER ALL=(ALL) NOPASSWD:ALL
 EOF
-USER "$USER"
+USER $USER
+ENV USER=$USER
 ENV PATH=/restricted/upkg-wrapper-bin:$PATH
-ENV SSH_AUTH_SOCK=/ssh_auth
 
 WORKDIR /upkg
 ENTRYPOINT ["/usr/local/bin/bats"]

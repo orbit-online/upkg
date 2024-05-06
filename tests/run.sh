@@ -13,10 +13,14 @@ main() {
   else
     docker_opts+=( -a stdout -a stderr)
   fi
+  mkdir -p "$PKGROOT/tests/bats-tmp"
   exec docker run --rm "${docker_opts[@]}" \
     --name upkg-tests \
     -eUPDATE_SNAPSHOTS -eCREATE_SNAPSHOTS -eRESTRICT_BIN \
-    -v"$PKGROOT:/upkg:$mode" \
+    -eTMPDIR=/upkg/tests/bats-tmp \
+    -v"$PKGROOT:/upkg:ro" \
+    -v"$PKGROOT/tests:/upkg/tests:$mode" \
+    -v"$PKGROOT/tests/bats-tmp:/upkg/tests/bats-tmp:rw" \
     "$shasum" "$@"
 }
 

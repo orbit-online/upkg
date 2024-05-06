@@ -1,0 +1,14 @@
+Port ${SSHD_PORT}
+# Port 2213
+AddressFamily any
+ListenAddress 127.0.0.1
+ListenAddress ::1
+AuthorizedKeysFile ${SSHD_ROOT}/ssh_client_ed25519.pub
+# AuthorizedKeysFile /upkg/sandbox/ssh_client_ed25519.pub
+HostKey ${SSHD_ROOT}/ssh_host_ed25519
+# HostKey /upkg/sandbox/ssh_host_ed25519
+PermitRootLogin no
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+UsePAM yes
+PermitTTY no

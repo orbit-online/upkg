@@ -14,8 +14,11 @@ setup_suite() {
   export PACKAGE_FIXTURES
   PACKAGE_FIXTURES=$BATS_RUN_TMPDIR/package-fixtures
   mkdir -p "$PACKAGE_FIXTURES"
+  export UPKG_SEQUENTIAL=true
   umask 022 # Make sure permissions of new files match what we expect
+  PYTHON=$(which python 2>/dev/null || which python3 2>/dev/null)
   setup_package_fixtures_httpd
+  setup_package_fixtures_sshd
   check_package_fixture_template_permissions
   setup_package_fixture_templates
 }
@@ -23,7 +26,11 @@ setup_suite() {
 teardown_suite() {
   if [[ -n $HTTPD_PKG_FIXTURES_PID ]]; then
     kill -INT "$HTTPD_PKG_FIXTURES_PID" 2>/dev/null
-    wait "$HTTPD_PKG_FIXTURES_PID" || printf "Webserver exited with status code %d\n" "$?" >&2
+    wait "$HTTPD_PKG_FIXTURES_PID" || printf "HTTP server exited with status code %d\n" "$?" >&2
+  fi
+  if [[ -n $SSHD_PKG_FIXTURES_PID ]]; then
+    kill -INT "$SSHD_PKG_FIXTURES_PID" 2>/dev/null
+    wait "$SSHD_PKG_FIXTURES_PID" || printf "HTTP server exited with status code %d\n" "$?" >&2
   fi
 }
 
@@ -102,31 +109,93 @@ setup_package_fixture_templates() {
   done
 }
 
-# Setup webserver to serve package fixtures
+# Setup HTTP server to serve package fixtures
 setup_package_fixtures_httpd() {
-  export HTTPD_PKG_FIXTURES_LOG=$BATS_RUN_TMPDIR/httpd.log
-  local python
-  python=$(which python 2>/dev/null || which python3 2>/dev/null)
-  if [[ -n $python ]]; then
-    (cd "$PACKAGE_FIXTURES"; exec $python -u -m http.server -b localhost 0 &>"$HTTPD_PKG_FIXTURES_LOG") & HTTPD_PKG_FIXTURES_PID=$!
-    local listening_line
-    wait_timeout=1000
-    until [[ -n $listening_line ]]; do
-      sleep .01
-      listening_line=$(head -n1 "$HTTPD_PKG_FIXTURES_LOG")
-      if ((wait_timeout-- <= 0)); then
-        export SKIP_HTTPD_PKG_FIXTURES="Timed out waiting for the webserver to become available."
-        return 0
-      fi
-    done
-    if [[ $listening_line =~ \((http:\/\/[^\)]+)\/\) ]]; then
-      export HTTPD_PKG_FIXTURES_ADDR=${BASH_REMATCH[1]}
-      true >"$HTTPD_PKG_FIXTURES_LOG" # Clear log before returning
-    else
-      kill -INT "$HTTPD_PKG_FIXTURES_PID" 2>/dev/null
-      export SKIP_HTTPD_PKG_FIXTURES="Unable to determine server listening port from first log line: $listening_line"
-    fi
-  else
-    export SKIP_HTTPD_PKG_FIXTURES='python is not available, use tests/run.sh to run the tests in a container'
+  export SKIP_HTTPD_PKG_FIXTURES
+  if [[ -z $PYTHON ]]; then
+    SKIP_HTTPD_PKG_FIXTURES='python is not available, use tests/run.sh to run the tests in a container'
+    return 0
   fi
+  export HTTPD_PKG_FIXTURES_LOG=$BATS_RUN_TMPDIR/httpd.log
+  (cd "$PACKAGE_FIXTURES"; exec $PYTHON -u -m http.server -b localhost 0 &>"$HTTPD_PKG_FIXTURES_LOG") & HTTPD_PKG_FIXTURES_PID=$!
+  local listening_line
+  wait_timeout=1000
+  until [[ -n $listening_line ]]; do
+    sleep .01
+    listening_line=$(head -n1 "$HTTPD_PKG_FIXTURES_LOG")
+    if ((wait_timeout-- <= 0)); then
+      kill -INT "$HTTPD_PKG_FIXTURES_PID" 2>/dev/null
+      unset HTTPD_PKG_FIXTURES_PID
+      fatal "Timed out waiting for the HTTP server to become available. Use \"--filter-tags '!http'\" to skip HTTP tests."
+    fi
+  done
+  if [[ $listening_line =~ \((http:\/\/[^\)]+)\/\) ]]; then
+    export HTTPD_PKG_FIXTURES_ADDR=${BASH_REMATCH[1]}
+    true >"$HTTPD_PKG_FIXTURES_LOG" # Clear log before returning
+  else
+    kill -INT "$HTTPD_PKG_FIXTURES_PID" 2>/dev/null
+    unset HTTPD_PKG_FIXTURES_PID
+    SKIP_HTTPD_PKG_FIXTURES="Unable to determine server listening port from first log line: $listening_line"
+  fi
+}
+
+# Setup SSH server to serve git package fixtures
+setup_package_fixtures_sshd() {
+  export SKIP_SSHD_PKG_FIXTURES
+  if [[ -z $PYTHON ]]; then
+    SKIP_SSHD_PKG_FIXTURES='python is not available (needed to find a free port for sshd), use tests/run.sh to run the tests in a container'
+    return 0
+  fi
+  local sshd
+  sshd=$(which sshd 2>/dev/null)
+  if [[ -n $ssh ]]; then
+    SKIP_SSHD_PKG_FIXTURES='sshd is not available, use tests/run.sh to run the tests in a container'
+    return 0
+  fi
+  if [[ -z $TMPDIR || $(stat -c %U "$TMPDIR") != "$USER" || ! $(stat -c %a "$TMPDIR") =~ ^7[0-7][0-7]$ ]]; then
+    SKIP_SSHD_PKG_FIXTURES="\$TMPDIR must be set to a user owned directory with normal permissions for SSH tests to pass, use tests/run.sh to run the tests in a container or set TMPDIR=$BATS_TEST_DIRNAME/bats-tmp"
+    return 0
+  fi
+  local sshd_root="$BATS_RUN_TMPDIR/ssh/root" sshd_port
+  export SSHD_PKG_FIXTURES_LOG=$sshd_root.log SSH_CONFIG=$sshd_root/ssh_config GIT_SSH_COMMAND
+  mkdir -p "$sshd_root"
+  sshd_port=$(python3 -c 'import socket
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind(("", 0))
+addr = s.getsockname()
+print(addr[1])
+s.close()')
+  SSHD_ROOT=$sshd_root SSHD_PORT=$sshd_port envsubst <"$BATS_TEST_DIRNAME/assets/sshd_config" >"$sshd_root/sshd_config"
+  ssh-keygen -q -N '' -t ed25519 -f "$sshd_root/ssh_host_ed25519"
+  ssh-keygen -q -N '' -t ed25519 -f "$sshd_root/ssh_client_ed25519"
+  (cd "$sshd_root"; exec $sshd -D -E "$SSHD_PKG_FIXTURES_LOG" -f "$sshd_root/sshd_config") & SSHD_PKG_FIXTURES_PID=$!
+  local listening_line
+  wait_timeout=1000
+  until [[ -n $listening_line ]]; do
+    sleep .01
+    listening_line=$(head -n1 "$SSHD_PKG_FIXTURES_LOG")
+    if ((wait_timeout-- <= 0)); then
+      kill -INT "$SSHD_PKG_FIXTURES_PID" 2>/dev/null
+      unset SSHD_PKG_FIXTURES_PID
+      fatal "Timed out waiting for sshd to become available. Use \"--filter-tags '!ssh'\" to skip SSH tests."
+    fi
+  done
+  if [[ $listening_line =~ Server\ listening\ on\ ([^ ]+)\ port\ ([0-9]+)\. ]]; then
+    export SSHD_PKG_FIXTURES_HOST=${BASH_REMATCH[1]}
+    export SSHD_PKG_FIXTURES_PORT=${BASH_REMATCH[2]}
+    true >"$SSHD_PKG_FIXTURES_LOG" # Clear log before returning
+  else
+    kill -INT "$SSHD_PKG_FIXTURES_PID" 2>/dev/null
+    fatal "Unable to determine server listening port from first log line (use \"--filter-tags '!ssh'\" to skip SSH tests): %s." "$listening_line"
+  fi
+  SSHD_ROOT=$sshd_root envsubst <"$BATS_TEST_DIRNAME/assets/ssh_config" >"$SSH_CONFIG"
+  chmod -R go-rwx "$BATS_RUN_TMPDIR/ssh"
+  GIT_SSH_COMMAND="ssh -F $(printf "%q" "$SSH_CONFIG")"
+}
+
+fatal() {
+  local tpl=$1; shift
+  # shellcheck disable=SC2059
+  printf -- "$tpl\n" "$@" >&2
+  return 1
 }

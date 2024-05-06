@@ -11,11 +11,8 @@ common_setup_file() {
 }
 
 common_setup() {
-  if has_tag remote; then
-    [[ -z $SKIP_HTTPD_PKG_FIXTURES ]] || skip "$SKIP_HTTPD_PKG_FIXTURES"
-  else
-    unset HTTPD_PKG_FIXTURES_ADDR
-  fi
+  ! has_tag http || [[ -z $SKIP_HTTPD_PKG_FIXTURES ]] || skip "$SKIP_HTTPD_PKG_FIXTURES"
+  ! has_tag ssh || [[ -z $SKIP_SSHD_PKG_FIXTURES ]] || skip "$SKIP_SSHD_PKG_FIXTURES"
   ! has_tag tar || [[ -z $SKIP_TAR ]] || skip "$SKIP_TAR"
   ! has_tag git || [[ -z $SKIP_GIT ]] || skip "$SKIP_GIT"
   ! has_tag wget || [[ -z $SKIP_WGET ]] || skip "$SKIP_WGET"
@@ -27,7 +24,6 @@ common_setup() {
   # EUID cannot be set, so even when running as root make sure to install to $HOME
   export INSTALL_PREFIX=$HOME/.local
   # Don't let upkg run installs in parallel, this results in non-deterministic ouput
-  export UPKG_SEQUENTIAL=true
   mkdir "$HOME" "$GLOBAL_INSTALL_PREFIX" "$PROJECT_ROOT"
   cd "$PROJECT_ROOT"
 }
@@ -36,11 +32,27 @@ common_teardown() {
   if [[ -n $(jobs -p) ]]; then
     fail "There were unterminated background jobs after test completion"
   fi
-  if has_tag remote; then
-    # Output and clear server log after every test
-    printf -- "-- webserver logs --\n" >&2
-    cat "$HTTPD_PKG_FIXTURES_LOG" >&2
-    true >"$HTTPD_PKG_FIXTURES_LOG"
+  if [[ -e $HTTPD_PKG_FIXTURES_LOG ]]; then
+    if has_tag http; then
+      # Output and clear server log after every test
+      printf -- "-- httpd logs --\n" >&2
+      cat "$HTTPD_PKG_FIXTURES_LOG" >&2
+      true >"$HTTPD_PKG_FIXTURES_LOG"
+    elif [[ $(stat -c %s "$HTTPD_PKG_FIXTURES_LOG") -gt 0 ]]; then
+      true >"$HTTPD_PKG_FIXTURES_LOG"
+      fail "HTTP server was accessed but test did not have 'http' tag, you must tag tests that access the HTTP server ('# bats test_tags=http')"
+    fi
+  fi
+  if [[ -e $SSHD_PKG_FIXTURES_LOG ]]; then
+    if has_tag ssh; then
+      # Output and clear server log after every test
+      printf -- "-- sshd logs --\n" >&2
+      cat "$SSHD_PKG_FIXTURES_LOG" >&2
+      true >"$SSHD_PKG_FIXTURES_LOG"
+    elif [[ $(stat -c %s "$SSHD_PKG_FIXTURES_LOG") -gt 0 ]]; then
+      true >"$SSHD_PKG_FIXTURES_LOG"
+      fail "SSH server was accessed but test did not have 'ssh' tag, you must tag tests that access the SSH server ('# bats test_tags=ssh')"
+    fi
   fi
 }
 
@@ -75,8 +87,8 @@ create_tar_package() {
 create_git_package() {
   has_tag git || fail "create_git_package is used, but the test is not tagged with 'git'"
   local tpl=$PACKAGE_TEMPLATES/$1 working_copy=$PACKAGE_FIXTURES/$1.git-tmp dest=$PACKAGE_FIXTURES/$1.git
-  mkdir -p "$(dirname "$dest")"
   if [[ ! -e $dest ]]; then
+    mkdir -p "$(dirname "$dest")"
     mkdir "$working_copy"
     git init -q  "$working_copy"
     cp -r "$tpl/." "$working_copy/"

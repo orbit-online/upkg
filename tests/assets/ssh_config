@@ -1,0 +1,7 @@
+Host package-fixtures
+  HostName ${SSHD_PKG_FIXTURES_HOST}
+  Port ${SSHD_PKG_FIXTURES_PORT}
+  IdentityFile ${SSHD_ROOT}/ssh_client_ed25519
+  User ${USER}
+  StrictHostKeyChecking no
+  UserKnownHostsFile /dev/null

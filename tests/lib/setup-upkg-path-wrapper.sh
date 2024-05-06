@@ -39,16 +39,18 @@ PATH="${RESTRICTED_BIN:-"%s"}" "%s" "$@"
     mv cp mkdir touch rm ln chmod cat readlink realpath # fs commands
     sleep flock # concurrency commands
     shasum git tar gzip xz bzip2 # archive commands
+  ) optional_commands=(
+    wget curl ssh
   )
   for cmd in "${required_commands[@]}"; do
     target=$(which "$cmd") || { printf "Unable to find required command '%s'" "$cmd" >&2; return 1; }
     ln -sT "$target" "$restricted_bin/$cmd"
   done
-  if target=$(which wget 2>/dev/null); then
-    ln -sT "$target" "$restricted_bin/wget"
-  elif target=$(which curl 2>/dev/null); then
-    ln -sT "$target" "$restricted_bin/curl"
-  else
+  for cmd in "${optional_commands[@]}"; do
+    target=$(which "$cmd") || { printf "Unable to find optional command '%s'" "$cmd" >&2; continue; }
+    ln -sT "$target" "$restricted_bin/$cmd"
+  done
+  if [[ ! -e $restricted_bin/wget && ! -e $restricted_bin/curl ]]; then
     fatal "Unable to find wget or curl"
   fi
   ln -sT "../upkg-wrapper-bin/upkg" "$restricted_bin/upkg"

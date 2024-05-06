@@ -25,7 +25,7 @@ teardown_file() { common_teardown_file; }
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
 }
 
-# bats test_tags=remote,tar
+# bats test_tags=http,tar
 @test "fails when installing a remote repo and wget & curl are not available" {
   remove_commands curl wget
   local name=default/acme-empty-v1.0.2-metadata
@@ -82,7 +82,7 @@ teardown_file() { common_teardown_file; }
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
 }
 
-# bats test_tags=remote,tar
+# bats test_tags=http,tar
 @test "wget can perform head request" {
   type wget &>/dev/null || skip 'wget is not available'
   remove_commands curl
@@ -93,7 +93,7 @@ teardown_file() { common_teardown_file; }
   assert_snapshot_path
 }
 
-# bats test_tags=remote,tar
+# bats test_tags=http,tar
 @test "curl can perform head request" {
   type curl &>/dev/null || fail 'curl is not available'
   local name=default/acme-empty-v1.0.2-metadata

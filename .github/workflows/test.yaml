@@ -37,6 +37,7 @@ jobs:
       working-directory: upkg
       env:
         BATS_LIB_PATH: ${{ github.workspace }}/lib
+        TMPDIR: ${{ github.workspace }}/upkg/tests/bats-tmp
     - name: Generate test summary
       uses: test-summary/action@v2
       with:
