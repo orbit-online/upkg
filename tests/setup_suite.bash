@@ -14,6 +14,7 @@ setup_suite() {
   export PACKAGE_FIXTURES
   PACKAGE_FIXTURES=$BATS_RUN_TMPDIR/package-fixtures
   mkdir -p "$PACKAGE_FIXTURES"
+  umask 022 # Make sure permissions of new files match what we expect
   setup_package_fixtures_httpd
   check_package_fixture_template_permissions
   setup_package_fixture_templates
