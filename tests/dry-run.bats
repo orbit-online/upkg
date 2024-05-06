@@ -17,3 +17,9 @@ teardown_file() { common_teardown_file; }
   assert_snapshot_output shared/usage
   assert_snapshot_path shared/empty
 }
+
+@test "remove does not have --dry-run" {
+  run -1 upkg remove -n acme
+  assert_snapshot_output shared/usage
+  assert_snapshot_path shared/empty
+}
