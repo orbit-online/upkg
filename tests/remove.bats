@@ -24,7 +24,7 @@ teardown_file() { common_teardown_file; }
   local name=default/acme
   create_tar_package $name
   run -0 upkg add -g "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
-  run -0 upkg remove -g acme-empty
+  run -0 upkg remove -g acme
   assert_snapshot_output
   assert_snapshot_path "" "$HOME/.local"
 }
@@ -36,7 +36,7 @@ teardown_file() { common_teardown_file; }
   run -0 upkg add "$PACKAGE_FIXTURES/$name1.tar" $TAR_SHASUM
   create_tar_package $name2
   run -0 upkg add "$PACKAGE_FIXTURES/$name2.tar" $TAR_SHASUM
-  run -0 upkg remove acme-empty
+  run -0 upkg remove acme
   assert_snapshot_output
   assert_snapshot_path
 }

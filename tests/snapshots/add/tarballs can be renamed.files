@@ -6,5 +6,5 @@
 │   │   └── [drwxr-xr-x]  acme-no-metadata.tar@8269ed897058ec43430168b2367ed8d588f2259ce6a373890dd0b1b96fd722c1
 │   │       └── [drwxr-xr-x]  bin
 │   │           └── [-rwxr-xr-x]  acme.bin
-│   └── [lrwxrwxrwx]  acme-empty -> .packages/acme-no-metadata.tar@8269ed897058ec43430168b2367ed8d588f2259ce6a373890dd0b1b96fd722c1
+│   └── [lrwxrwxrwx]  acme-2 -> .packages/acme-no-metadata.tar@8269ed897058ec43430168b2367ed8d588f2259ce6a373890dd0b1b96fd722c1
 └── [-rw-r--r--]  upkg.json

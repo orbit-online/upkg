@@ -1,11 +1,11 @@
 [drwxr-xr-x]  .
 ├── [drwxr-xr-x]  .upkg
 │   ├── [drwxr-xr-x]  .bin
-│   │   └── [lrwxrwxrwx]  acme.bin -> ../.packages/acme-empty@db82dc5f57b1da1024134f1793d6cc34b7f0b76b45d910426fe292e3a623a51b/bin/acme.bin
+│   │   └── [lrwxrwxrwx]  acme.bin -> ../.packages/acme@2fc13e1819bc3ed22ee1526d4f44ec20cd8748575e52a28e137f74fec2dd1160/bin/acme.bin
 │   ├── [drwxr-xr-x]  .packages
-│   │   └── [drwxr-xr-x]  acme-empty@db82dc5f57b1da1024134f1793d6cc34b7f0b76b45d910426fe292e3a623a51b
+│   │   └── [drwxr-xr-x]  acme@2fc13e1819bc3ed22ee1526d4f44ec20cd8748575e52a28e137f74fec2dd1160
 │   │       ├── [drwxr-xr-x]  bin
 │   │       │   └── [-rwxr-xr-x]  acme.bin
 │   │       └── [-rw-r--r--]  upkg.json
-│   └── [lrwxrwxrwx]  has_in-name -> .packages/acme-empty@db82dc5f57b1da1024134f1793d6cc34b7f0b76b45d910426fe292e3a623a51b
+│   └── [lrwxrwxrwx]  has_in-name -> .packages/acme@2fc13e1819bc3ed22ee1526d4f44ec20cd8748575e52a28e137f74fec2dd1160
 └── [-rw-r--r--]  upkg.json

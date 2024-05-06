@@ -16,13 +16,14 @@ teardown_file() { common_teardown_file; }
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_output
   assert_snapshot_path
+  assert_file_executable .upkg/.bin/acme.bin
 }
 
 # bats test_tags=tar
 @test "tarballs can be renamed" {
   local name=default/acme-no-metadata
   create_tar_package $name
-  run -0 upkg add -p acme-empty "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
+  run -0 upkg add -p acme-2 "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_output
   assert_snapshot_path
 }
@@ -40,7 +41,7 @@ teardown_file() { common_teardown_file; }
 @test "git repos can be renamed" {
   local name=default/acme-no-metadata
   create_git_package $name
-  run -0 upkg add -t git -p acme-empty "$PACKAGE_FIXTURES/$name.git" $GIT_COMMIT
+  run -0 upkg add -t git -p acme-2 "$PACKAGE_FIXTURES/$name.git" $GIT_COMMIT
   assert_snapshot_output
   assert_snapshot_path
 }
@@ -51,8 +52,8 @@ teardown_file() { common_teardown_file; }
   create_tar_package $name
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_output
-  assert_snapshot_path metadata-tarball
-  assert_dir_exists .upkg/acme-empty
+  assert_snapshot_path shared/acme
+  assert_dir_exists .upkg/acme
 }
 
 # bats test_tags=http,tar
@@ -61,8 +62,8 @@ teardown_file() { common_teardown_file; }
   create_tar_package $name
   run -0 upkg add $HTTPD_PKG_FIXTURES_ADDR/$name.tar $TAR_SHASUM
   assert_snapshot_output
-  assert_snapshot_path metadata-tarball
-  assert_dir_exists .upkg/acme-empty
+  assert_snapshot_path shared/acme
+  assert_dir_exists .upkg/acme
 }
 
 # bats test_tags=http,git
@@ -108,7 +109,7 @@ teardown_file() { common_teardown_file; }
   local name=default/acme
   create_tar_package $name
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
-  run -0 upkg add -p acme-empty-2 "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
+  run -0 upkg add -p acme-2 "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_output
   assert_snapshot_path "$BATS_TEST_DESCRIPTION"
 }
@@ -120,9 +121,9 @@ teardown_file() { common_teardown_file; }
     name2=default/acme-no-metadata
   create_tar_package $name1
   run -0 upkg add "$PACKAGE_FIXTURES/$name1.tar" $TAR_SHASUM
-  assert_snapshot_path
+  assert_snapshot_path shared/acme
   create_tar_package $name2
   run -1 upkg add "$PACKAGE_FIXTURES/$name2.tar" $TAR_SHASUM
   assert_snapshot_output
-  assert_snapshot_path
+  assert_snapshot_path shared/acme
 }

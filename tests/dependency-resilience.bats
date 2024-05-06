@@ -90,7 +90,7 @@ teardown_file() { common_teardown_file; }
   create_tar_package $name
   run -0 upkg add $HTTPD_PKG_FIXTURES_ADDR/$name.tar
   assert_snapshot_output
-  assert_snapshot_path
+  assert_snapshot_path shared/acme
 }
 
 # bats test_tags=http,tar
@@ -100,5 +100,5 @@ teardown_file() { common_teardown_file; }
   create_tar_package $name
   run -0 upkg add $HTTPD_PKG_FIXTURES_ADDR/$name.tar
   assert_snapshot_output
-  assert_snapshot_path
+  assert_snapshot_path shared/acme
 }
