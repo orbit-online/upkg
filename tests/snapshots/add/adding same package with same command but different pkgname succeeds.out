@@ -1,2 +1,3 @@
-upkg: Already downloaded '$BATS_RUN_TMPDIR/package-fixtures/default/acme.tar'
+upkg: Skipping '$BATS_RUN_TMPDIR/package-fixtures/default/acme.tar'
+upkg: Skipping '$BATS_RUN_TMPDIR/package-fixtures/default/acme.tar'
 upkg: Added '$BATS_RUN_TMPDIR/package-fixtures/default/acme.tar'

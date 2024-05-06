@@ -1,1 +1,2 @@
+upkg: Skipping '$BATS_RUN_TMPDIR/package-fixtures/default/no-executables.tar'
 upkg: Removed 'acme'

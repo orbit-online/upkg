@@ -2,6 +2,6 @@ upkg: --no-bin and --bin are mutually exclusive
 
 Usage:
   upkg install [-nqv]
-  upkg add [-nqvgXB -b PATH... -p PKGNAME -t PKGTYPE] (URL|PATH) [SHA]
-  upkg remove [-nqvg] PKGNAME
+  upkg add [-qvgXB -b PATH... -p PKGNAME -t PKGTYPE] (URL|PATH) [SHA]
+  upkg remove [-qvg] PKGNAME
   upkg list [-qvg] [-- COLUMNOPTS...

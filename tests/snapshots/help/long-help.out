@@ -1,12 +1,12 @@
 μpkg - A minimalist package manager
 Usage:
   upkg install [-nqv]
-  upkg add [-nqvgXB -b PATH... -p PKGNAME -t PKGTYPE] (URL|PATH) [SHA]
-  upkg remove [-nqvg] PKGNAME
+  upkg add [-qvgXB -b PATH... -p PKGNAME -t PKGTYPE] (URL|PATH) [SHA]
+  upkg remove [-qvg] PKGNAME
   upkg list [-qvg] [-- COLUMNOPTS...]
 
 Options:
-  -n --dry-run       Dry run, $?=1 if install/upgrade is required
+  -n --dry-run       Dry run, $?=1 if install is required
   -q --quiet         Log only fatal errors
   -v --verbose       Output verbose logs and disable writing to the same line
   -g --global        Act globally

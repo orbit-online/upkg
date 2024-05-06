@@ -8,5 +8,5 @@
 │   │       │   └── [-rwxr-xr-x]  acme.bin
 │   │       └── [-rw-r--r--]  upkg.json
 │   ├── [lrwxrwxrwx]  acme -> .packages/acme@2fc13e1819bc3ed22ee1526d4f44ec20cd8748575e52a28e137f74fec2dd1160
-│   └── [lrwxrwxrwx]  acme-2 -> .packages/acme
+│   └── [lrwxrwxrwx]  acme-2 -> .packages/acme@2fc13e1819bc3ed22ee1526d4f44ec20cd8748575e52a28e137f74fec2dd1160
 └── [-rw-r--r--]  upkg.json
