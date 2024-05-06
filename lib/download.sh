@@ -76,7 +76,8 @@ upkg_download() {
     fi
 
     sha256 "$filepath" "$checksum"
-    if dep_exec "$dep"; then
+    if jq -re '.exec // true' <<<"$dep" >/dev/null; then
+      # file should be executable
       chmod +x "$downloadpath"
     fi
 
@@ -87,15 +88,6 @@ upkg_download() {
       fatal "Unable to clone '%s'. Error:\n%s" "$pkgurl" "$out"
     out=$(git -C "$downloadpath" checkout -q "$checksum" -- 2>&1) || \
       fatal "Unable to checkout '%s' from '%s'. Error:\n%s" "$checksum" "$pkgurl" "$out"
-
-    if [[ -e "$downloadpath/upkg.json" ]]; then
-      # Add a version property to upkg.json
-      local version upkgjson
-      version=$(git -C "$downloadpath" describe 2>/dev/null) || version=$checksum
-      upkgjson=$(jq --arg version "$version" '.version = $version' <"$downloadpath/upkg.json") || \
-        fatal "The package from '%s' does not contain a valid upkg.json" "$pkgurl"
-      printf "%s\n" "$upkgjson" >"$downloadpath/upkg.json"
-    fi
 
   else
     fatal "Fetching of '%s' not implemented" "$pkgtype"

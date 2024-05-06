@@ -49,24 +49,6 @@ dep_checksum() {
   jq -re '(if has("git") then .sha1 else .sha256 end) // empty' <<<"$dep"
 }
 
-dep_name() {
-  local dep=$1 pkgname
-  pkgname="$(jq -re '.name // empty' <<<"$dep")" || return 1
-  clean_pkgname "$pkgname"
-}
-
-# Whether the dependency should be linked to .upkg/.bin/
-dep_bin() {
-  local dep=$1
-  jq -r '(.bin // [])[]' <<<"$dep" >/dev/null
-}
-
-# Whether the dependency should be executable
-dep_exec() {
-  local dep=$1
-  jq -re '.exec // true' <<<"$dep" >/dev/null
-}
-
 upkg_validate_upkgjson() {
   # unique pkgname (those that are set)
   :

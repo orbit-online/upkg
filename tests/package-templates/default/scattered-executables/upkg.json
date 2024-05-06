@@ -1,0 +1,3 @@
+{
+  "bin": ["root-exec.sh", "bin/bin-exec.sh", "tools/"]
+}

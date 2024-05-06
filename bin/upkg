@@ -140,6 +140,7 @@ for ((;docopt_i>0;docopt_i--)); do declare -p "${prefix}__dry_run" \
     if $DRY_RUN; then processing 'All dependencies are up-to-date'
     else processing 'Installed all dependencies'; fi
     trailing_newline
+
   elif $_add; then
     if $___global; then
       if [[ ! -e "$INSTALL_PREFIX/lib/upkg" ]]; then
@@ -158,9 +159,10 @@ for ((;docopt_i>0;docopt_i--)); do declare -p "${prefix}__dry_run" \
     if [[ -z $pkgtype ]]; then
       pkgtype=$(upkg_guess_pkgtype "$_URL" "$_SHA")
     fi
-    if [[ $pkgtype != file ]]; then
-      ! $___no_exec || docopt_exit "upkg: --no-exec is only valid for files"
+    if [[ $pkgtype = file ]]; then
       [[ ${#___bin[@]} -eq 0 ]] || docopt_exit "upkg: You cannot specify bin paths for a file. It will be linked by default, unless you use --no-exec."
+    else
+      ! $___no_exec || docopt_exit "upkg: --no-exec is only valid for files"
     fi
     if [[ $pkgtype = git ]]; then
       [[ -z $_SHA || $_SHA =~ ^[a-z0-9]{40}$ ]] || fatal "A git sha1 commit hash must be 40 hexchars"
@@ -171,6 +173,7 @@ for ((;docopt_i>0;docopt_i--)); do declare -p "${prefix}__dry_run" \
     upkg_mktemp
     upkg_add "$pkgtype" "$_URL" "$_SHA" "$(clean_pkgname "$___pkgname")" "$___no_exec" "$___no_bin" "${___bin[@]}"
     trailing_newline
+
   elif $_remove; then
     if $___global; then
       [[ -e "$INSTALL_PREFIX/lib/upkg" ]] || return 0
@@ -179,12 +182,14 @@ for ((;docopt_i>0;docopt_i--)); do declare -p "${prefix}__dry_run" \
     upkg_mktemp
     upkg_remove "$(clean_pkgname "$_PKGNAME")"
     trailing_newline
+
   elif $_list; then
     if $___global; then
       [[ -e "$INSTALL_PREFIX/lib/upkg" ]] || return 0
       cd "$INSTALL_PREFIX/lib/upkg"
     fi
     upkg_list "${COLUMNOPTS[@]}"
+
   else
     fatal "Not implemented"
   fi

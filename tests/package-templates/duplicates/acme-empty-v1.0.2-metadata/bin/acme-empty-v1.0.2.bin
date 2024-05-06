@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-# Duplicate of acme except for this line
-exit 0

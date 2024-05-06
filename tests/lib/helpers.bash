@@ -113,12 +113,10 @@ assert_equals_diff() {
 
 assert_snapshot_output() {
   local actual=${2:-$output} snapshot_path
-  if [[ -n $1 ]]; then
-    if [[ $1 != */* ]]; then
-      snapshot_path=$SNAPSHOTS/$1.out
-    else
-      snapshot_path=$SNAPSHOTS_ROOT/$1.out
-    fi
+  if [[ $1 = */* ]]; then
+    snapshot_path=$SNAPSHOTS_ROOT/$1.out
+  elif [[ -n $1 ]]; then
+    snapshot_path=$SNAPSHOTS/$1.out
   else
     snapshot_path=$SNAPSHOTS/${BATS_TEST_DESCRIPTION//'/'/_}.out
   fi
@@ -139,12 +137,10 @@ assert_snapshot_output() {
 
 assert_snapshot_path() {
   local actual_path=${2:-.} snapshot_path
-  if [[ -n $1 ]]; then
-    if [[ $1 != */* ]]; then
-      snapshot_path=$SNAPSHOTS/$1.files
-    else
-      snapshot_path=$SNAPSHOTS_ROOT/$1.files
-    fi
+  if [[ $1 = */* ]]; then
+    snapshot_path=$SNAPSHOTS_ROOT/$1.files
+  elif [[ -n $1 ]]; then
+    snapshot_path=$SNAPSHOTS/$1.files
   else
     snapshot_path=$SNAPSHOTS/${BATS_TEST_DESCRIPTION//'/'/_}.files
   fi

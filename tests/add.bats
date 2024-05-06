@@ -100,5 +100,15 @@ teardown_file() { common_teardown_file; }
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   run -0 upkg add -p acme-2 "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_output
-  assert_snapshot_path "$BATS_TEST_DESCRIPTION"
+  assert_snapshot_path
+}
+
+# bats test_tags=tar
+@test "upkg.json controls pkgname" {
+  local name=default/acme-renamed
+  create_tar_package $name
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
+  assert_snapshot_output
+  assert_snapshot_path
+  assert_dir_exists .upkg/acme
 }

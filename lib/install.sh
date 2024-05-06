@@ -40,8 +40,9 @@ upkg_install() {
       # Merge copy the tmp directory (basically just merging .upkg/.packages)
       cp -a .upkg/.tmp/root/.upkg ./
       # Remove all unreferenced packages
-      local dep_pkgpath
-      for dep_pkgpath in $(comm -23 <(cd .upkg; for dedup_path in .packages/*; do echo "$dedup_path"; done | sort) <(upkg_list_referenced_pkgs . | sort)); do
+      local dep_pkgpath unreferenced_pkgs=()
+      readarray -t -d $'\n' unreferenced_pkgs < <(comm -23 <(cd .upkg; for dedup_path in .packages/*; do echo "$dedup_path"; done | sort) <(upkg_list_referenced_pkgs . | sort))
+      for dep_pkgpath in "${unreferenced_pkgs[@]}"; do
         rm -rf ".upkg/$dep_pkgpath"
       done
     else
@@ -165,7 +166,9 @@ upkg_install_dep() {
 
   local dedup_pkgname pkgname
   dedup_pkgname=${dedup_name%@*}
-  pkgname=$(dep_name "$dep") || pkgname=$dedup_pkgname
+
+  pkgname="$(jq -re '.name // empty' <<<"$dep")" || pkgname=$dedup_pkgname
+  pkgname=$(clean_pkgname "$pkgname")
 
   local dedup_path=.packages/$dedup_name # The relative path to the deduplicated package from .upkg/
   # Atomic operation, if this fails there is a duplicate
@@ -182,26 +185,36 @@ upkg_install_dep() {
 
   else
     local binpath binpaths=() binpaths_is_default=true
-    readarray -t -d $'\n' binpaths < <(dep_bin "$dep")
-    if [[ ${#binpaths[@]} -eq 0 ]]; then
-      binpaths_is_default=true
+    # Check if there is a bin property in either the dep or in the upkg.json of the package itself
+    if jq -re 'has("bin")' <<<"$dep" >/dev/null; then
+      readarray -t -d $'\n' binpaths < <(jq -r '.bin[]' <<<"$dep")
+      binpaths_is_default=false
+    elif [[ -e $dedup_location/upkg.json ]] && jq -re 'has("bin")' "$dedup_location/upkg.json" >/dev/null; then
+      readarray -t -d $'\n' binpaths < <(jq -r '.bin[]' "$dedup_location/upkg.json")
+      binpaths_is_default=false
+    else
       binpaths=(bin)
     fi
 
     for binpath in "${binpaths[@]}"; do
       if [[ ! -e "$dedup_location/$binpath" ]]; then
-        $binpaths_is_default || warning "bin path '%s' in package '%s' does not exist, ignoring"
+        $binpaths_is_default || warning "bin path '%s' in the package '%s' does not exist, ignoring"
+        continue
+      fi
+      if [[ ! -x "$dedup_location/$binpath" ]]; then
+        # directories are executable so this works for both files & dirs
+        $binpaths_is_default || warning "bin path '%s' in the package '%s' is not executable, ignoring"
         continue
       fi
       local abs_binpath
       abs_binpath=$(realpath "$dedup_location/$binpath")
       if [[ $abs_binpath != "$(realpath "$dedup_location")"/* ]]; then
-        warning "bin path '%s' must be a subpath of the package '%s', ignoring" "$binpath" "$pkgname"
+        warning "bin path '%s' must be a subpath of the package '%s', ignoring" "$binpath" "$pkgurl"
         continue
       fi
 
-      if [[ -f $binpath ]]; then
-        command=$(basename "$command")
+      if [[ -f $dedup_location/$binpath ]]; then
+        command=$(basename "$binpath")
         upkg_link_cmd "../$dedup_path/$binpath" "$parent_pkgpath/.upkg/.bin/$command"
       else
         for command in "$dedup_location/$binpath"/*; do

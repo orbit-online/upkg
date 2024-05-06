@@ -8,6 +8,7 @@
       "description": "The name of this package. This will become the directory link name in .upkg/ of the parent package.\nA starting period (.), slashes (/), and newlines (\\n) will silently be replaced with underscore (_)",
       "$ref": "#/definitions/name"
     },
+    "bin": { "$ref": "#/definitions/bin" },
     "update": { "$ref": "#/definitions/update" },
     "version": { "type": "string" },
     "dependencies": {
