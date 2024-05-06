@@ -15,7 +15,8 @@ main() {
       --workdir '/upkg/sandbox' \
       -v"$PKGROOT:/upkg:ro" \
       -v"$PKGROOT/sandbox:/upkg/sandbox:rw" \
-      -v"${SSH_AUTH_SOCK}:/ssh_auth" \
+      -eSSH_AUTH_SOCK=/ssh_auth_sock \
+      -v"${SSH_AUTH_SOCK}:/ssh_auth_sock" \
       --entrypoint /bin/bash \
       "$shasum"
   fi

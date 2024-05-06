@@ -1,3 +1,3 @@
-upkg: No checksum given for '$REMOTE_ADDR/default/acme-empty-v1.0.2-metadata.tar', determining now
-upkg: Downloading $REMOTE_ADDR/default/acme-empty-v1.0.2-metadata.tar
-upkg: Unable to download '$REMOTE_ADDR/default/acme-empty-v1.0.2-metadata.tar', neither wget nor curl are available
+upkg: No checksum given for '$HTTPD_PKG_FIXTURES_ADDR/default/acme-empty-v1.0.2-metadata.tar', determining now
+upkg: Downloading $HTTPD_PKG_FIXTURES_ADDR/default/acme-empty-v1.0.2-metadata.tar
+upkg: Unable to download '$HTTPD_PKG_FIXTURES_ADDR/default/acme-empty-v1.0.2-metadata.tar', neither wget nor curl are available

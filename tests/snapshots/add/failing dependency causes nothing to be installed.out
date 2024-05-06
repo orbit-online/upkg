@@ -1,4 +1,4 @@
-upkg: Downloading $REMOTE_ADDR/negative/non-existent-dep.tar
-upkg: Error while downloading '$REMOTE_ADDR/negative/non-existent-dep.tar', server response:
+upkg: Downloading $HTTPD_PKG_FIXTURES_ADDR/negative/non-existent-dep.tar
+upkg: Error while downloading '$HTTPD_PKG_FIXTURES_ADDR/negative/non-existent-dep.tar', server response:
   HTTP/1.0 404 File not found
   

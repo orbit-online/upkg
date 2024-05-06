@@ -14,15 +14,15 @@ setup_suite() {
   export PACKAGE_FIXTURES
   PACKAGE_FIXTURES=$BATS_RUN_TMPDIR/package-fixtures
   mkdir -p "$PACKAGE_FIXTURES"
-  setup_package_fixtures_remote
+  setup_package_fixtures_httpd
   check_package_fixture_template_permissions
   setup_package_fixture_templates
 }
 
 teardown_suite() {
-  if [[ -n $REMOTE_PID ]]; then
-    kill -INT "$REMOTE_PID" 2>/dev/null
-    wait "$REMOTE_PID" || printf "Webserver exited with status code %d\n" "$?" >&2
+  if [[ -n $HTTPD_PKG_FIXTURES_PID ]]; then
+    kill -INT "$HTTPD_PKG_FIXTURES_PID" 2>/dev/null
+    wait "$HTTPD_PKG_FIXTURES_PID" || printf "Webserver exited with status code %d\n" "$?" >&2
   fi
 }
 
@@ -95,37 +95,37 @@ setup_package_fixture_templates() {
     for template in "$group"/*; do
       if [[ -f $template/upkg.json ]]; then
         sed -i "s#\$BATS_RUN_TMPDIR#$BATS_RUN_TMPDIR#g" "$template/upkg.json"
-        sed -i "s#\$REMOTE_ADDR#$REMOTE_ADDR#g" "$template/upkg.json"
+        sed -i "s#\$HTTPD_PKG_FIXTURES_ADDR#$HTTPD_PKG_FIXTURES_ADDR#g" "$template/upkg.json"
       fi
     done
   done
 }
 
 # Setup webserver to serve package fixtures
-setup_package_fixtures_remote() {
-  export REMOTE_LOG=$BATS_RUN_TMPDIR/httpd.log
+setup_package_fixtures_httpd() {
+  export HTTPD_PKG_FIXTURES_LOG=$BATS_RUN_TMPDIR/httpd.log
   local python
   python=$(which python 2>/dev/null || which python3 2>/dev/null)
   if [[ -n $python ]]; then
-    (cd "$PACKAGE_FIXTURES"; exec $python -u -m http.server -b localhost 0 &>"$REMOTE_LOG") & REMOTE_PID=$!
+    (cd "$PACKAGE_FIXTURES"; exec $python -u -m http.server -b localhost 0 &>"$HTTPD_PKG_FIXTURES_LOG") & HTTPD_PKG_FIXTURES_PID=$!
     local listening_line
     wait_timeout=1000
     until [[ -n $listening_line ]]; do
       sleep .01
-      listening_line=$(head -n1 "$REMOTE_LOG")
+      listening_line=$(head -n1 "$HTTPD_PKG_FIXTURES_LOG")
       if ((wait_timeout-- <= 0)); then
-        export SKIP_REMOTE="Timed out waiting for the webserver to become available."
+        export SKIP_HTTPD_PKG_FIXTURES="Timed out waiting for the webserver to become available."
         return 0
       fi
     done
     if [[ $listening_line =~ \((http:\/\/[^\)]+)\/\) ]]; then
-      export REMOTE_ADDR=${BASH_REMATCH[1]}
-      true >"$REMOTE_LOG" # Clear log before returning
+      export HTTPD_PKG_FIXTURES_ADDR=${BASH_REMATCH[1]}
+      true >"$HTTPD_PKG_FIXTURES_LOG" # Clear log before returning
     else
-      kill -INT "$REMOTE_PID" 2>/dev/null
-      export SKIP_REMOTE="Unable to determine server listening port from first log line: $listening_line"
+      kill -INT "$HTTPD_PKG_FIXTURES_PID" 2>/dev/null
+      export SKIP_HTTPD_PKG_FIXTURES="Unable to determine server listening port from first log line: $listening_line"
     fi
   else
-    export SKIP_REMOTE='python is not available, use tests/run.sh to run the tests in a container'
+    export SKIP_HTTPD_PKG_FIXTURES='python is not available, use tests/run.sh to run the tests in a container'
   fi
 }

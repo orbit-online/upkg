@@ -12,9 +12,9 @@ common_setup_file() {
 
 common_setup() {
   if has_tag remote; then
-    [[ -z $SKIP_REMOTE ]] || skip "$SKIP_REMOTE"
+    [[ -z $SKIP_HTTPD_PKG_FIXTURES ]] || skip "$SKIP_HTTPD_PKG_FIXTURES"
   else
-    unset REMOTE_ADDR
+    unset HTTPD_PKG_FIXTURES_ADDR
   fi
   ! has_tag tar || [[ -z $SKIP_TAR ]] || skip "$SKIP_TAR"
   ! has_tag git || [[ -z $SKIP_GIT ]] || skip "$SKIP_GIT"
@@ -39,8 +39,8 @@ common_teardown() {
   if has_tag remote; then
     # Output and clear server log after every test
     printf -- "-- webserver logs --\n" >&2
-    cat "$REMOTE_LOG" >&2
-    true >"$REMOTE_LOG"
+    cat "$HTTPD_PKG_FIXTURES_LOG" >&2
+    true >"$HTTPD_PKG_FIXTURES_LOG"
   fi
 }
 
@@ -138,7 +138,7 @@ replace_values() {
   (if [[ -n $1 ]]; then cat "$1"; else cat; fi) | \
   sed "s#$BATS_TEST_TMPDIR#\$BATS_TEST_TMPDIR#g" | \
   sed "s#$BATS_RUN_TMPDIR#\$BATS_RUN_TMPDIR#g" | \
-  (if [[ -n $REMOTE_ADDR ]]; then sed "s#$REMOTE_ADDR#\$REMOTE_ADDR#g"; else cat; fi)
+  (if [[ -n $HTTPD_PKG_FIXTURES_ADDR ]]; then sed "s#$HTTPD_PKG_FIXTURES_ADDR#\$HTTPD_PKG_FIXTURES_ADDR#g"; else cat; fi)
 }
 
 # shellcheck disable=SC2120
@@ -146,7 +146,7 @@ replace_vars() {
   (if [[ -n $1 ]]; then cat "$1"; else cat; fi) | \
   sed "s#\$BATS_TEST_TMPDIR#$BATS_TEST_TMPDIR#g" | \
   sed "s#\$BATS_RUN_TMPDIR#$BATS_RUN_TMPDIR#g" | \
-  (if [[ -n $REMOTE_ADDR ]]; then sed "s#\$REMOTE_ADDR#$REMOTE_ADDR#g"; else cat; fi)
+  (if [[ -n $HTTPD_PKG_FIXTURES_ADDR ]]; then sed "s#\$HTTPD_PKG_FIXTURES_ADDR#$HTTPD_PKG_FIXTURES_ADDR#g"; else cat; fi)
 }
 
 get_file_structure() {

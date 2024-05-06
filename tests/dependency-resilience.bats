@@ -30,7 +30,7 @@ teardown_file() { common_teardown_file; }
   remove_commands curl wget
   local name=default/acme-empty-v1.0.2-metadata
   create_tar_package $name
-  run -1 upkg add $REMOTE_ADDR/$name.tar
+  run -1 upkg add $HTTPD_PKG_FIXTURES_ADDR/$name.tar
   assert_snapshot_output
 }
 
@@ -88,7 +88,7 @@ teardown_file() { common_teardown_file; }
   remove_commands curl
   local name=default/acme-empty-v1.0.2-metadata
   create_tar_package $name
-  run -0 upkg add $REMOTE_ADDR/$name.tar
+  run -0 upkg add $HTTPD_PKG_FIXTURES_ADDR/$name.tar
   assert_snapshot_output
   assert_snapshot_path
 }
@@ -98,7 +98,7 @@ teardown_file() { common_teardown_file; }
   type curl &>/dev/null || fail 'curl is not available'
   local name=default/acme-empty-v1.0.2-metadata
   create_tar_package $name
-  run -0 upkg add $REMOTE_ADDR/$name.tar
+  run -0 upkg add $HTTPD_PKG_FIXTURES_ADDR/$name.tar
   assert_snapshot_output
   assert_snapshot_path
 }
