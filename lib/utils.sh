@@ -43,9 +43,9 @@ upkg_list_referenced_pkgs() {
 
 # List all commands in .upkg/.bin
 upkg_list_available_cmds() {
-  local pkgroot=$1 cmdpath
-  [[ -e "$pkgroot/.upkg/.bin" ]] || return 0
-  for cmdpath in "$pkgroot/.upkg/.bin"/*; do
+  local pkgpath=$1 cmdpath
+  [[ -e "$pkgpath/.upkg/.bin" ]] || return 0
+  for cmdpath in "$pkgpath/.upkg/.bin"/*; do
     printf "%s\n" "$(basename "$cmdpath")"
   done
 }
