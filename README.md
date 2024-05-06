@@ -1,32 +1,21 @@
 TODO:
 Describe meta package, depend on a bunch of binaries an symlink them out
-Add #no-link
-Add #update-cmd=
-Switch to fully structured
 Use https://github.com/dominictarr/JSON.sh as fallback
 Add zip support
 Check wget support in busybox & alpine
 Check mac support
 Check freebsd support
-name -> alias, unified replace, dedupname to pkgname or something
-Make "upkg add" able to replace packages
-Validate hash params
 Add test check that determines unused snapshots
 Kill running dep installs when first error is discovered
-install should not install deps on dry-run
-Run through snapshots and detect same files
-Remove `find` dependency
-Make a #no-bin to prevent package symlinking when there is a known conflict
 Test naming clash after rename
-We need sort **-u** when using comm
 Maybe rethink install_prefix
 Replace '[[...]] ||' with '[[...]] &&'
-Test duplicate checksum dep install
+Add #update-cmd=
 update script should update itself first
 update script: pass all arguments as env vars, make the upkg.json entry a single string
 tar: auto-detect whether to --strip-components 1, add strip-components to upkg.json
 "bin": Make default "bin/" and allow sepcifying a different path. False is still false
-Fail when a package already contains a .upkg/
+Figure out a way to check if a package is installed
 
 ## Testing
 
