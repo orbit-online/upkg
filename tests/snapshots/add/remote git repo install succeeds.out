@@ -1,3 +1,0 @@
-upkg: Cloning $HTTPD_PKG_FIXTURES_ADDR/default/acme-empty-v1.0.2-metadata.git
-upkg: Linking 'acme-empty-v1.0.2.bin'
-upkg: Added '$HTTPD_PKG_FIXTURES_ADDR/default/acme-empty-v1.0.2-metadata.git'
