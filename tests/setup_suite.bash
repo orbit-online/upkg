@@ -82,6 +82,8 @@ check_commands() {
   type wget &>/dev/null || SKIP_WGET='wget is not available, use tests/run.sh to run the tests in a container'
   export SKIP_CURL=
   type curl &>/dev/null || SKIP_CURL='curl is not available, use tests/run.sh to run the tests in a container'
+  export SKIP_LIST=
+  type column &>/dev/null || SKIP_LIST='column is not available, use tests/run.sh to run the tests in a container'
 }
 
 # Make sure the package-templates have the correct permissions (i.e. git checkout wasn't run with a 002 instead of 022 umask)

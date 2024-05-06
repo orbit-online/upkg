@@ -35,12 +35,12 @@ PATH="${RESTRICTED_BIN:-"%s"}" "%s" "$@"
 
   local cmd target required_commands=(
     bash jq
-    basename dirname sort comm cut column # string commands
+    basename dirname sort comm cut # string commands
     mv cp mkdir touch rm ln chmod cat readlink realpath # fs commands
     sleep flock # concurrency commands
     shasum git tar gzip xz bzip2 # archive commands
   ) optional_commands=(
-    wget curl ssh
+    wget curl ssh column
   )
   for cmd in "${required_commands[@]}"; do
     target=$(which "$cmd") || { printf "Unable to find required command '%s'" "$cmd" >&2; return 1; }

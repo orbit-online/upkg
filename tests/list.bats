@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# bats file_tags=list
 
 # shellcheck source=lib/shellcheck-defs.sh
 source "$BATS_TEST_DIRNAME/lib/empty-file.sh"
