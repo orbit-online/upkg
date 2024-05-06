@@ -1,2 +1,2 @@
-upkg: Downloading $HTTPD_PKG_FIXTURES_ADDR/default/acme-empty-v1.0.2-metadata.tar
-upkg: Added '$HTTPD_PKG_FIXTURES_ADDR/default/acme-empty-v1.0.2-metadata.tar'
+upkg: Downloading $HTTPD_PKG_FIXTURES_ADDR/default/acme.tar
+upkg: Added '$HTTPD_PKG_FIXTURES_ADDR/default/acme.tar'

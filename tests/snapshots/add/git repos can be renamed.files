@@ -1,10 +1,10 @@
 [drwxr-xr-x]  .
 ├── [drwxr-xr-x]  .upkg
 │   ├── [drwxr-xr-x]  .bin
-│   │   └── [lrwxrwxrwx]  acme-empty-v1.0.2.bin -> ../.packages/acme-empty-v1.0.2-no-metadata.git@ea82f0b9fbce993deb1f969a2472d14b077e8842/bin/acme-empty-v1.0.2.bin
+│   │   └── [lrwxrwxrwx]  acme.bin -> ../.packages/acme-no-metadata.git@b3e404bef10fa4f8503d3fae92431f9c1b594cdc/bin/acme.bin
 │   ├── [drwxr-xr-x]  .packages
-│   │   └── [drwxr-xr-x]  acme-empty-v1.0.2-no-metadata.git@ea82f0b9fbce993deb1f969a2472d14b077e8842
+│   │   └── [drwxr-xr-x]  acme-no-metadata.git@b3e404bef10fa4f8503d3fae92431f9c1b594cdc
 │   │       └── [drwxr-xr-x]  bin
-│   │           └── [-rwxr-xr-x]  acme-empty-v1.0.2.bin
-│   └── [lrwxrwxrwx]  acme-empty -> .packages/acme-empty-v1.0.2-no-metadata.git@ea82f0b9fbce993deb1f969a2472d14b077e8842
+│   │           └── [-rwxr-xr-x]  acme.bin
+│   └── [lrwxrwxrwx]  acme-empty -> .packages/acme-no-metadata.git@b3e404bef10fa4f8503d3fae92431f9c1b594cdc
 └── [-rw-r--r--]  upkg.json

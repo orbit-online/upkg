@@ -1,15 +1,15 @@
 [drwxr-xr-x]  .
 ├── [drwxr-xr-x]  bin
-│   └── [lrwxrwxrwx]  acme-empty-v1.0.2.bin -> ../lib/upkg/.upkg/.bin/acme-empty-v1.0.2.bin
+│   └── [lrwxrwxrwx]  acme.bin -> ../lib/upkg/.upkg/.bin/acme.bin
 └── [drwxr-xr-x]  lib
     └── [drwxr-xr-x]  upkg
         ├── [drwxr-xr-x]  .upkg
         │   ├── [drwxr-xr-x]  .bin
-        │   │   └── [lrwxrwxrwx]  acme-empty-v1.0.2.bin -> ../.packages/acme-empty@921ab9cf632078e9dcef1d32d0837ef6d160b7d3/bin/acme-empty-v1.0.2.bin
+        │   │   └── [lrwxrwxrwx]  acme.bin -> ../.packages/acme-empty@1a76bbe01f5af96acb6fe468ca5dea6878bbb6cc/bin/acme.bin
         │   ├── [drwxr-xr-x]  .packages
-        │   │   └── [drwxr-xr-x]  acme-empty@921ab9cf632078e9dcef1d32d0837ef6d160b7d3
+        │   │   └── [drwxr-xr-x]  acme-empty@1a76bbe01f5af96acb6fe468ca5dea6878bbb6cc
         │   │       ├── [drwxr-xr-x]  bin
-        │   │       │   └── [-rwxr-xr-x]  acme-empty-v1.0.2.bin
+        │   │       │   └── [-rwxr-xr-x]  acme.bin
         │   │       └── [-rw-r--r--]  upkg.json
-        │   └── [lrwxrwxrwx]  acme-empty -> .packages/acme-empty@921ab9cf632078e9dcef1d32d0837ef6d160b7d3
+        │   └── [lrwxrwxrwx]  acme-empty -> .packages/acme-empty@1a76bbe01f5af96acb6fe468ca5dea6878bbb6cc
         └── [-rw-r--r--]  upkg.json

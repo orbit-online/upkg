@@ -38,7 +38,7 @@ teardown_file() { common_teardown_file; }
 
 # bats test_tags=tar
 @test "silently replaces slashes in name override" {
-  local name=default/acme-empty-v1.0.2-metadata
+  local name=default/acme
   create_tar_package $name
   run -0 upkg add -p has/in-name "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_output
@@ -47,7 +47,7 @@ teardown_file() { common_teardown_file; }
 
 # bats test_tags=tar
 @test "silently replaces newlines in name override" {
-  local name=default/acme-empty-v1.0.2-metadata
+  local name=default/acme
   create_tar_package $name
   run -0 upkg add -p has$'\n'in-name "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_output

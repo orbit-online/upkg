@@ -11,18 +11,18 @@ teardown_file() { common_teardown_file; }
 
 # bats test_tags=tar
 @test ".upkg/.bin/ linked executable works" {
-  local name=default/acme-empty-v1.0.2-metadata
+  local name=default/acme
   create_tar_package $name
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
-  run -0 .upkg/.bin/acme-empty-v1.0.2.bin
+  run -0 .upkg/.bin/acme.bin
 }
 
 # bats test_tags=tar
 @test ".local/.bin/ linked executable works" {
-  local name=default/acme-empty-v1.0.2-metadata
+  local name=default/acme
   create_tar_package $name
   run -0 upkg add -g "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
-  run -0 "$HOME/.local/bin/acme-empty-v1.0.2.bin"
+  run -0 "$HOME/.local/bin/acme.bin"
 }
 
 # bats test_tags=tar
@@ -37,9 +37,9 @@ teardown_file() { common_teardown_file; }
 # bats test_tags=tar
 @test "conflicting global commands are detected and no change happens" {
   mkdir -p "$HOME/.local/bin"
-  touch "$HOME/.local/bin/acme-empty-v1.0.2.bin"
-  chmod +x "$HOME/.local/bin/acme-empty-v1.0.2.bin"
-  local name=default/acme-empty-v1.0.2-metadata
+  touch "$HOME/.local/bin/acme.bin"
+  chmod +x "$HOME/.local/bin/acme.bin"
+  local name=default/acme
   create_tar_package $name
   run -1 upkg add -g "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_output

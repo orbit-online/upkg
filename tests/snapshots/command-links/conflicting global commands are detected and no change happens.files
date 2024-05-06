@@ -1,5 +1,5 @@
 [drwxr-xr-x]  .
 ├── [drwxr-xr-x]  bin
-│   └── [-rwxr-xr-x]  acme-empty-v1.0.2.bin
+│   └── [-rwxr-xr-x]  acme.bin
 └── [drwxr-xr-x]  lib
     └── [drwxr-xr-x]  upkg
