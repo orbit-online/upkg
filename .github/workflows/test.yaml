@@ -42,4 +42,5 @@ jobs:
       uses: test-summary/action@v2
       with:
         paths: upkg/tests/results.tap
+        show: "fail, skip"
       if: always()
