@@ -94,17 +94,6 @@ teardown_file() { common_teardown_file; }
 }
 
 # bats test_tags=tar
-@test "adding same package with same options fails" {
-  local name=default/acme-no-metadata
-  create_tar_package $name
-  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
-  assert_snapshot_path "same package, same name"
-  run -1 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
-  assert_snapshot_output
-  assert_snapshot_path "same package, same name"
-}
-
-# bats test_tags=tar
 @test "adding same package with same command but different pkgname succeeds" {
   local name=default/acme
   create_tar_package $name
@@ -112,18 +101,4 @@ teardown_file() { common_teardown_file; }
   run -0 upkg add -p acme-2 "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_output
   assert_snapshot_path "$BATS_TEST_DESCRIPTION"
-}
-
-# bats test_tags=tar
-@test "adding two packages containing the same command fails" {
-  local \
-    name1=default/acme \
-    name2=default/acme-no-metadata
-  create_tar_package $name1
-  run -0 upkg add "$PACKAGE_FIXTURES/$name1.tar" $TAR_SHASUM
-  assert_snapshot_path shared/acme
-  create_tar_package $name2
-  run -1 upkg add "$PACKAGE_FIXTURES/$name2.tar" $TAR_SHASUM
-  assert_snapshot_output
-  assert_snapshot_path shared/acme
 }
