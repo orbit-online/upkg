@@ -124,7 +124,7 @@ assert_snapshot_output() {
   fi
   if [[ ! -e "$snapshot_path" ]]; then
     if ${CREATE_SNAPSHOTS:-false}; then
-      mkdir -p "$SNAPSHOTS"
+      mkdir -p "$(dirname "$snapshot_path")"
       # shellcheck disable=SC2001
       replace_values <<<"$actual" > "$snapshot_path"
     else
