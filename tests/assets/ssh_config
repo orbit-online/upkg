@@ -5,3 +5,4 @@ Host package-fixtures
   User ${USER}
   StrictHostKeyChecking no
   UserKnownHostsFile /dev/null
+  BatchMode yes
