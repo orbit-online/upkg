@@ -15,5 +15,5 @@ teardown_file() { common_teardown_file; }
   create_tar_package $name
   run -1 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_output
-  assert_snapshot_path "empty"
+  assert_snapshot_path "shared/empty"
 }

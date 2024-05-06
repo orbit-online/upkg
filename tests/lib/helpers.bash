@@ -6,8 +6,9 @@ bats_load_library bats-assert
 bats_load_library bats-file
 
 common_setup_file() {
-  export SNAPSHOTS
-  SNAPSHOTS=$BATS_TEST_DIRNAME/snapshots/$(basename "$BATS_TEST_FILENAME" .bats)
+  export SNAPSHOTS_ROOT SNAPSHOTS
+  SNAPSHOTS_ROOT=$BATS_TEST_DIRNAME/snapshots
+  SNAPSHOTS=$SNAPSHOTS_ROOT/$(basename "$BATS_TEST_FILENAME" .bats)
 }
 
 common_setup() {
@@ -110,16 +111,23 @@ assert_equals_diff() {
 }
 
 assert_snapshot_output() {
-  local snapshot_name=${1:-$BATS_TEST_DESCRIPTION} actual=${2:-$output}
-  snapshot_name=${snapshot_name//'/'/_}
-  local snapshot_path=$SNAPSHOTS/$snapshot_name.out
+  local actual=${2:-$output} snapshot_path
+  if [[ -n $1 ]]; then
+    if [[ $1 != */* ]]; then
+      snapshot_path=$SNAPSHOTS/$1.out
+    else
+      snapshot_path=$SNAPSHOTS_ROOT/$1.out
+    fi
+  else
+    snapshot_path=$SNAPSHOTS/${BATS_TEST_DESCRIPTION//'/'/_}.out
+  fi
   if [[ ! -e "$snapshot_path" ]]; then
     if ${CREATE_SNAPSHOTS:-false}; then
       mkdir -p "$SNAPSHOTS"
       # shellcheck disable=SC2001
       replace_values <<<"$actual" > "$snapshot_path"
     else
-      fail "The snapshot '${snapshot_path%"$SNAPSHOTS"}' does not exist, run with CREATE_SNAPSHOTS=true to create it"
+      fail "The snapshot '${snapshot_path%"$SNAPSHOTS_ROOT"}' does not exist, run with CREATE_SNAPSHOTS=true to create it"
     fi
   elif ${UPDATE_SNAPSHOTS:-false}; then
     # shellcheck disable=SC2001
@@ -129,15 +137,22 @@ assert_snapshot_output() {
 }
 
 assert_snapshot_path() {
-  local snapshot_name=${1:-$BATS_TEST_DESCRIPTION} actual_path=${2:-.}
-  snapshot_name=${snapshot_name//'/'/_}
-  local snapshot_path=$SNAPSHOTS/$snapshot_name.files
+  local actual_path=${2:-.} snapshot_path
+  if [[ -n $1 ]]; then
+    if [[ $1 != */* ]]; then
+      snapshot_path=$SNAPSHOTS/$1.files
+    else
+      snapshot_path=$SNAPSHOTS_ROOT/$1.files
+    fi
+  else
+    snapshot_path=$SNAPSHOTS/${BATS_TEST_DESCRIPTION//'/'/_}.files
+  fi
   if [[ ! -e "$snapshot_path" ]]; then
     if ${CREATE_SNAPSHOTS:-false}; then
-      mkdir -p "$SNAPSHOTS"
+      mkdir -p "$(dirname "$snapshot_path")"
       get_file_structure "$actual_path" > "$snapshot_path"
     else
-      fail "The snapshot '${snapshot_path%"$SNAPSHOTS"}' does not exist, run with CREATE_SNAPSHOTS=true to create it"
+      fail "The snapshot '${snapshot_path%"$SNAPSHOTS_ROOT"}' does not exist, run with CREATE_SNAPSHOTS=true to create it"
     fi
   elif ${UPDATE_SNAPSHOTS:-false}; then
     get_file_structure "$actual_path" > "$snapshot_path"
