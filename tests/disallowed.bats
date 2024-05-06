@@ -41,7 +41,7 @@ teardown_file() { common_teardown_file; }
   local name=default/acme
   create_tar_package $name
   run -0 upkg add -p has/in-name "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
-  assert_snapshot_output
+  assert_snapshot_output shared/acme
   assert_snapshot_path
 }
 
@@ -50,7 +50,7 @@ teardown_file() { common_teardown_file; }
   local name=default/acme
   create_tar_package $name
   run -0 upkg add -p has$'\n'in-name "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
-  assert_snapshot_output
+  assert_snapshot_output shared/acme
   assert_snapshot_path
 }
 

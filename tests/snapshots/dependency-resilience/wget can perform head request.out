@@ -1,3 +1,0 @@
-upkg: No checksum given for '$HTTPD_PKG_FIXTURES_ADDR/default/acme.tar', determining now
-upkg: Downloading $HTTPD_PKG_FIXTURES_ADDR/default/acme.tar
-upkg: Added '$HTTPD_PKG_FIXTURES_ADDR/default/acme.tar'

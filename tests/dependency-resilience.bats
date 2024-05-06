@@ -89,7 +89,7 @@ teardown_file() { common_teardown_file; }
   local name=default/acme
   create_tar_package $name
   run -0 upkg add $HTTPD_PKG_FIXTURES_ADDR/$name.tar
-  assert_snapshot_output
+  assert_snapshot_output download-acme
   assert_snapshot_path shared/acme
 }
 
@@ -99,6 +99,6 @@ teardown_file() { common_teardown_file; }
   local name=default/acme
   create_tar_package $name
   run -0 upkg add $HTTPD_PKG_FIXTURES_ADDR/$name.tar
-  assert_snapshot_output
+  assert_snapshot_output download-acme
   assert_snapshot_path shared/acme
 }

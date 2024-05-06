@@ -14,8 +14,8 @@ teardown_file() { common_teardown_file; }
   local name=default/acme-no-metadata
   create_tar_package $name
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
-  assert_snapshot_output
-  assert_snapshot_path
+  assert_snapshot_output shared/acme-no-metadata
+  assert_snapshot_path shared/acme-no-metadata
   assert_file_executable .upkg/.bin/acme.bin
 }
 
@@ -24,7 +24,7 @@ teardown_file() { common_teardown_file; }
   local name=default/acme-no-metadata
   create_tar_package $name
   run -0 upkg add -p acme-2 "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
-  assert_snapshot_output
+  assert_snapshot_output shared/acme-no-metadata
   assert_snapshot_path
 }
 
@@ -51,7 +51,7 @@ teardown_file() { common_teardown_file; }
   local name=default/acme
   create_tar_package $name
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
-  assert_snapshot_output
+  assert_snapshot_output shared/acme
   assert_snapshot_path shared/acme
   assert_dir_exists .upkg/acme
 }
@@ -90,7 +90,7 @@ teardown_file() { common_teardown_file; }
   create_tar_package $name
   run -1 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_output "" "${output//Server: SimpleHTTP*}" # server response has version and date in the output, which changes, so remove that part
-  assert_snapshot_path
+  assert_snapshot_path shared/empty
 }
 
 # bats test_tags=tar
