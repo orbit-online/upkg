@@ -110,6 +110,11 @@ upkg_install_deps() {
   # Run through deps and install them concurrently
   for dep in "${deps[@]}"; do
     upkg_install_dep "$pkgpath" "$dep" "$dep_idx" &
+    if ${UPKG_SEQUENTIAL:-false}; then
+      # Wait for upkg_install_dep to take the exclusive lock before spawning the next subshell.
+      # This way we ensure a deterministic install order
+      until [[ -e "$pkgpath/.upkg/.sentinels/$dep_idx.lock" || -e "$pkgpath/.upkg/.sentinels/$dep_idx.fail" ]]; do sleep .01; done
+    fi
     # checksums are not unique across dependencies, so we use the dependencies array order as a key instead
     : $((dep_idx++))
   done
