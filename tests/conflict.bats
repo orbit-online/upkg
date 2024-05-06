@@ -33,3 +33,17 @@ teardown_file() { common_teardown_file; }
   assert_snapshot_output
   assert_snapshot_path shared/acme
 }
+
+# bats test_tags=tar
+@test "invalid pkgname rename to the existing pkgname results in conflict" {
+  local \
+    name1=disallowed/with-slash-in-name \
+    name2=disallowed/with-newline-in-name
+  create_tar_package $name1
+  run -0 upkg add "$PACKAGE_FIXTURES/$name1.tar" $TAR_SHASUM
+  assert_snapshot_path
+  create_tar_package $name2
+  run -1 upkg add "$PACKAGE_FIXTURES/$name2.tar" $TAR_SHASUM
+  assert_snapshot_output
+  assert_snapshot_path
+}
