@@ -9,7 +9,7 @@ PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 # pkgpath: The path to a package root
 # pkgname: The effective name of a package in .upkg/
 # dedup_path: The path to a deduplicated package as seen from .upkg/
-# dedup_name: The name of a package in .upkg/packages/
+# dedup_name: The name of a package in .upkg/.packages/
 # dedup_pkgname: The name of a package without the @<checksum> part in .upkg/.packages/
 # checksum: The sha1 (if pkgtype=git) or sha256 (otherwise) hash of the package
 # archiveext: The extension of an archive including the starting dot. e.g. ".tar.gz"

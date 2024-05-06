@@ -70,14 +70,17 @@ upkg_resolve_links() {
 upkg_mktemp() {
   local keep_dotupkg=false
   mkdir .upkg 2>/dev/null || keep_dotupkg=true
-  ! $DRY_RUN || $keep_dotupkg || fatal ".upkg/ does not exist"
   mkdir .upkg/.tmp || fatal "Unable to create .upkg/.tmp, another upkg instance is possibly already installing to '%s'" "$PWD" # Implicit lock
   mkdir .upkg/.tmp/root # Precreate root dir, we always need it
   # shellcheck disable=SC2064
   if ! ${UPKG_KEEP_TMP:-false}; then
     # Cleanup when done, make sure no subshell ever calls these traps (set -E is on)
-    trap "[[ \$BASHPID != $BASHPID ]] || rm -rf .upkg/.tmp" EXIT
-    $keep_dotupkg || trap "[[ \$BASHPID != $BASHPID ]] || rm -rf .upkg" ERR
+    if $DRY_RUN && ! $keep_dotupkg; then
+      trap "[[ \$BASHPID != $BASHPID ]] || rm -rf .upkg" EXIT
+    else
+      trap "[[ \$BASHPID != $BASHPID ]] || rm -rf .upkg/.tmp" EXIT
+      $keep_dotupkg || trap "[[ \$BASHPID != $BASHPID ]] || rm -rf .upkg" ERR
+    fi
   fi
 }
 

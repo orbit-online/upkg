@@ -157,7 +157,7 @@ upkg_install_dep() {
   checksum=$(dep_checksum "$dep")
 
   local dedup_name is_dedup=false dedup_location # The actual current physical location of the deduplicated package
-  if [[ -e ".upkg/packages" ]] && dedup_location=$(compgen -G ".upkg/packages/*@$checksum"); then
+  if [[ -e ".upkg/.packages" ]] && dedup_location=$(compgen -G ".upkg/.packages/*@$checksum"); then
     # Package already exists in the destination, all we need is the dedup_path so we can symlink it
     $DRY_RUN || processing "Skipping '%s'" "$pkgurl"
     dedup_name=$(basename "$dedup_location")
