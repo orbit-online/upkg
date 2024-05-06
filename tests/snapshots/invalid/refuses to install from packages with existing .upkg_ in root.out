@@ -1,0 +1,2 @@
+upkg: The package '$BATS_RUN_TMPDIR/package-fixtures/negative/with-existing-upkg.tar' contains a .upkg/ directory. Unable to install.
+upkg: An error occurred while installing '$BATS_RUN_TMPDIR/package-fixtures/negative/with-existing-upkg.tar'

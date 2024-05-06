@@ -101,6 +101,8 @@ upkg_download() {
     fatal "Fetching of '%s' not implemented" "$pkgtype"
   fi
 
+  [[ ! -e "$downloadpath/.upkg" ]] || fatal "The package '%s' contains a .upkg/ directory. Unable to install." "$pkgurl"
+
   if [[ ! -e "$downloadpath/upkg.json" ]] || ! dedup_pkgname=$(jq -re '.name // empty' "$downloadpath/upkg.json"); then
     # Generate a dedup_pkgname
     dedup_pkgname=${pkgurl%%'#'*} # Remove trailing anchor
