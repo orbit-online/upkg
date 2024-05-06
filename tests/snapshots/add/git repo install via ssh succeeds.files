@@ -5,11 +5,11 @@
     └── [drwxr-xr-x]  upkg
         ├── [drwxr-xr-x]  .upkg
         │   ├── [drwxr-xr-x]  .bin
-        │   │   └── [lrwxrwxrwx]  acme.bin -> ../.packages/acme@1a76bbe01f5af96acb6fe468ca5dea6878bbb6cc/bin/acme.bin
+        │   │   └── [lrwxrwxrwx]  acme.bin -> ../.packages/acme@fed41fe4eb663c46830f09e04e7fae30db45ae30/bin/acme.bin
         │   ├── [drwxr-xr-x]  .packages
-        │   │   └── [drwxr-xr-x]  acme@1a76bbe01f5af96acb6fe468ca5dea6878bbb6cc
+        │   │   └── [drwxr-xr-x]  acme@fed41fe4eb663c46830f09e04e7fae30db45ae30
         │   │       ├── [drwxr-xr-x]  bin
         │   │       │   └── [-rwxr-xr-x]  acme.bin
         │   │       └── [-rw-r--r--]  upkg.json
-        │   └── [lrwxrwxrwx]  acme -> .packages/acme@1a76bbe01f5af96acb6fe468ca5dea6878bbb6cc
+        │   └── [lrwxrwxrwx]  acme -> .packages/acme@fed41fe4eb663c46830f09e04e7fae30db45ae30
         └── [-rw-r--r--]  upkg.json
