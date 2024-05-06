@@ -25,7 +25,7 @@ upkg() {
   DOC="μpkg - A minimalist package manager
 Usage:
   upkg install [-nqv]
-  upkg add [-nqvgXB -b PATH... -p PKGNAME -t PKGTYPE] (URL|PATH) [SHA]
+  upkg add [-qvgXB -b PATH... -p PKGNAME -t PKGTYPE] (URL|PATH) [SHA]
   upkg remove [-nqvg] PKGNAME
   upkg list [-qvg] [-- COLUMNOPTS...]
 
@@ -45,8 +45,8 @@ Options:
 # docopt parser below, refresh this parser with `docopt.sh upkg`
 # shellcheck disable=2016,1090,1091,2034,2154
 docopt() { source "$PKGROOT/.upkg/docopt-lib.sh" '1.0.0' || { ret=$?
-printf -- "exit %d\n" "$ret"; exit "$ret"; }; set -e; trimmed_doc=${DOC:0:843}
-usage=${DOC:36:167}; digest=dc7ce; shorts=(-n -q -v -g -X -B -b -p -t)
+printf -- "exit %d\n" "$ret"; exit "$ret"; }; set -e; trimmed_doc=${DOC:0:842}
+usage=${DOC:36:166}; digest=5a05e; shorts=(-n -q -v -g -X -B -b -p -t)
 longs=(--dry-run --quiet --verbose --global --no-exec --no-bin --bin --pkgname --pkgtype)
 argcounts=(0 0 0 0 0 0 1 1 1); node_0(){ switch __dry_run 0; }; node_1(){
 switch __quiet 1; }; node_2(){ switch __verbose 2; }; node_3(){
@@ -58,13 +58,13 @@ value PKGNAME a; }; node_13(){ value COLUMNOPTS a true; }; node_14(){
 _command install; }; node_15(){ _command add; }; node_16(){ _command remove; }
 node_17(){ _command list; }; node_18(){ _command __ --; }; node_19(){
 optional 0 1 2; }; node_20(){ required 14 19; }; node_21(){ oneormore 6; }
-node_22(){ optional 0 1 2 3 4 5 21 7 8; }; node_23(){ either 9 10; }; node_24(){
+node_22(){ optional 1 2 3 4 5 21 7 8; }; node_23(){ either 9 10; }; node_24(){
 required 23; }; node_25(){ optional 11; }; node_26(){ required 15 22 24 25; }
 node_27(){ optional 0 1 2 3; }; node_28(){ required 16 27 12; }; node_29(){
 optional 1 2 3; }; node_30(){ oneormore 13; }; node_31(){ optional 18 30; }
 node_32(){ required 17 29 31; }; node_33(){ either 20 26 28 32; }; node_34(){
 required 33; }; cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
-printf "%s\n" "${DOC:36:167}" >&2; exit 1; }'; unset var___dry_run var___quiet \
+printf "%s\n" "${DOC:36:166}" >&2; exit 1; }'; unset var___dry_run var___quiet \
 var___verbose var___global var___no_exec var___no_bin var___bin var___pkgname \
 var___pkgtype var_URL var_PATH var_SHA var_PKGNAME var_COLUMNOPTS var_install \
 var_add var_remove var_list var___; parse 34 "$@"

@@ -14,6 +14,7 @@ update script should update itself first
 update script: pass all arguments as env vars, make the upkg.json entry a single string
 tar: auto-detect whether to --strip-components 1, add strip-components to upkg.json
 Figure out a way to check if a package is installed
+Test file installs & -X
 
 ## Testing
 

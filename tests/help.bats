@@ -12,7 +12,7 @@ teardown_file() { common_teardown_file; }
 @test "no arguments" {
   # TODO: Docopt cuts the help text wrong because of the μ multibyte char in pkg
   run -1 upkg
-  assert_snapshot_output short-help
+  assert_snapshot_output shared/usage
 }
 
 @test "help longoption" {
@@ -27,5 +27,5 @@ teardown_file() { common_teardown_file; }
 
 @test "invalid command" {
   run -1 upkg invalid-command
-  assert_snapshot_output short-help
+  assert_snapshot_output shared/usage
 }

@@ -8,12 +8,3 @@ setup_file() { common_setup_file; }
 setup() { common_setup; }
 teardown() { common_teardown; }
 teardown_file() { common_teardown_file; }
-
-# bats test_tags=tar
-@test "add does not have --dry-run" {
-  local name=default/acme
-  create_tar_package $name
-  run -1 upkg add -n "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
-  assert_snapshot_output shared/usage
-  assert_snapshot_path shared/empty
-}

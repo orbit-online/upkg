@@ -47,7 +47,7 @@ teardown_file() { common_teardown_file; }
 }
 
 # bats test_tags=tar
-@test "local tarball install with pkgname from package" { # TODO: rename
+@test "local tarball install with pkgname from package" {
   local name=default/acme
   create_tar_package $name
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
@@ -57,7 +57,7 @@ teardown_file() { common_teardown_file; }
 }
 
 # bats test_tags=http,tar
-@test "tarball install via http with pkgname from package" { # TODO: rename
+@test "tarball install via http with pkgname from package" {
   local name=default/acme
   create_tar_package $name
   run -0 upkg add $HTTPD_PKG_FIXTURES_ADDR/$name.tar $TAR_SHASUM

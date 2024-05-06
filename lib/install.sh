@@ -50,7 +50,7 @@ upkg_install() {
       rm -rf .upkg
     fi
   else
-    # Fail if dependencies have been removed. Though only at the top-level, the rest should/must be the same
+    # Fail if dependencies have been removed.
     local dep_pkgpath unreferenced_pkgs=()
     # current pkgs - installed pkgs = unreferenced pkgs
     readarray -t -d $'\n' unreferenced_pkgs < <(comm -23 <(upkg_resolve_links .upkg | sort) <(upkg_resolve_links .upkg/.tmp/root/.upkg | sort))
