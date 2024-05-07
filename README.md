@@ -16,6 +16,7 @@ tar: auto-detect whether to --strip-components 1, add strip-components to upkg.j
 Figure out a way to check if a package is installed
 Test file installs & -X
 Warn when GIT_SSH_COMMAND is set but BatchMode!=yes
+Simulate `ln -T` with `ln -Fi <<<'n'` on BSD
 
 ## Testing
 

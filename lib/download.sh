@@ -21,7 +21,7 @@ upkg_download() {
   fi
 
   local dedup_pkgname
-  if dedup_pkgname=$(compgen -G ".upkg/.tmp/root/.upkg/.packages/*@$checksum"); then
+  if [[ -e .upkg/.tmp/root/.upkg/.packages ]] && dedup_pkgname=$(compgen -G ".upkg/.tmp/root/.upkg/.packages/*@$checksum"); then
     # The package has already been deduped
     processing "Already downloaded '%s'" "$pkgurl"
     # Get the dedup_pkgname from the dedup dir, output it, and exit early
@@ -36,7 +36,6 @@ upkg_download() {
     # Download failure, but the lock has already been released. Don't try anything, just fail
     return 1
   fi
-  mkdir -p .upkg/.tmp/root/.upkg/.packages
 
   if [[ $pkgtype = tar ]]; then
     local archivepath
@@ -98,6 +97,7 @@ upkg_download() {
   dedup_pkgname=$(clean_pkgname "$dedup_pkgname")
 
   # Move to dedup path
+  mkdir -p ".upkg/.tmp/root/.upkg/.packages"
   mv "$pkgpath" ".upkg/.tmp/root/.upkg/.packages/$dedup_pkgname@$checksum"
   printf "%s\n" "$dedup_pkgname@$checksum"
 }

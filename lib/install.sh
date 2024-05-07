@@ -35,10 +35,14 @@ upkg_install() {
   if ! $DRY_RUN; then
     # .bin/ and all pkgname symlinks are fully rebuilt during install, so we just remove it and copy it over
     rm -rf .upkg/.bin
-    rm -f .upkg/*
+    rm -f .upkg/* # "*" works here because we don't have nullglob on and dotglob off, meaning don't match .packages/ and .tmp/
     if [[ -e .upkg/.tmp/root/.upkg ]]; then
-      # Merge copy the tmp directory (basically just merging .upkg/.packages)
-      cp -a .upkg/.tmp/root/.upkg ./
+      if [[ -e .upkg/.tmp/root/.upkg/.packages ]]; then
+        mkdir -p .upkg/.packages
+        mv -nt .upkg/.packages .upkg/.tmp/root/.upkg/.packages/*
+      fi
+      [[ ! -e .upkg/.tmp/root/.upkg/.bin ]] || mv -nt .upkg/ .upkg/.tmp/root/.upkg/.bin
+      mv -nt .upkg .upkg/.tmp/root/.upkg/*
       # Remove all unreferenced packages
       local dep_pkgpath unreferenced_pkgs=()
       readarray -t -d $'\n' unreferenced_pkgs < <(comm -23 <(cd .upkg; for dedup_path in .packages/*; do echo "$dedup_path"; done | sort) <(upkg_list_referenced_pkgs . | sort))
@@ -62,7 +66,7 @@ upkg_install() {
   # All packages copied successfully, symlink commands
   if $is_global; then
     # Recalculate the available commands after install
-    available_cmds=$(upkg_list_available_cmds .upkg/.tmp/root | sort) # Full list of commands that should be linked
+    available_cmds=$(upkg_list_available_cmds . | sort) # Full list of commands that should be linked
     # global - available = new links
     local new_links=()
     readarray -t -d $'\n' new_links < <(comm -23 <(printf "%s\n" "$available_cmds") <(printf "%s\n" "$global_cmds"))
@@ -95,10 +99,9 @@ upkg_install_deps() {
   readarray -t -d $'\n' deps < <(jq -rc '(.dependencies // [])[]' "$pkgpath/upkg.json")
   [[ ${#deps[@]} -gt 0 ]] || return 0 # No deps -> nothing to do
   mkdir "$pkgpath/.upkg" 2>/dev/null || return 0 # .upkg exists -> another process is already installing the deps
-  if [[ $pkgpath = .upkg/.tmp/root ]]; then
-    mkdir "$pkgpath/.upkg/.packages" # We are at the root, this should be a directory, and not just a link
-  else
-    ln -sT ../../ "$pkgpath/.upkg/.packages" # Deeper dependency, link to the parent dedup directory
+  # Let upkg_download create the real dedup directory, indicating something was actually fetched
+  if [[ $pkgpath != .upkg/.tmp/root ]]; then
+    ln -sT ../../ "$pkgpath/.upkg/.packages" # Dependency, link to the parent dedup directory
   fi
 
   # Create sentinels dir where subprocesses create a file which indicates that
