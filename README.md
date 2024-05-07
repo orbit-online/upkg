@@ -5,16 +5,13 @@ Add zip support
 Check wget support in busybox & alpine
 Check mac support
 Check freebsd support
-Add test check that determines unused snapshots
 Kill running dep installs when first error is discovered
 Maybe rethink install_prefix
 Replace '[[...]] ||' with '[[...]] &&'
-Add #update-cmd=
+Add update property to deps
 update script should update itself first
 update script: pass all arguments as env vars, make the upkg.json entry a single string
 tar: auto-detect whether to --strip-components 1, add strip-components to upkg.json
-Figure out a way to check if a package is installed
-Test file installs & -X
 Warn when GIT_SSH_COMMAND is set but BatchMode!=yes
 Simulate `ln -T` with `ln -Fi <<<'n'` on BSD
 
