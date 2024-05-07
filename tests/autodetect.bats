@@ -34,7 +34,7 @@ teardown_file() { common_teardown_file; }
   local name=default/acme
   create_tar_package $name $name.nottar
   run -0 upkg add -t tar "$PACKAGE_FIXTURES/$name.nottar"
-  assert_snapshot_output
+  assert_snapshot_output nottar
   assert_snapshot_path shared/acme
 }
 
@@ -44,7 +44,7 @@ teardown_file() { common_teardown_file; }
   create_tar_package $name $name.nottar .gz
   run -0 upkg add -t tar "$PACKAGE_FIXTURES/$name.nottar"
   cp "$PACKAGE_FIXTURES/$name.nottar" /tmp/
-  assert_snapshot_output
+  assert_snapshot_output nottar
   assert_snapshot_path
 }
 
@@ -53,7 +53,7 @@ teardown_file() { common_teardown_file; }
   local name=default/acme
   create_tar_package $name $name.nottar .bz2
   run -0 upkg add -t tar "$PACKAGE_FIXTURES/$name.nottar"
-  assert_snapshot_output
+  assert_snapshot_output nottar
   assert_snapshot_path
 }
 
@@ -71,5 +71,5 @@ teardown_file() { common_teardown_file; }
   create_tar_package $name "" .bzip2
   run -0 upkg add -v "$PACKAGE_FIXTURES/$name.tar.bzip2"
   assert_snapshot_output
-  assert_snapshot_path
+  assert_snapshot_path shared/acme
 }

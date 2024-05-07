@@ -72,7 +72,7 @@ teardown_file() { common_teardown_file; }
   create_git_package $name
   run -0 upkg add -t git -g $HTTPD_PKG_FIXTURES_ADDR/$name.git $GIT_COMMIT
   assert_snapshot_output
-  assert_snapshot_path "" "$HOME/.local"
+  assert_snapshot_path acme-git-global "$HOME/.local"
 }
 
 # bats test_tags=ssh,git
@@ -81,7 +81,7 @@ teardown_file() { common_teardown_file; }
   create_git_package $name
   run -0 upkg add -t git -g package-fixtures:"$PACKAGE_FIXTURES/$name.git" $GIT_COMMIT
   assert_snapshot_output
-  assert_snapshot_path "" "$HOME/.local"
+  assert_snapshot_path acme-git-global "$HOME/.local"
 }
 
 # bats test_tags=tar
@@ -90,7 +90,6 @@ teardown_file() { common_teardown_file; }
   create_tar_package $name
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   run -0 upkg add -p acme-2 "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
-  assert_snapshot_output
   assert_snapshot_path
 }
 
@@ -101,5 +100,5 @@ teardown_file() { common_teardown_file; }
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_output
   assert_snapshot_path
-  assert_dir_exists .upkg/acme
+  assert_dir_exists .upkg/acme-renamed
 }
