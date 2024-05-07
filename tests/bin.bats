@@ -70,6 +70,7 @@ teardown_file() { common_teardown_file; }
   run -0 upkg add -X "$PACKAGE_FIXTURES/$name" $FILE_SHASUM
   assert_file_not_executable .upkg/executable
   assert_file_not_exists .upkg/.bin/executable
+  assert_snapshot_path
 }
 
 # bats test_tags=tar

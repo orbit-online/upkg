@@ -1,0 +1,13 @@
+[drwxr-xr-x]  .
+├── [drwxr-xr-x]  .upkg
+│   ├── [drwxr-xr-x]  .bin
+│   │   ├── [lrwxrwxrwx]  acme.bin -> ../.packages/acme-no-metadata.tar@8269ed897058ec43430168b2367ed8d588f2259ce6a373890dd0b1b96fd722c1/bin/acme.bin
+│   │   └── [lrwxrwxrwx]  file -> ../.packages/acme-no-metadata.tar+x@8269ed897058ec43430168b2367ed8d588f2259ce6a373890dd0b1b96fd722c1
+│   ├── [drwxr-xr-x]  .packages
+│   │   ├── [-rwxr-xr-x]  acme-no-metadata.tar+x@8269ed897058ec43430168b2367ed8d588f2259ce6a373890dd0b1b96fd722c1
+│   │   └── [drwxr-xr-x]  acme-no-metadata.tar@8269ed897058ec43430168b2367ed8d588f2259ce6a373890dd0b1b96fd722c1
+│   │       └── [drwxr-xr-x]  bin
+│   │           └── [-rwxr-xr-x]  acme.bin
+│   ├── [lrwxrwxrwx]  archive -> .packages/acme-no-metadata.tar@8269ed897058ec43430168b2367ed8d588f2259ce6a373890dd0b1b96fd722c1
+│   └── [lrwxrwxrwx]  file -> .packages/acme-no-metadata.tar+x@8269ed897058ec43430168b2367ed8d588f2259ce6a373890dd0b1b96fd722c1
+└── [-rw-r--r--]  upkg.json

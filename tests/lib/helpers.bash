@@ -31,7 +31,7 @@ common_setup() {
     HOME=$BATS_TEST_TMPDIR/home \
     GLOBAL_INSTALL_PREFIX=$BATS_TEST_TMPDIR/usr \
     PROJECT_ROOT=$BATS_TEST_TMPDIR/project
-  export CLEAR_FIXTURES=()
+  export CLEAR_FIXTURES=() SNAPSHOT_CREATED=false
   # EUID cannot be set, so even when running as root make sure to install to $HOME
   export INSTALL_PREFIX=$HOME/.local
   # Don't let upkg run installs in parallel, this results in non-deterministic ouput
@@ -69,6 +69,12 @@ common_teardown() {
   for fixture in "${CLEAR_FIXTURES[@]}"; do
     rm -rf "$fixture"
   done
+  if ${SNAPSHOT_CREATED:-false}; then
+    skip "Snapshots were created during this run. Inspect and validate them, then run the tests again to ensure that they are stable"
+  fi
+  if ${SNAPSHOT_UPDATED:-false}; then
+    skip "Snapshots were update during this run. Inspect and validate them, then run the tests again to ensure that they are stable"
+  fi
 }
 
 common_teardown_file() {
@@ -158,16 +164,14 @@ assert_snapshot_output() {
     snapshot_path=$SNAPSHOTS/${BATS_TEST_DESCRIPTION//'/'/_}.out
   fi
   if [[ ! -e "$snapshot_path" ]]; then
-    if ${CREATE_SNAPSHOTS:-false}; then
-      mkdir -p "$(dirname "$snapshot_path")"
-      # shellcheck disable=SC2001
-      replace_values <<<"$actual" > "$snapshot_path"
-    else
-      fail "The snapshot '${snapshot_path%"$SNAPSHOTS_ROOT"}' does not exist, run with CREATE_SNAPSHOTS=true to create it"
-    fi
+    mkdir -p "$(dirname "$snapshot_path")"
+    # shellcheck disable=SC2001
+    replace_values <<<"$actual" > "$snapshot_path"
+    SNAPSHOT_CREATED=true
   elif ${UPDATE_SNAPSHOTS:-false}; then
     # shellcheck disable=SC2001
     replace_values <<<"$actual" > "$snapshot_path"
+    SNAPSHOT_UPDATED=true
   fi
   assert_equals_diff "$(replace_vars "$snapshot_path")" "$actual"
 }
@@ -182,14 +186,12 @@ assert_snapshot_path() {
     snapshot_path=$SNAPSHOTS/${BATS_TEST_DESCRIPTION//'/'/_}.files
   fi
   if [[ ! -e "$snapshot_path" ]]; then
-    if ${CREATE_SNAPSHOTS:-false}; then
-      mkdir -p "$(dirname "$snapshot_path")"
-      get_file_structure "$actual_path" > "$snapshot_path"
-    else
-      fail "The snapshot '${snapshot_path%"$SNAPSHOTS_ROOT"}' does not exist, run with CREATE_SNAPSHOTS=true to create it"
-    fi
+    mkdir -p "$(dirname "$snapshot_path")"
+    get_file_structure "$actual_path" > "$snapshot_path"
+    SNAPSHOT_CREATED=true
   elif ${UPDATE_SNAPSHOTS:-false}; then
     get_file_structure "$actual_path" > "$snapshot_path"
+    SNAPSHOT_UPDATED=true
   fi
   assert_equals_diff "$(cat "$snapshot_path")" "$(get_file_structure "$actual_path")"
 }

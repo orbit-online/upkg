@@ -1,11 +1,11 @@
 [drwxr-xr-x]  .
 ├── [drwxr-xr-x]  .upkg
 │   ├── [drwxr-xr-x]  .bin
-│   │   └── [lrwxrwxrwx]  acme.bin -> ../.packages/acme@fed41fe4eb663c46830f09e04e7fae30db45ae30/bin/acme.bin
+│   │   └── [lrwxrwxrwx]  acme.bin -> ../.packages/acme.git@fed41fe4eb663c46830f09e04e7fae30db45ae30/bin/acme.bin
 │   ├── [drwxr-xr-x]  .packages
-│   │   └── [drwxr-xr-x]  acme@fed41fe4eb663c46830f09e04e7fae30db45ae30
+│   │   └── [drwxr-xr-x]  acme.git@fed41fe4eb663c46830f09e04e7fae30db45ae30
 │   │       ├── [drwxr-xr-x]  bin
 │   │       │   └── [-rwxr-xr-x]  acme.bin
 │   │       └── [-rw-r--r--]  upkg.json
-│   └── [lrwxrwxrwx]  acme -> .packages/acme@fed41fe4eb663c46830f09e04e7fae30db45ae30
+│   └── [lrwxrwxrwx]  acme.git -> .packages/acme.git@fed41fe4eb663c46830f09e04e7fae30db45ae30
 └── [-rw-r--r--]  upkg.json

@@ -1,7 +1,7 @@
 [drwxr-xr-x]  .
 ├── [drwxr-xr-x]  .upkg
 │   ├── [drwxr-xr-x]  .packages
-│   │   └── [drwxr-xr-x]  with@in-name@a3a73cdb6d7b80f21bd4b28ee0e8184e69d2ed1cec48071088437b36c2d7f2a0
+│   │   └── [drwxr-xr-x]  with@in-name.tar@a3a73cdb6d7b80f21bd4b28ee0e8184e69d2ed1cec48071088437b36c2d7f2a0
 │   │       └── [-rw-r--r--]  upkg.json
-│   └── [lrwxrwxrwx]  with@in-name -> .packages/with@in-name@a3a73cdb6d7b80f21bd4b28ee0e8184e69d2ed1cec48071088437b36c2d7f2a0
+│   └── [lrwxrwxrwx]  with@in-name -> .packages/with@in-name.tar@a3a73cdb6d7b80f21bd4b28ee0e8184e69d2ed1cec48071088437b36c2d7f2a0
 └── [-rw-r--r--]  upkg.json

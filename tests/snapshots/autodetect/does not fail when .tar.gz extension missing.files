@@ -1,11 +1,11 @@
 [drwxr-xr-x]  .
 ├── [drwxr-xr-x]  .upkg
 │   ├── [drwxr-xr-x]  .bin
-│   │   └── [lrwxrwxrwx]  acme.bin -> ../.packages/acme@ea9503a44bad411434bdac188ec1161074a2314e539f8c0c9f6eb4fbcf5b9c6d/bin/acme.bin
+│   │   └── [lrwxrwxrwx]  acme.bin -> ../.packages/acme.tar@ea9503a44bad411434bdac188ec1161074a2314e539f8c0c9f6eb4fbcf5b9c6d/bin/acme.bin
 │   ├── [drwxr-xr-x]  .packages
-│   │   └── [drwxr-xr-x]  acme@ea9503a44bad411434bdac188ec1161074a2314e539f8c0c9f6eb4fbcf5b9c6d
+│   │   └── [drwxr-xr-x]  acme.tar@ea9503a44bad411434bdac188ec1161074a2314e539f8c0c9f6eb4fbcf5b9c6d
 │   │       ├── [drwxr-xr-x]  bin
 │   │       │   └── [-rwxr-xr-x]  acme.bin
 │   │       └── [-rw-r--r--]  upkg.json
-│   └── [lrwxrwxrwx]  acme -> .packages/acme@ea9503a44bad411434bdac188ec1161074a2314e539f8c0c9f6eb4fbcf5b9c6d
+│   └── [lrwxrwxrwx]  acme -> .packages/acme.tar@ea9503a44bad411434bdac188ec1161074a2314e539f8c0c9f6eb4fbcf5b9c6d
 └── [-rw-r--r--]  upkg.json

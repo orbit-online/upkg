@@ -1,4 +1,2 @@
-upkg: Skipping '$BATS_RUN_TMPDIR/package-fixtures/default/acme-no-metadata.tar'
-upkg: Skipping '$BATS_RUN_TMPDIR/package-fixtures/default/acme-no-metadata.tar'
-upkg: conflict: There is more than one package with the name 'acme-no-metadata.tar' ('acme-no-metadata.tar' and 'acme-no-metadata.tar')
+upkg: conflict: There is more than one package with the name 'acme-no-metadata' ('acme-no-metadata.tar' and 'acme-no-metadata.tar')
 upkg: An error occurred while installing '$BATS_RUN_TMPDIR/package-fixtures/default/acme-no-metadata.tar'

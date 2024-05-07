@@ -33,6 +33,11 @@ teardown_file() { common_teardown_file; }
   assert_snapshot_path
 }
 
-@test "depending on the same file as an archive and a file does not clash" {
-  :
+# bats test_tags=tar
+@test "depending on the same unnamed repo as an archive and a file does not clash" {
+  local name=default/acme-no-metadata
+  create_tar_package $name
+  run -0 upkg add -p archive -t tar "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
+  run -0 upkg add -p file -t file "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
+  assert_snapshot_path
 }

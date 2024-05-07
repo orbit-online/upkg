@@ -11,5 +11,5 @@
 │   │       │   ├── [-rw-r--r--]  not-an-exec
 │   │       │   └── [-rwxr-xr-x]  tools-exec
 │   │       └── [-rw-r--r--]  upkg.json
-│   └── [lrwxrwxrwx]  scattered-executables.tar -> .packages/scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888
+│   └── [lrwxrwxrwx]  scattered-executables -> .packages/scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888
 └── [-rw-r--r--]  upkg.json

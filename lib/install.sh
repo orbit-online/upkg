@@ -172,24 +172,28 @@ upkg_install_dep() {
   else flock -ns 9; fi # Acquire a shared lock which is released once this process completes. Fail if we can't lock
   touch "$parent_pkgpath/.upkg/.sentinels/$dep_idx.lock" # Tell the parent process that the shared lock has been acquired
 
-  local pkgurl checksum
+  local pkgurl checksum pkgtype
   pkgurl=$(dep_pkgurl "$dep")
   checksum=$(dep_checksum "$dep")
+  pkgtype=$(dep_pkgtype "$dep")
 
   local dedup_name dedup_glob is_dedup=false dedup_location # The actual current physical location of the deduplicated package
   if [[ -e ".upkg/.packages" ]]; then
-    if [[ $(dep_pkgtype "$dep") = file ]]; then
+
+    if [[ $pkgtype = file ]]; then
       if dep_is_exec "$dep"; then
         dedup_glob=".upkg/.packages/*+x@$checksum"
       else
         dedup_glob=".upkg/.packages/*-x@$checksum"
       fi
+    elif [[ $pkgtype = tar ]]; then
+      dedup_glob=".upkg/.packages/*.tar@$checksum"
     else
-      dedup_glob=".upkg/.packages/*@$checksum"
+      dedup_glob=".upkg/.packages/*.git@$checksum"
     fi
     if dedup_location=$(compgen -G "$dedup_glob"); then
       # Package already exists in the destination, all we need is the dedup_path so we can symlink it
-      $DRY_RUN || processing "Skipping '%s'" "$pkgurl"
+      $DRY_RUN || verbose "Skipping download of '%s'" "$pkgurl"
       dedup_name=$(basename "$dedup_location")
       is_dedup=true
     fi
@@ -209,7 +213,15 @@ upkg_install_dep() {
   local dedup_pkgname pkgname
   dedup_pkgname=${dedup_name%@*}
 
-  pkgname="$(jq -re '.name // empty' <<<"$dep")" || pkgname=$dedup_pkgname
+  if ! pkgname="$(jq -re '.name // empty' <<<"$dep")"; then
+    if [[ $pkgtype = file ]]; then
+      pkgname=${dedup_pkgname%?x} # Remove -x or +x dedup suffix
+    elif [[ $pkgtype = tar ]]; then
+      pkgname=${dedup_pkgname%.tar} # Remove .tar suffix
+    else
+      pkgname=${dedup_pkgname%.tar} # Remove .git suffix
+    fi
+  fi
   pkgname=$(clean_pkgname "$pkgname")
 
   local dedup_path=.packages/$dedup_name # The relative path to the deduplicated package from .upkg/

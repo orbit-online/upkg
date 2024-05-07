@@ -37,8 +37,15 @@ upkg_download() {
     return 1
   fi
 
+  # Generate a preliminary dedup_pkgname (will be modified based on the pkgtype)
+  dedup_pkgname=${pkgurl%%'#'*} # Remove trailing anchor
+  dedup_pkgname=${dedup_pkgname%%'?'*} # Remove query params
+  dedup_pkgname=$(basename "$dedup_pkgname") # Remove path prefix
+
+  local dedup_pkgname_suffix # avoid clashes between tar and file pkgtypes by suffixing them (and just do it for git repos as well)
   if [[ $pkgtype = tar ]]; then
     local archivepath
+    dedup_pkgname_suffix=.tar
     # check if file was already downloaded by upkg_add to generate a checksum
     if [[ -e ".upkg/.tmp/prefetched/$checksum" ]]; then
       # archive was already downloaded by upkg_add to generate a checksum
@@ -51,6 +58,8 @@ upkg_download() {
       archivepath=$pkgpath.archive
       upkg_fetch "$pkgurl" "$archivepath"
     fi
+    # Remove the suffix so that it is just ".tar". This is only to avoid ".tar.gz.tar" and is not strictly necessary
+    [[ ! $dedup_pkgname =~ (\.tar(\.[^.?#/]+)?)$ ]] || dedup_pkgname=${dedup_pkgname%"${BASH_REMATCH[1]}"}
 
     sha256 "$archivepath" "$checksum"
     tar -xf "$archivepath" -C "$pkgpath"
@@ -75,19 +84,20 @@ upkg_download() {
       # file should be executable
       chmod +x "$pkgpath"
       # Suffix the name with +x or -x so we don't end up clashing with a dedup'ed dependency where "exec" is different
-      mv "$pkgpath" "$pkgpath+x"
-      pkgpath=$pkgpath+x
+      dedup_pkgname_suffix=+x
     else
-      mv "$pkgpath" "$pkgpath-x"
-      pkgpath=$pkgpath-x
+      dedup_pkgname_suffix=-x
     fi
 
   elif [[ $pkgtype = git ]]; then
+    dedup_pkgname_suffix=.git
     local out
     out=$(git clone -q "${pkgurl%%'#'*}" "$pkgpath" 2>&1) || \
       fatal "Unable to clone '%s'. Error:\n%s" "$pkgurl" "$out"
     out=$(git -C "$pkgpath" checkout -q "$checksum" -- 2>&1) || \
       fatal "Unable to checkout '%s' from '%s'. Error:\n%s" "$checksum" "$pkgurl" "$out"
+    # Remove a potential .git suffix, we add it later on
+    dedup_pkgname=${dedup_pkgname%".git"}
 
   else
     fatal "Fetching of '%s' not implemented" "$pkgtype"
@@ -95,13 +105,12 @@ upkg_download() {
 
   [[ ! -e "$pkgpath/.upkg" ]] || fatal "The package '%s' contains a .upkg/ directory. Unable to install." "$pkgurl"
 
-  if [[ ! -e "$pkgpath/upkg.json" ]] || ! dedup_pkgname=$(jq -re '.name // empty' "$pkgpath/upkg.json"); then
-    # Generate a dedup_pkgname
-    dedup_pkgname=${pkgurl%%'#'*} # Remove trailing anchor
-    dedup_pkgname=${dedup_pkgname%%'?'*} # Remove query params
-    dedup_pkgname=$(basename "$dedup_pkgname") # Remove path prefix
+  local pkgname
+  if [[ -e "$pkgpath/upkg.json" ]] && pkgname=$(jq -re '.name // empty' "$pkgpath/upkg.json"); then
+    dedup_pkgname=$pkgname
   fi
   dedup_pkgname=$(clean_pkgname "$dedup_pkgname")
+  dedup_pkgname=${dedup_pkgname}${dedup_pkgname_suffix}
 
   # Move to dedup path
   mkdir -p ".upkg/.tmp/root/.upkg/.packages"

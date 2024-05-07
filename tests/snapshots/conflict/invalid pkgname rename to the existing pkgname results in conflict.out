@@ -1,3 +1,2 @@
-upkg: Skipping '$BATS_RUN_TMPDIR/package-fixtures/disallowed/with-slash-in-name.tar'
-upkg: conflict: There is more than one package with the name 'with_in-name' ('with_in-name' and 'with_in-name')
+upkg: conflict: There is more than one package with the name 'with_in-name' ('with_in-name.tar' and 'with_in-name.tar')
 upkg: An error occurred while installing '$BATS_RUN_TMPDIR/package-fixtures/disallowed/with-newline-in-name.tar'
