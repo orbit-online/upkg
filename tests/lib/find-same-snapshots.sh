@@ -12,7 +12,8 @@ Usage:
   find-same-snapshots.sh
 "
   [[ $# -eq 0 ]] || { printf "%s\n" "$DOC"; return 1; }
-  local test_file snapshot test_file_cmp snapshot_cmp
+  local test_file snapshot test_file_cmp snapshot_cmp sha
+  declare -A same
   cd "$PKGROOT/tests/snapshots"
   for test_file in *; do
     for snapshot in "$test_file"/*; do
@@ -20,10 +21,16 @@ Usage:
         for snapshot_cmp in "$test_file_cmp"/*; do
           # Don't compare files we already compared the other way around
           [[ $snapshot < "$snapshot_cmp" ]] || continue
-          ! diff -q "$snapshot" "$snapshot_cmp" >/dev/null || printf "%s and %s are the same\n" "$snapshot" "$snapshot_cmp"
+          if diff -q "$snapshot" "$snapshot_cmp" >/dev/null; then
+            sha=$(shasum -a 256 "$snapshot" | cut -d ' ' -f1)
+            same[$sha]="${same[$sha]}\n  $snapshot\n  $snapshot_cmp"
+          fi
         done
       done
     done
+  done
+  for i in "${!same[@]}"; do
+    printf "These files are the same:${same[$i]}\n\n"
   done
 }
 
