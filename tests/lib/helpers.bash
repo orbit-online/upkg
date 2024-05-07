@@ -86,6 +86,15 @@ create_tar_package() {
   TAR_SHASUM=$(shasum -a 256 "$dest" | cut -d' ' -f1)
 }
 
+create_file_package() {
+  has_tag file || fail "create_file_package is used, but the test is not tagged with 'file'"
+  local tpl=$PACKAGE_TEMPLATES/$1 dest=$PACKAGE_FIXTURES/$1
+  mkdir -p "$(dirname "$dest")"
+  [[ -e $dest ]] || cp "$tpl" "$dest"
+  # shellcheck disable=SC2034
+  FILE_SHASUM=$(shasum -a 256 "$dest" | cut -d' ' -f1)
+}
+
 create_git_package() {
   has_tag git || fail "create_git_package is used, but the test is not tagged with 'git'"
   local tpl=$PACKAGE_TEMPLATES/$1 working_copy=$PACKAGE_FIXTURES/$1.git-tmp dest=$PACKAGE_FIXTURES/$1.git

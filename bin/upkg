@@ -146,15 +146,13 @@ for ((;docopt_i>0;docopt_i--)); do declare -p "${prefix}__dry_run" \
       [[ -e "$INSTALL_PREFIX/lib/upkg" ]] || mkdir -p "$INSTALL_PREFIX/lib/upkg"
       cd "$INSTALL_PREFIX/lib/upkg"
     fi
-    if $___no_exec && $___no_bin; then
-      docopt_exit "upkg: --no-exec implies --no-bin. Do not specify --no-bin"
-    fi
-    if $___no_bin; then
-      [[ ${#___bin[@]} -eq 0 ]] || docopt_exit "upkg: --no-bin and --bin are mutually exclusive"
-    fi
     local pkgtype=$___pkgtype
     if [[ -z $pkgtype ]]; then
       pkgtype=$(upkg_guess_pkgtype "$_URL" "$_SHA")
+    fi
+    if $___no_bin; then
+      ! $___no_exec || docopt_exit "upkg: --no-exec implies --no-bin. Do not specify --no-bin"
+      [[ ${#___bin[@]} -eq 0 ]] || docopt_exit "upkg: --no-bin and --bin are mutually exclusive"
     fi
     if [[ $pkgtype = file ]]; then
       [[ ${#___bin[@]} -eq 0 ]] || docopt_exit "upkg: You cannot specify bin paths for a file. It will be linked by default, unless you use --no-exec."

@@ -5,9 +5,6 @@ upkg_add() {
   local pkgtype=$1 pkgurl=$2 checksum=$3 pkgname=$4 no_exec=$5 no_bin=$6
         shift;     shift;    shift;      shift;     shift;     shift;    binpaths=("$@")
 
-  local archiveext
-  ! [[ $pkgtype = tar ]] || archiveext=$(get_tar_suffix "$pkgurl")
-
   if [[ -z "$checksum" ]]; then
     # Autocalculate the checksum
     processing "No checksum given for '%s', determining now" "$pkgurl"
@@ -20,6 +17,8 @@ upkg_add() {
         local tmpfile=.upkg/.tmp/prefetched/tmpfile
         upkg_fetch "$pkgurl" "$tmpfile"
         checksum=$(sha256 "$tmpfile")
+        local archiveext
+        ! [[ $pkgtype = tar ]] || archiveext=$(get_tar_suffix "$pkgurl")
         mv "$tmpfile" ".upkg/.tmp/prefetched/${checksum}${archiveext}"
       fi
     else

@@ -44,3 +44,30 @@ teardown_file() { common_teardown_file; }
   assert_snapshot_output
   assert_snapshot_path
 }
+
+# bats test_tags=file
+@test "executable file is linked and made executable" {
+  local name=default/executable
+  create_file_package $name
+  run -0 upkg add "$PACKAGE_FIXTURES/$name" $FILE_SHASUM
+  assert_file_executable .upkg/executable
+  assert_file_executable .upkg/.bin/executable
+}
+
+# bats test_tags=file
+@test "non-executable file is linked and made executable" {
+  local name=default/non-executable
+  create_file_package $name
+  run -0 upkg add "$PACKAGE_FIXTURES/$name" $FILE_SHASUM
+  assert_file_executable .upkg/non-executable
+  assert_file_executable .upkg/.bin/non-executable
+}
+
+# bats test_tags=file
+@test "-X is respected" {
+  local name=default/executable
+  create_file_package $name
+  run -0 upkg add -X "$PACKAGE_FIXTURES/$name" $FILE_SHASUM
+  assert_file_not_executable .upkg/executable
+  assert_file_not_exists .upkg/.bin/executable
+}

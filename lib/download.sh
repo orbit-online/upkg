@@ -10,10 +10,10 @@ upkg_download() {
   checksum=$(dep_checksum "$dep")
 
   mkdir -p .upkg/.tmp/download
-  local downloadpath=.upkg/.tmp/download/$checksum
+  local pkgpath=.upkg/.tmp/download/$checksum
 
   # Create a lock so we never download a package more than once, and so other processes can wait for the download to finish
-  exec 9<>"$downloadpath.lock"
+  exec 9<>"$pkgpath.lock"
   local already_downloading=false
   if ! flock -nx 9; then # Try getting an exclusive lock, if we can we are either the first, or the very last where everybody else is done
     already_downloading=true # Didn't get it, somebody is already downloading
@@ -32,70 +32,65 @@ upkg_download() {
   elif $already_downloading; then
     # Download failure. Don't try anything, just fail
     return 1
-  elif ! mkdir "$downloadpath" 2>/dev/null; then
+  elif ! mkdir "$pkgpath" 2>/dev/null; then
     # Download failure, but the lock has already been released. Don't try anything, just fail
     return 1
   fi
   mkdir -p .upkg/.tmp/root/.upkg/.packages
 
-  local prefetchpath
   if [[ $pkgtype = tar ]]; then
-    local filepath
-    if prefetchpath=$(compgen -G ".upkg/.tmp/prefetched/${checksum}*"); then
-      # file was already downloaded by upkg_add to generate a checksum, reuse it
-      filepath=$prefetchpath
-    elif [[ -e $pkgurl ]]; then
-      # file exists on the filesystem, extract from it directly
-      filepath=$pkgurl
-    else
-      # file does not exist on the filesystem, download it
-      filepath="${downloadpath}$(get_tar_suffix "$pkgurl")"
-      upkg_fetch "$pkgurl" "$filepath"
+    local archivepath
+    # check if file was already downloaded by upkg_add to generate a checksum
+    if ! archivepath=$(compgen -G ".upkg/.tmp/prefetched/${checksum}*"); then
+      if [[ -e $pkgurl ]]; then
+        # file exists on the filesystem, extract from it directly
+        archivepath=$pkgurl
+      else
+        # file does not exist on the filesystem, download it
+        archivepath="${pkgpath}$(get_tar_suffix "$pkgurl")"
+        upkg_fetch "$pkgurl" "$archivepath"
+      fi
     fi
 
-    sha256 "$filepath" "$checksum"
-    tar -xf "$filepath" -C "$downloadpath"
+    sha256 "$archivepath" "$checksum"
+    tar -xf "$archivepath" -C "$pkgpath"
 
   elif [[ $pkgtype = file ]]; then
-    local filepath
-    if prefetchpath=$(compgen -G ".upkg/.tmp/prefetched/${checksum}*"); then
-      # file was already downloaded by upkg_add to generate a checksum, reuse it
-      filepath=$prefetchpath
-      downloadpath=$filepath
+    # change the original $pkgpath which is a directory and an implicit lock
+    pkgpath=$pkgpath.file
+    if [[ -e ".upkg/.tmp/prefetched/$checksum" ]]; then
+      # file was already downloaded by upkg_add to generate a checksum, move it
+      mv ".upkg/.tmp/prefetched/$checksum" "$pkgpath"
     elif [[ -e $pkgurl ]]; then
       # file exists on the filesystem, copy it so it can be moved later on
-      filepath=$downloadpath.file
-      downloadpath=$filepath
-      cp "$pkgurl" "$downloadpath"
+      cp "$pkgurl" "$pkgpath"
+      chmod -x "$pkgpath" # make sure no executable bits are preserved
     else
       # file does not exist on the filesystem, download it
-      # but don't download to $filepath (which is a directory)
-      filepath=$downloadpath.file
-      downloadpath=$filepath
-      upkg_fetch "$pkgurl" "$filepath"
+      upkg_fetch "$pkgurl" "$pkgpath"
     fi
 
-    sha256 "$filepath" "$checksum"
-    if jq -re '.exec // true' <<<"$dep" >/dev/null; then
+    sha256 "$pkgpath" "$checksum"
+    if jq -re 'if has("exec") then .exec else true end' <<<"$dep" >/dev/null; then
       # file should be executable
-      chmod +x "$downloadpath"
+      chmod +x "$pkgpath"
     fi
 
   elif [[ $pkgtype = git ]]; then
     processing 'Cloning %s' "$pkgurl"
     local out
-    out=$(git clone -q "${pkgurl%%'#'*}" "$downloadpath" 2>&1) || \
+    out=$(git clone -q "${pkgurl%%'#'*}" "$pkgpath" 2>&1) || \
       fatal "Unable to clone '%s'. Error:\n%s" "$pkgurl" "$out"
-    out=$(git -C "$downloadpath" checkout -q "$checksum" -- 2>&1) || \
+    out=$(git -C "$pkgpath" checkout -q "$checksum" -- 2>&1) || \
       fatal "Unable to checkout '%s' from '%s'. Error:\n%s" "$checksum" "$pkgurl" "$out"
 
   else
     fatal "Fetching of '%s' not implemented" "$pkgtype"
   fi
 
-  [[ ! -e "$downloadpath/.upkg" ]] || fatal "The package '%s' contains a .upkg/ directory. Unable to install." "$pkgurl"
+  [[ ! -e "$pkgpath/.upkg" ]] || fatal "The package '%s' contains a .upkg/ directory. Unable to install." "$pkgurl"
 
-  if [[ ! -e "$downloadpath/upkg.json" ]] || ! dedup_pkgname=$(jq -re '.name // empty' "$downloadpath/upkg.json"); then
+  if [[ ! -e "$pkgpath/upkg.json" ]] || ! dedup_pkgname=$(jq -re '.name // empty' "$pkgpath/upkg.json"); then
     # Generate a dedup_pkgname
     dedup_pkgname=${pkgurl%%'#'*} # Remove trailing anchor
     dedup_pkgname=${dedup_pkgname%%'?'*} # Remove query params
@@ -104,7 +99,7 @@ upkg_download() {
   dedup_pkgname=$(clean_pkgname "$dedup_pkgname")
 
   # Move to dedup path
-  mv "$downloadpath" ".upkg/.tmp/root/.upkg/.packages/$dedup_pkgname@$checksum"
+  mv "$pkgpath" ".upkg/.tmp/root/.upkg/.packages/$dedup_pkgname@$checksum"
   printf "%s\n" "$dedup_pkgname@$checksum"
 }
 
