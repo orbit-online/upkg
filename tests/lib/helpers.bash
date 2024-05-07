@@ -31,7 +31,7 @@ common_setup() {
     HOME=$BATS_TEST_TMPDIR/home \
     GLOBAL_INSTALL_PREFIX=$BATS_TEST_TMPDIR/usr \
     PROJECT_ROOT=$BATS_TEST_TMPDIR/project
-  export CLEAR_FIXTURES=() SNAPSHOT_CREATED=false
+  export CLEAR_FIXTURES=() SNAPSHOT_CREATED=false SNAPSHOT_UPDATED=false
   # EUID cannot be set, so even when running as root make sure to install to $HOME
   export INSTALL_PREFIX=$HOME/.local
   # Don't let upkg run installs in parallel, this results in non-deterministic ouput
@@ -40,8 +40,10 @@ common_setup() {
 }
 
 common_teardown() {
+  local ret=0
   if [[ -n $(jobs -p) ]]; then
     fail "There were unterminated background jobs after test completion"
+    ret=1
   fi
   if [[ -e $HTTPD_PKG_FIXTURES_LOG ]]; then
     if has_tag http; then
@@ -52,6 +54,7 @@ common_teardown() {
     elif [[ $(stat -c %s "$HTTPD_PKG_FIXTURES_LOG") -gt 0 ]]; then
       true >"$HTTPD_PKG_FIXTURES_LOG"
       fail "HTTP server was accessed but test did not have 'http' tag, you must tag tests that access the HTTP server ('# bats test_tags=http')"
+      ret=1
     fi
   fi
   if [[ -e $SSHD_PKG_FIXTURES_LOG ]]; then
@@ -63,18 +66,22 @@ common_teardown() {
     elif [[ $(stat -c %s "$SSHD_PKG_FIXTURES_LOG") -gt 0 ]]; then
       true >"$SSHD_PKG_FIXTURES_LOG"
       fail "SSH server was accessed but test did not have 'ssh' tag, you must tag tests that access the SSH server ('# bats test_tags=ssh')"
+      ret=1
     fi
   fi
   local fixture
   for fixture in "${CLEAR_FIXTURES[@]}"; do
     rm -rf "$fixture"
   done
-  if ${SNAPSHOT_CREATED:-false}; then
-    skip "Snapshots were created during this run. Inspect and validate them, then run the tests again to ensure that they are stable"
+  if [[ -e $BATS_TEST_TMPDIR/snapshot-created ]]; then
+    fail "Snapshots were created during this run. Inspect and validate them, then run the tests again to ensure that they are stable"
+    ret=1
   fi
-  if ${SNAPSHOT_UPDATED:-false}; then
-    skip "Snapshots were update during this run. Inspect and validate them, then run the tests again to ensure that they are stable"
+  if [[ -e $BATS_TEST_TMPDIR/snapshot-updated ]]; then
+    fail "Snapshots were updated during this run. Inspect and validate them, then run the tests again to ensure that they are stable"
+    ret=1
   fi
+  [[ $ret = 0 ]] || exit $ret
 }
 
 common_teardown_file() {
@@ -167,11 +174,11 @@ assert_snapshot_output() {
     mkdir -p "$(dirname "$snapshot_path")"
     # shellcheck disable=SC2001
     replace_values <<<"$actual" > "$snapshot_path"
-    SNAPSHOT_CREATED=true
+    touch "$BATS_TEST_TMPDIR/snapshot-created"
   elif ${UPDATE_SNAPSHOTS:-false}; then
     # shellcheck disable=SC2001
     replace_values <<<"$actual" > "$snapshot_path"
-    SNAPSHOT_UPDATED=true
+    touch "$BATS_TEST_TMPDIR/snapshot-updated"
   fi
   assert_equals_diff "$(replace_vars "$snapshot_path")" "$actual"
 }
@@ -188,10 +195,10 @@ assert_snapshot_path() {
   if [[ ! -e "$snapshot_path" ]]; then
     mkdir -p "$(dirname "$snapshot_path")"
     get_file_structure "$actual_path" > "$snapshot_path"
-    SNAPSHOT_CREATED=true
+    touch "$BATS_TEST_TMPDIR/snapshot-created"
   elif ${UPDATE_SNAPSHOTS:-false}; then
     get_file_structure "$actual_path" > "$snapshot_path"
-    SNAPSHOT_UPDATED=true
+    touch "$BATS_TEST_TMPDIR/snapshot-updated"
   fi
   assert_equals_diff "$(cat "$snapshot_path")" "$(get_file_structure "$actual_path")"
 }
