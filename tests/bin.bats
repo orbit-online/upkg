@@ -71,3 +71,11 @@ teardown_file() { common_teardown_file; }
   assert_file_not_executable .upkg/executable
   assert_file_not_exists .upkg/.bin/executable
 }
+
+# bats test_tags=tar
+@test "cannot use -X on tar" {
+  local name=default/acme
+  create_tar_package $name
+  run -1 upkg add -X "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
+  assert_snapshot_output
+}
