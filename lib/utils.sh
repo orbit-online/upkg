@@ -9,19 +9,6 @@ clean_pkgname() {
   printf "%s\n" "$pkgname"
 }
 
-get_tar_suffix() {
-  local pkgurl=$1
-  if [[ -e "$pkgurl" ]]; then
-    [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)$ ]] || \
-      fatal "Unable to determine filename extension for tar archive, path must end in .tar or .tar.*"
-    printf "%s\n" "${BASH_REMATCH[1]}"
-  else
-    [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)([?#]|$) ]] || \
-      fatal "Unable to determine filename extension for tar archive, URL must end in .tar or .tar.* (? and # suffixes are allowed)"
-    printf "%s\n" "${BASH_REMATCH[1]}"
-  fi
-}
-
 sha256() {
   local filepath=$1 sha256=$2
   if [[ -n $sha256 ]]; then

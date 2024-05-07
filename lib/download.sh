@@ -40,15 +40,16 @@ upkg_download() {
   if [[ $pkgtype = tar ]]; then
     local archivepath
     # check if file was already downloaded by upkg_add to generate a checksum
-    if ! archivepath=$(compgen -G ".upkg/.tmp/prefetched/${checksum}*"); then
-      if [[ -e $pkgurl ]]; then
-        # file exists on the filesystem, extract from it directly
-        archivepath=$pkgurl
-      else
-        # file does not exist on the filesystem, download it
-        archivepath="${pkgpath}$(get_tar_suffix "$pkgurl")"
-        upkg_fetch "$pkgurl" "$archivepath"
-      fi
+    if [[ -e ".upkg/.tmp/prefetched/$checksum" ]]; then
+      # archive was already downloaded by upkg_add to generate a checksum
+      archivepath=".upkg/.tmp/prefetched/$checksum"
+    elif [[ -e $pkgurl ]]; then
+      # archive exists on the filesystem, extract from it directly
+      archivepath=$pkgurl
+    else
+      # archive does not exist on the filesystem, download it next to the pkgpath
+      archivepath=$pkgpath.archive
+      upkg_fetch "$pkgurl" "$archivepath"
     fi
 
     sha256 "$archivepath" "$checksum"
@@ -58,8 +59,8 @@ upkg_download() {
     # change the original $pkgpath which is a directory and an implicit lock
     pkgpath=$pkgpath.file
     if [[ -e ".upkg/.tmp/prefetched/$checksum" ]]; then
-      # file was already downloaded by upkg_add to generate a checksum, move it
-      mv ".upkg/.tmp/prefetched/$checksum" "$pkgpath"
+      # file was already downloaded by upkg_add to generate a checksum
+      pkgpath=".upkg/.tmp/prefetched/$checksum"
     elif [[ -e $pkgurl ]]; then
       # file exists on the filesystem, copy it so it can be moved later on
       cp "$pkgurl" "$pkgpath"

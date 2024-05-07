@@ -17,9 +17,7 @@ upkg_add() {
         local tmpfile=.upkg/.tmp/prefetched/tmpfile
         upkg_fetch "$pkgurl" "$tmpfile"
         checksum=$(sha256 "$tmpfile")
-        local archiveext
-        ! [[ $pkgtype = tar ]] || archiveext=$(get_tar_suffix "$pkgurl")
-        mv "$tmpfile" ".upkg/.tmp/prefetched/${checksum}${archiveext}"
+        mv "$tmpfile" ".upkg/.tmp/prefetched/$checksum"
       fi
     else
       # pkgurl is a git archive

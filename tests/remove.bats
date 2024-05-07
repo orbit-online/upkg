@@ -16,7 +16,7 @@ teardown_file() { common_teardown_file; }
   run -0 upkg add -g "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   run -0 upkg remove -g "$(basename "$name").tar"
   assert_snapshot_output
-  assert_snapshot_path "shared/clean-global" "$HOME/.local"
+  assert_snapshot_path shared/clean-global "$HOME/.local"
 }
 
 # bats test_tags=tar
@@ -26,7 +26,7 @@ teardown_file() { common_teardown_file; }
   run -0 upkg add -g "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   run -0 upkg remove -g acme
   assert_snapshot_output
-  assert_snapshot_path "shared/clean-global" "$HOME/.local"
+  assert_snapshot_path shared/clean-global "$HOME/.local"
 }
 
 # bats test_tags=tar

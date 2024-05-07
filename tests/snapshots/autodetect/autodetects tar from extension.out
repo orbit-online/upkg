@@ -1,0 +1,3 @@
+upkg: Guessing pkgtype is tar, based on the URL being a file that exists on the machine and it ending in .tar or .tar.*
+upkg: No checksum given for '$BATS_RUN_TMPDIR/package-fixtures/default/acme.tar.bzip2', determining now
+upkg: Added '$BATS_RUN_TMPDIR/package-fixtures/default/acme.tar.bzip2'

@@ -1,0 +1,4 @@
+upkg: Downloading $HTTPD_PKG_FIXTURES_ADDR/non-existent.tar
+upkg: Error while downloading '$HTTPD_PKG_FIXTURES_ADDR/non-existent.tar', server response:
+  HTTP/1.0 404 File not found
+  

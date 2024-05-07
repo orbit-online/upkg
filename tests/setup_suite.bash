@@ -66,24 +66,27 @@ setup_reproducible_vars() {
 # Check availability of various commands and set $SKIP_* vars whose values are skip messages
 check_commands() {
   # Check tar availability and version
-  export SKIP_TAR
   if type tar &>/dev/null; then
     local tar_actual_version tar_expected_version='tar (GNU tar) 1.34'
     tar_actual_version=$(tar --version | head -n1)
     if [[ $tar_actual_version != "$tar_expected_version" ]]; then
-      SKIP_TAR="tar reported version ${tar_actual_version#tar (GNU tar) }. Only ${tar_expected_version#tar (GNU tar) } is supported. Use tests/run.sh to run the tests in a container"
+      export SKIP_TAR="tar reported version ${tar_actual_version#tar (GNU tar) }. Only ${tar_expected_version#tar (GNU tar) } is supported. Use tests/run.sh to run the tests in a container"
     fi
   else
-    SKIP_TAR='tar is not available. Use tests/run.sh to run the tests in a container.'
+    export SKIP_TAR='tar is not available. Use tests/run.sh to run the tests in a container.'
   fi
-  export SKIP_GIT=
-  type git &>/dev/null || SKIP_GIT='git is not available. Use tests/run.sh to run the tests in a container.'
-  export SKIP_WGET=
-  type wget &>/dev/null || SKIP_WGET='wget is not available. Use tests/run.sh to run the tests in a container.'
-  export SKIP_CURL=
-  type curl &>/dev/null || SKIP_CURL='curl is not available. Use tests/run.sh to run the tests in a container.'
-  export SKIP_LIST=
-  type column &>/dev/null || SKIP_LIST='column is not available. Use tests/run.sh to run the tests in a container.'
+  type git &>/dev/null || export SKIP_GIT='git is not available. Use tests/run.sh to run the tests in a container.'
+  type wget &>/dev/null || export SKIP_WGET='wget is not available. Use tests/run.sh to run the tests in a container.'
+  type curl &>/dev/null || export SKIP_CURL='curl is not available. Use tests/run.sh to run the tests in a container.'
+  type column &>/dev/null || export SKIP_LIST='column is not available. Use tests/run.sh to run the tests in a container.'
+  type bzip2 &>/dev/null || export SKIP_BZIP2='bzip2 compression is not available. Use tests/run.sh to run the tests in a container.'
+  type xz &>/dev/null || export SKIP_XZ='xz compression is not available. Use tests/run.sh to run the tests in a container.'
+  type lzip &>/dev/null || export SKIP_LZIP='lzip compression is not available. Use tests/run.sh to run the tests in a container.'
+  type lzma &>/dev/null || export SKIP_LZMA='lzma compression is not available. Use tests/run.sh to run the tests in a container.'
+  type lzop &>/dev/null || export SKIP_LZOP='lzop compression is not available. Use tests/run.sh to run the tests in a container.'
+  type gzip &>/dev/null || export SKIP_GZIP='gzip compression is not available. Use tests/run.sh to run the tests in a container.'
+  type compress &>/dev/null || export SKIP_COMPRESS='z compression is not available. Use tests/run.sh to run the tests in a container.'
+  type zstd &>/dev/null || export SKIP_ZSTD='zstd compression is not available. Use tests/run.sh to run the tests in a container.'
 }
 
 # Make sure the package-templates have the correct permissions (i.e. git checkout wasn't run with a 002 instead of 022 umask)

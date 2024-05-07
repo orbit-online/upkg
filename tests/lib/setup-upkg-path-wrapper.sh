@@ -38,7 +38,8 @@ PATH="${RESTRICTED_BIN:-"%s"}" "%s" "$@"
     basename dirname sort comm cut grep # string commands
     mv cp mkdir touch rm ln chmod cat readlink realpath # fs commands
     sleep flock # concurrency commands
-    shasum git tar gzip xz bzip2 # archive commands
+    shasum git tar # archive commands
+    bzip2 xz lzip lzma lzop gzip compress zstd # tar compressions
   ) optional_commands=(
     wget curl ssh column
   )
