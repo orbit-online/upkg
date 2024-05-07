@@ -23,8 +23,7 @@ upkg_list_referenced_pkgs() {
   local pkgpath=$1 dep_pkgpath
   for dep_pkgpath in $(upkg_resolve_links "$pkgpath/.upkg"); do
     printf "%s\n" "$dep_pkgpath"
-    [[ ! -e "$pkgpath/.upkg/$dep_pkgpath/.upkg" ]] || \
-      upkg_resolve_links "$pkgpath/.upkg/$dep_pkgpath/.upkg"
+    upkg_list_referenced_pkgs "$pkgpath/.upkg/$dep_pkgpath"
   done
 }
 

@@ -1,0 +1,9 @@
+{
+  "name": "dep-1",
+  "dependencies": [
+    {
+      "tar": "dep-2.tar",
+      "sha256": "19a270455443770ee8db2e2f3b1b321bd48e1be756184ad80e6af796eade871e"
+    }
+  ]
+}

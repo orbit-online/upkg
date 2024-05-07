@@ -1,0 +1,2 @@
+upkg: No checksum given for '$BATS_RUN_TMPDIR/package-fixtures/default/dep-1.tar', determining now
+upkg: Added '$BATS_RUN_TMPDIR/package-fixtures/default/dep-1.tar'

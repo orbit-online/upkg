@@ -108,7 +108,9 @@ setup_package_fixture_templates() {
     for template in "$group"/*; do
       if [[ -f $template/upkg.json ]]; then
         sed -i "s#\$BATS_RUN_TMPDIR#$BATS_RUN_TMPDIR#g" "$template/upkg.json"
+        sed -i "s#\$PACKAGE_FIXTURES#$PACKAGE_FIXTURES#g" "$template/upkg.json"
         sed -i "s#\$HTTPD_PKG_FIXTURES_ADDR#$HTTPD_PKG_FIXTURES_ADDR#g" "$template/upkg.json"
+        sed -i "s#\$SSHD_PKG_FIXTURES_ADDR#$SSHD_PKG_FIXTURES_ADDR#g" "$template/upkg.json"
       fi
     done
   done

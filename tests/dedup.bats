@@ -17,3 +17,22 @@ teardown_file() { common_teardown_file; }
   assert_file_executable .upkg/executable
   assert_file_not_executable .upkg/not-executable
 }
+
+# bats test_tags=tar
+@test "deep dependencies work" {
+  local archives=(1 2 3 4 5) i
+  for i in "${archives[@]}"; do
+    create_tar_package "default/dep-$i"
+    ln -s "$PACKAGE_FIXTURES/default/dep-$i.tar" "dep-$i.tar"
+  done
+  run -0 upkg add "$PACKAGE_FIXTURES/default/dep-1.tar"
+  for i in "${archives[@]}"; do
+    rm "dep-$i.tar"
+  done
+  assert_snapshot_output
+  assert_snapshot_path
+}
+
+@test "depending on the same file as an archive and a file does not clash" {
+  :
+}
