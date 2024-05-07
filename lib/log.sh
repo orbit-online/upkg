@@ -32,6 +32,18 @@ warning() {
   fi
 }
 
+# Special function for dry-run. Like fatal but can be silenced
+dry_run_fail() {
+  ! ${QUIET:-false} || return 0
+  local tpl=$1; shift
+  if ! $VERBOSE && [[ -t 2 ]]; then
+    printf -- "\e[2Kupkg: $tpl\n" "$@" >&2
+  else
+    printf -- "upkg: $tpl\n" "$@" >&2
+  fi
+  return 1
+}
+
 fatal() {
   local tpl=$1; shift
   if ! $VERBOSE && [[ -t 2 ]]; then

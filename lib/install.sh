@@ -89,7 +89,7 @@ upkg_install() {
     for cmd in "${new_links[@]}"; do
       [[ -n $cmd ]] || continue # See above
       # Same loop again, this time we are sure none of the new links exist
-      ! $DRY_RUN || fatal "'%s' was not symlinked" "$INSTALL_PREFIX/bin/$cmd"
+      ! $DRY_RUN || dry_run_fail "'%s' was not symlinked" "$INSTALL_PREFIX/bin/$cmd"
       processing "Linking '%s'" "$cmd"
       mkdir -p "$INSTALL_PREFIX/bin"
       ln -sT "../lib/upkg/.upkg/.bin/$cmd" "$INSTALL_PREFIX/bin/$cmd"
@@ -100,7 +100,7 @@ upkg_install() {
     for cmd in "${removed_links[@]}"; do
       [[ -n $cmd ]] || continue # See above
       # Remove all old links
-      ! $DRY_RUN || fatal "'%s' should not be symlinked" "$INSTALL_PREFIX/bin/$cmd"
+      ! $DRY_RUN || dry_run_fail "'%s' should not be symlinked" "$INSTALL_PREFIX/bin/$cmd"
       rm "$INSTALL_PREFIX/bin/$cmd"
     done
   fi
@@ -154,6 +154,7 @@ upkg_install_deps() {
     # Check that no processes failed
     [[ ! -e "$pkgpath/.upkg/.sentinels/$dep_idx.fail" ]] || \
       fatal "An error occurred while installing '%s'" "$(dep_pkgurl "$dep")"
+    [[ ! -e "$pkgpath/.upkg/.sentinels/$dep_idx.dry-run-fail" ]] || return 1 # dry-run install failed
     : $((dep_idx++))
   done
   rm -rf "$pkgpath/.upkg/.sentinels" # Done, remove the lock sentinels
@@ -194,7 +195,12 @@ upkg_install_dep() {
     fi
   fi
   if ! $is_dedup; then
-    ! $DRY_RUN || fatal "'%s' is not installed" "$pkgurl"
+    if $DRY_RUN; then
+      # Don't signal a fatal error to parent shell,
+      trap "" ERR
+      touch "$parent_pkgpath/.upkg/.sentinels/$dep_idx.dry-run-fail"
+      dry_run_fail "'%s' is not installed" "$pkgurl"
+    fi
     # Obtain package
     dedup_name=$(upkg_download "$dep")
     dedup_location=.upkg/.tmp/root/.upkg/.packages/$dedup_name

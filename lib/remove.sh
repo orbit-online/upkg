@@ -22,7 +22,7 @@ upkg_remove() {
       return 0
     fi
   fi
-  ! $DRY_RUN || fatal "'%s' is installed" "$pkgname"
+  ! $DRY_RUN || dry_run_fail "'%s' is installed" "$pkgname"
 
   local upkgjson
   # .upkg might get deleted so we won't be able to copy it over later on, keep it in a var instead
