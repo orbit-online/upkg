@@ -30,5 +30,5 @@ teardown_file() { common_teardown_file; }
 
 @test "local, no dep installed" {
   run -0 upkg list
-  assert_snapshot_output
+  assert_snapshot_output empty
 }

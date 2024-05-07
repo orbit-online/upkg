@@ -102,3 +102,10 @@ teardown_file() { common_teardown_file; }
   assert_snapshot_output download-acme
   assert_snapshot_path shared/acme
 }
+
+# bats test_tags=jq
+@test "fails when jq is not available" {
+  remove_commands jq
+  run -1 upkg list
+  assert_snapshot_output
+}

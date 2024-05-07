@@ -35,7 +35,7 @@ PATH="${RESTRICTED_BIN:-"%s"}" "%s" "$@"
 
   local cmd target required_commands=(
     bash jq
-    basename dirname sort comm cut # string commands
+    basename dirname sort comm cut grep # string commands
     mv cp mkdir touch rm ln chmod cat readlink realpath # fs commands
     sleep flock # concurrency commands
     shasum git tar gzip xz bzip2 # archive commands

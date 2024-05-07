@@ -71,19 +71,19 @@ check_commands() {
     local tar_actual_version tar_expected_version='tar (GNU tar) 1.34'
     tar_actual_version=$(tar --version | head -n1)
     if [[ $tar_actual_version != "$tar_expected_version" ]]; then
-      SKIP_TAR="tar reported version ${tar_actual_version#tar (GNU tar) }. Only ${tar_expected_version#tar (GNU tar) } is supported, use tests/run.sh to run the tests in a container"
+      SKIP_TAR="tar reported version ${tar_actual_version#tar (GNU tar) }. Only ${tar_expected_version#tar (GNU tar) } is supported. Use tests/run.sh to run the tests in a container"
     fi
   else
-    SKIP_TAR='tar is not available, use tests/run.sh to run the tests in a container'
+    SKIP_TAR='tar is not available. Use tests/run.sh to run the tests in a container.'
   fi
   export SKIP_GIT=
-  type git &>/dev/null || SKIP_GIT='git is not available, use tests/run.sh to run the tests in a container'
+  type git &>/dev/null || SKIP_GIT='git is not available. Use tests/run.sh to run the tests in a container.'
   export SKIP_WGET=
-  type wget &>/dev/null || SKIP_WGET='wget is not available, use tests/run.sh to run the tests in a container'
+  type wget &>/dev/null || SKIP_WGET='wget is not available. Use tests/run.sh to run the tests in a container.'
   export SKIP_CURL=
-  type curl &>/dev/null || SKIP_CURL='curl is not available, use tests/run.sh to run the tests in a container'
+  type curl &>/dev/null || SKIP_CURL='curl is not available. Use tests/run.sh to run the tests in a container.'
   export SKIP_LIST=
-  type column &>/dev/null || SKIP_LIST='column is not available, use tests/run.sh to run the tests in a container'
+  type column &>/dev/null || SKIP_LIST='column is not available. Use tests/run.sh to run the tests in a container.'
 }
 
 # Make sure the package-templates have the correct permissions (i.e. git checkout wasn't run with a 002 instead of 022 umask)
@@ -115,7 +115,7 @@ setup_package_fixture_templates() {
 setup_package_fixtures_httpd() {
   export SKIP_HTTPD_PKG_FIXTURES
   if [[ -z $PYTHON ]]; then
-    SKIP_HTTPD_PKG_FIXTURES='python is not available, use tests/run.sh to run the tests in a container'
+    SKIP_HTTPD_PKG_FIXTURES='python is not available. Use tests/run.sh to run the tests in a container.'
     return 0
   fi
   export HTTPD_PKG_FIXTURES_LOG=$BATS_RUN_TMPDIR/httpd.log
@@ -145,17 +145,19 @@ setup_package_fixtures_httpd() {
 setup_package_fixtures_sshd() {
   export SKIP_SSHD_PKG_FIXTURES
   if [[ -z $PYTHON ]]; then
-    SKIP_SSHD_PKG_FIXTURES='python is not available (needed to find a free port for sshd), use tests/run.sh to run the tests in a container'
+    SKIP_SSHD_PKG_FIXTURES='python is not available (needed to find a free port for sshd). Use tests/run.sh to run the tests in a container.'
     return 0
   fi
   local sshd
   sshd=$(which sshd 2>/dev/null)
   if [[ -n $ssh ]]; then
-    SKIP_SSHD_PKG_FIXTURES='sshd is not available, use tests/run.sh to run the tests in a container'
+    SKIP_SSHD_PKG_FIXTURES='sshd is not available. Use tests/run.sh to run the tests in a container.'
     return 0
   fi
   if [[ -z $TMPDIR || $(stat -c %U "$TMPDIR") != "$USER" || ! $(stat -c %a "$TMPDIR") =~ ^7[0-7][0-7]$ ]]; then
-    SKIP_SSHD_PKG_FIXTURES="\$TMPDIR must be set to a user owned directory with normal permissions for SSH tests to pass, use tests/run.sh to run the tests in a container or set TMPDIR=$BATS_TEST_DIRNAME/bats-tmp"
+    local tmpdir=$BATS_TEST_DIRNAME/bats-tmp
+    [[ $BATS_TEST_DIRNAME/bats-tmp != "$PWD"/* ]] || tmpdir=\$PWD/${BATS_TEST_DIRNAME#"$PWD/"}/bats-tmp
+    SKIP_SSHD_PKG_FIXTURES="For SSH tests to pass \$TMPDIR must be set to a user owned directory with normal permissions. Set TMPDIR=$tmpdir or use tests/run.sh to run the tests in a container"
     return 0
   fi
   local sshd_root="$BATS_RUN_TMPDIR/ssh/root" sshd_port

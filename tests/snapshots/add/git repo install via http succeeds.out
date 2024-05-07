@@ -1,3 +1,2 @@
-upkg: Cloning $HTTPD_PKG_FIXTURES_ADDR/default/acme.git
 upkg: Linking 'acme.bin'
 upkg: Added '$HTTPD_PKG_FIXTURES_ADDR/default/acme.git'

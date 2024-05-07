@@ -1,3 +1,2 @@
-upkg: Cloning package-fixtures:$BATS_RUN_TMPDIR/package-fixtures/default/acme.git
 upkg: Linking 'acme.bin'
 upkg: Added 'package-fixtures:$BATS_RUN_TMPDIR/package-fixtures/default/acme.git'

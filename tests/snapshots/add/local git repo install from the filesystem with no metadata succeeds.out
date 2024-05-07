@@ -1,2 +1,1 @@
-upkg: Cloning $BATS_RUN_TMPDIR/package-fixtures/default/acme-no-metadata.git
 upkg: Added '$BATS_RUN_TMPDIR/package-fixtures/default/acme-no-metadata.git'
