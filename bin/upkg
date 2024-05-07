@@ -18,10 +18,12 @@ PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 
 # shellcheck disable=SC2154
 upkg() {
-  [[ ! $BASH_VERSION =~ ^[0-3]|^4\.[0-3] ]] || fatal "upkg requires bash >= v4.4"
-  # Make sure we have jq available, git and tar are optional and we let them fail once we get there
-  type "jq" >/dev/null 2>&1 || fatal "command not found: 'jq'"
+  if [[ $BASH_VERSION =~ ^[0-3]|^4\.[0-3] ]]; then
+    printf "upkg requires bash >= v4.4\n" >&2
+    return 1
+  fi
   export GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND=${GIT_SSH_COMMAND:-"ssh -oBatchMode=yes"}
+
   DOC="μpkg - A minimalist package manager
 Usage:
   upkg install [-nqv]
@@ -112,6 +114,9 @@ for ((;docopt_i>0;docopt_i--)); do declare -p "${prefix}__dry_run" \
   source "$PKGROOT/lib/install.sh"
   source "$PKGROOT/lib/remove.sh"
   source "$PKGROOT/lib/add.sh"
+
+  # Make sure we have jq available, git and tar are optional and we let them fail once we get there
+  type "jq" >/dev/null 2>&1 || fatal "command not found: 'jq'"
 
   if [[ -z $INSTALL_PREFIX ]]; then # Allow the user to override the path prefix when using the global (-g) switch
     # Otherwise switch based on the UID
