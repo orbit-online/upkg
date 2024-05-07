@@ -11,7 +11,7 @@ teardown_file() { common_teardown_file; }
 
 # bats test_tags=tar
 @test "refuses to install from packages with existing .upkg/ in root" {
-  local name=negative/with-existing-upkg
+  local name=invalid/with-existing-upkg
   create_tar_package $name
   run -1 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_output
@@ -61,7 +61,7 @@ teardown_file() { common_teardown_file; }
 
 # bats test_tags=http,tar,wget
 @test "failing dependency causes nothing to be installed" {
-  local name=negative/failing-dependency
+  local name=invalid/failing-dependency
   create_tar_package $name
   run -1 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_output "" "${output//Server: SimpleHTTP*}" # server response has version and date in the output, which changes, so remove that part
