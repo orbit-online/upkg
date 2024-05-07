@@ -48,10 +48,10 @@ teardown_file() { common_teardown_file; }
   assert_snapshot_path
 }
 
-# bats test_tags=tar,bzip2
+# bats test_tags=tar,bz2
 @test "does not fail when .tar.bzip2 extension missing" {
   local name=default/acme
-  create_tar_package $name $name.nottar .bzip2
+  create_tar_package $name $name.nottar .bz2
   run -0 upkg add -t tar "$PACKAGE_FIXTURES/$name.nottar"
   assert_snapshot_output
   assert_snapshot_path
