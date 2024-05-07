@@ -77,7 +77,6 @@ upkg_download() {
     fi
 
   elif [[ $pkgtype = git ]]; then
-    processing 'Cloning %s' "$pkgurl"
     local out
     out=$(git clone -q "${pkgurl%%'#'*}" "$pkgpath" 2>&1) || \
       fatal "Unable to clone '%s'. Error:\n%s" "$pkgurl" "$out"
