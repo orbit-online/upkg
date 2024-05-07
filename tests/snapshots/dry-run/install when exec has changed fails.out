@@ -1,0 +1,2 @@
+upkg: '$BATS_RUN_TMPDIR/package-fixtures/default/executable' is not installed
+upkg: An error occurred while installing '$BATS_RUN_TMPDIR/package-fixtures/default/executable'

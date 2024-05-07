@@ -71,9 +71,15 @@ upkg_download() {
     fi
 
     sha256 "$pkgpath" "$checksum"
-    if jq -re 'if has("exec") then .exec else true end' <<<"$dep" >/dev/null; then
+    if dep_is_exec "$dep"; then
       # file should be executable
       chmod +x "$pkgpath"
+      # Suffix the name with +x or -x so we don't end up clashing with a dedup'ed dependency where "exec" is different
+      mv "$pkgpath" "$pkgpath+x"
+      pkgpath=$pkgpath+x
+    else
+      mv "$pkgpath" "$pkgpath-x"
+      pkgpath=$pkgpath-x
     fi
 
   elif [[ $pkgtype = git ]]; then

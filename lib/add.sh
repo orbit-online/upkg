@@ -45,6 +45,4 @@ upkg_add() {
   jq --argjson dep "$dep" '.dependencies+=[$dep]' <<<"$upkgjson" >.upkg/.tmp/root/upkg.json
   upkg_install
   cp .upkg/.tmp/root/upkg.json upkg.json
-
-  processing "Added '%s'" "$pkgurl"
 }

@@ -17,6 +17,11 @@ processing() {
   fi
 }
 
+completed() {
+  processing "$@"
+  trailing_newline
+}
+
 warning() {
   ! ${QUIET:-false} || return 0
   local tpl=$1; shift

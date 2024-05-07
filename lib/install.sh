@@ -54,12 +54,28 @@ upkg_install() {
       rm -rf .upkg
     fi
   else
-    # Fail if dependencies have been removed.
-    local dep_pkgpath unreferenced_pkgs=()
+    # Fail if dependencies have been added or removed.
+    local dep_pkgpath new_pkgs=() unreferenced_pkgs=()
+    # installed pkgs - current pkgs = new pkgs
     # current pkgs - installed pkgs = unreferenced pkgs
     readarray -t -d $'\n' unreferenced_pkgs < <(comm -23 <(upkg_resolve_links .upkg | sort) <(upkg_resolve_links .upkg/.tmp/root/.upkg | sort))
     for dep_pkgpath in "${unreferenced_pkgs[@]}"; do
       fatal "'%s' should not be installed" "$(basename "$dep_pkgpath")"
+    done
+    readarray -t -d $'\n' new_pkgs < <(comm -13 <(upkg_resolve_links .upkg | sort) <(upkg_resolve_links .upkg/.tmp/root/.upkg | sort))
+    for dep_pkgpath in "${new_pkgs[@]}"; do
+      fatal "'%s' is not installed" "$(basename "$dep_pkgpath")"
+    done
+    local bin_dest new_bins=() unreferenced_bins=()
+    # installed bins - current bins = new bins
+    # current bins - installed bins = unreferenced bins
+    readarray -t -d $'\n' unreferenced_bins < <(comm -23 <(upkg_resolve_links .upkg/.bin | sort) <(upkg_resolve_links .upkg/.tmp/root/.upkg/.bin | sort))
+    for bin_dest in "${unreferenced_bins[@]}"; do
+      fatal "'%s' is not correctly linked from .upkg/.bin" "$(basename "$bin_dest")"
+    done
+    readarray -t -d $'\n' new_bins < <(comm -13 <(upkg_resolve_links .upkg/.bin | sort) <(upkg_resolve_links .upkg/.tmp/root/.upkg/.bin | sort))
+    for bin_dest in "${new_bins[@]}"; do
+      fatal "'%s' is not linked from .upkg/.bin" "$(basename "$bin_dest")"
     done
   fi
 
@@ -159,13 +175,25 @@ upkg_install_dep() {
   pkgurl=$(dep_pkgurl "$dep")
   checksum=$(dep_checksum "$dep")
 
-  local dedup_name is_dedup=false dedup_location # The actual current physical location of the deduplicated package
-  if [[ -e ".upkg/.packages" ]] && dedup_location=$(compgen -G ".upkg/.packages/*@$checksum"); then
-    # Package already exists in the destination, all we need is the dedup_path so we can symlink it
-    $DRY_RUN || processing "Skipping '%s'" "$pkgurl"
-    dedup_name=$(basename "$dedup_location")
-    is_dedup=true
-  else
+  local dedup_name dedup_glob is_dedup=false dedup_location # The actual current physical location of the deduplicated package
+  if [[ -e ".upkg/.packages" ]]; then
+    if [[ $(dep_pkgtype "$dep") = file ]]; then
+      if dep_is_exec "$dep"; then
+        dedup_glob=".upkg/.packages/*+x@$checksum"
+      else
+        dedup_glob=".upkg/.packages/*-x@$checksum"
+      fi
+    else
+      dedup_glob=".upkg/.packages/*@$checksum"
+    fi
+    if dedup_location=$(compgen -G "$dedup_glob"); then
+      # Package already exists in the destination, all we need is the dedup_path so we can symlink it
+      $DRY_RUN || processing "Skipping '%s'" "$pkgurl"
+      dedup_name=$(basename "$dedup_location")
+      is_dedup=true
+    fi
+  fi
+  if ! $is_dedup; then
     ! $DRY_RUN || fatal "'%s' is not installed" "$pkgurl"
     # Obtain package
     dedup_name=$(upkg_download "$dep")

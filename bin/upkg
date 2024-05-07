@@ -28,7 +28,7 @@ upkg() {
 Usage:
   upkg install [-nqv]
   upkg add [-qvgXB -b PATH... -p PKGNAME -t PKGTYPE] (URL|PATH) [SHA]
-  upkg remove [-qvg] PKGNAME
+  upkg remove [-qnvg] PKGNAME
   upkg list [-qvg] [-- COLUMNOPTS...]
 
 Options:
@@ -47,8 +47,8 @@ Options:
 # docopt parser below, refresh this parser with `docopt.sh upkg`
 # shellcheck disable=2016,1090,1091,2034,2154
 docopt() { source "$PKGROOT/.upkg/docopt-lib.sh" '1.0.0' || { ret=$?
-printf -- "exit %d\n" "$ret"; exit "$ret"; }; set -e; trimmed_doc=${DOC:0:833}
-usage=${DOC:36:165}; digest=8e850; shorts=(-n -q -v -g -X -B -b -p -t)
+printf -- "exit %d\n" "$ret"; exit "$ret"; }; set -e; trimmed_doc=${DOC:0:834}
+usage=${DOC:36:166}; digest=32dd9; shorts=(-n -q -v -g -X -B -b -p -t)
 longs=(--dry-run --quiet --verbose --global --no-exec --no-bin --bin --pkgname --pkgtype)
 argcounts=(0 0 0 0 0 0 1 1 1); node_0(){ switch __dry_run 0; }; node_1(){
 switch __quiet 1; }; node_2(){ switch __verbose 2; }; node_3(){
@@ -62,14 +62,14 @@ node_17(){ _command list; }; node_18(){ _command __ --; }; node_19(){
 optional 0 1 2; }; node_20(){ required 14 19; }; node_21(){ oneormore 6; }
 node_22(){ optional 1 2 3 4 5 21 7 8; }; node_23(){ either 9 10; }; node_24(){
 required 23; }; node_25(){ optional 11; }; node_26(){ required 15 22 24 25; }
-node_27(){ optional 1 2 3; }; node_28(){ required 16 27 12; }; node_29(){
-oneormore 13; }; node_30(){ optional 18 29; }; node_31(){ required 17 27 30; }
-node_32(){ either 20 26 28 31; }; node_33(){ required 32; }
-cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
-printf "%s\n" "${DOC:36:165}" >&2; exit 1; }'; unset var___dry_run var___quiet \
+node_27(){ optional 1 0 2 3; }; node_28(){ required 16 27 12; }; node_29(){
+optional 1 2 3; }; node_30(){ oneormore 13; }; node_31(){ optional 18 30; }
+node_32(){ required 17 29 31; }; node_33(){ either 20 26 28 32; }; node_34(){
+required 33; }; cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2
+printf "%s\n" "${DOC:36:166}" >&2; exit 1; }'; unset var___dry_run var___quiet \
 var___verbose var___global var___no_exec var___no_bin var___bin var___pkgname \
 var___pkgtype var_URL var_PATH var_SHA var_PKGNAME var_COLUMNOPTS var_install \
-var_add var_remove var_list var___; parse 33 "$@"
+var_add var_remove var_list var___; parse 34 "$@"
 local prefix=${DOCOPT_PREFIX:-''}; unset "${prefix}__dry_run" \
 "${prefix}__quiet" "${prefix}__verbose" "${prefix}__global" \
 "${prefix}__no_exec" "${prefix}__no_bin" "${prefix}__bin" "${prefix}__pkgname" \
@@ -142,9 +142,8 @@ for ((;docopt_i>0;docopt_i--)); do declare -p "${prefix}__dry_run" \
     [[ -e "$PWD/upkg.json" ]] || fatal "No upkg.json found in '%s'" "$PWD"
     ln -sT "$PWD/upkg.json" ".upkg/.tmp/root/upkg.json"
     upkg_install "$PWD"
-    if $DRY_RUN; then processing 'All dependencies are up-to-date'
-    else processing 'Installed all dependencies'; fi
-    trailing_newline
+    if $DRY_RUN; then completed 'All dependencies are up-to-date'
+    else completed 'Installed all dependencies'; fi
 
   elif $_add; then
     if $___global; then
@@ -169,16 +168,45 @@ for ((;docopt_i>0;docopt_i--)); do declare -p "${prefix}__dry_run" \
 
     upkg_mktemp
     upkg_add "$pkgtype" "$_URL" "$_SHA" "$(clean_pkgname "$___pkgname")" "$___no_exec" "$___no_bin" "${___bin[@]}"
-    trailing_newline
+    completed "Added '%s'" "$_URL"
 
   elif $_remove; then
     if $___global; then
-      [[ -e "$INSTALL_PREFIX/lib/upkg" ]] || return 0
+      if ! [[ -e "$INSTALL_PREFIX/lib/upkg" ]]; then
+        completed "'%s' is not installed" "$_PKGNAME"
+        return 0
+      fi
       cd "$INSTALL_PREFIX/lib/upkg"
     fi
+    if [[ ! -e upkg.json && ! -e .upkg ]]; then
+      completed "'%s' is not installed" "$_PKGNAME"
+      return 0
+    fi
+    # dry-run an install to check if upkg.json is up-to-date
+    local ret=0
+    set +e; (
+      set -e
+      # shellcheck disable=SC2030
+      DRY_RUN=true
+      upkg_mktemp
+      ln -sT "$PWD/upkg.json" ".upkg/.tmp/root/upkg.json"
+      upkg_install #2>/dev/null
+    ); ret=$?; set -e
+
+    local pkgname
+    pkgname=$(clean_pkgname "$_PKGNAME")
+
+    # shellcheck disable=SC2031
+    if [[ $ret -eq 0 ]]; then
+      if [[ ! -e .upkg/$pkgname ]]; then
+        completed "'%s' is not installed" "$_PKGNAME"
+        return 0
+      fi
+    else
+      fatal "Unable to remove '%s'. upkg.json is not in sync with .upkg/" "$_PKGNAME"
+    fi
     upkg_mktemp
-    upkg_remove "$(clean_pkgname "$_PKGNAME")"
-    trailing_newline
+    upkg_remove "$pkgname"
 
   elif $_list; then
     if $___global; then
