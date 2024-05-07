@@ -9,7 +9,6 @@
       "$ref": "#/definitions/name"
     },
     "bin": { "$ref": "#/definitions/bin" },
-    "update": { "$ref": "#/definitions/update" },
     "version": { "type": "string" },
     "dependencies": {
       "type": "array",
@@ -22,11 +21,6 @@
     "name": {
       "type": "string",
       "pattern": "^[^.][^/\\n]*$"
-    },
-    "update": {
-      "description": "Path (relative to this upkg.json) to an executable that returns the path or URL to a newer version of this package.\nDefault: None",
-      "type": "string",
-      "pattern": "^[^\\n\\0/]+[^\\n\\0]*$"
     },
     "relpath": {
       "description": "A relative path without newlines or nulbytes",
@@ -72,8 +66,7 @@
           "description": "A name override for the extracted archive directory.\nThis will become the directory link name in .upkg/ of the parent package.\nA starting period (.), slashes (/), and newlines (\\n) will silently be replaced with underscore (_).\n\nDefault: The basename of the path or URL",
           "$ref": "#/definitions/name"
         },
-        "bin": { "$ref": "#/definitions/bin" },
-        "update": { "$ref": "#/definitions/update" }
+        "bin": { "$ref": "#/definitions/bin" }
       }
     },
     "file": {
@@ -96,8 +89,7 @@
           "description": "Set to [] to prevent the file from being linked to from .upkg/.bin (and /usr/local/bin or $HOME/.local/bin when installing globally)\nDefault: None",
           "const": [],
           "type": "array"
-        },
-        "update": { "$ref": "#/definitions/update" }
+        }
       },
       "required": ["file", "sha256"]
     },
@@ -121,8 +113,7 @@
           "description": "false implies bin=[]. Whether the file should be made executable (chmod +x).\nDefault: true",
           "const": false,
           "type": "boolean"
-        },
-        "update": { "$ref": "#/definitions/update" }
+        }
       },
       "required": ["file", "sha256", "exec"]
     },
@@ -142,8 +133,7 @@
         "sha1": {
           "description": "The SHA-1 git commit hash to checkout\nRequired",
           "$ref": "#/definitions/sha1"
-        },
-        "update": { "$ref": "#/definitions/update" }
+        }
       }
     }
   }
