@@ -39,9 +39,9 @@ PATH="${RESTRICTED_BIN:-"%s"}" "%s" "$@"
     mv cp mkdir touch rm ln chmod cat readlink realpath # fs commands
     sleep flock # concurrency commands
     shasum git tar # archive commands
-    bzip2 xz lzip lzma lzop gzip compress zstd # tar compressions
   ) optional_commands=(
     wget curl ssh column
+    bzip2 xz lzip lzma lzop gzip compress zstd # tar compressions
   )
   for cmd in "${required_commands[@]}"; do
     target=$(which "$cmd") || { printf "Unable to find required command '%s'" "$cmd" >&2; return 1; }
