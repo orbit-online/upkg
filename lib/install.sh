@@ -31,47 +31,55 @@ upkg_install() {
     done
   fi
 
+  local dedup_dir dedup_link
   # Copy new packages and all symlinks from .upkg/.tmp
   if ! $DRY_RUN; then
     # .bin/ and all pkgname symlinks are fully rebuilt during install, so we just remove it and copy it over
     rm -rf .upkg/.bin
     rm -f .upkg/* # "*" works here because we don't have nullglob on and dotglob off, meaning don't match .packages/ and .tmp/
-    if [[ -e .upkg/.tmp/root/.upkg ]]; then
-      if [[ -e .upkg/.tmp/root/.upkg/.packages ]]; then
-        mkdir -p .upkg/.packages
-        mv -nt .upkg/.packages .upkg/.tmp/root/.upkg/.packages/*
-      fi
-      [[ ! -e .upkg/.tmp/root/.upkg/.bin ]] || mv -nt .upkg/ .upkg/.tmp/root/.upkg/.bin
-      mv -nt .upkg .upkg/.tmp/root/.upkg/*
-      # Remove all unreferenced packages
-      local dep_pkgpath unreferenced_pkgs=()
-      readarray -t -d $'\n' unreferenced_pkgs < <(comm -23 <(cd .upkg; for dedup_path in .packages/*; do echo "$dedup_path"; done | sort) <(upkg_list_referenced_pkgs . | sort))
-      for dep_pkgpath in "${unreferenced_pkgs[@]}"; do
-        rm -rf ".upkg/$dep_pkgpath"
+    for dedup_dir in .upkg/.packages/*; do
+      # Remove all dedup packages that are no longer referenced.
+      # .upkg/.tmp/root/.upkg/.packages contains all packages of the entire subtree
+      [[ -e .upkg/.tmp/root/.upkg/.packages/$(basename "$dedup_dir") ]] || rm -rf "$dedup_dir"
+    done
+    if [[ -e .upkg/.tmp/root/.upkg ]]; then # .upkg in the root is only created when something needs installing
+      mkdir -p .upkg/.packages
+      local new_packages=false
+      for dedup_link in .upkg/.tmp/root/.upkg/.packages/*; do
+        # Remove all deduplication symlinks in the temporary package root
+        if [[ -L $dedup_link ]]; then
+          rm "$dedup_link"
+        else
+          # Not a symlink to already dedup'ed packages, so new packages were downloaded
+          new_packages=true
+        fi
       done
+      # Cleanup complete, move all:
+      # * physical packages (unless nothing new was downloaded)
+      ! $new_packages || mv -nt .upkg/.packages .upkg/.tmp/root/.upkg/.packages/*
+      # * binary links
+      [[ ! -e .upkg/.tmp/root/.upkg/.bin ]] || mv -nt .upkg/ .upkg/.tmp/root/.upkg/.bin
+      # * direct package dependencies
+      mv -nt .upkg .upkg/.tmp/root/.upkg/*
     else
       # The install resulted in all deps being removed. Don't keep the .upkg/ dir around
       rm -rf .upkg
     fi
+
   else
-    # Fail if dependencies have been added or removed.
-    local dep_pkgpath new_pkgs=() unreferenced_pkgs=()
-    # installed pkgs - current pkgs = new pkgs
-    # current pkgs - installed pkgs = unreferenced pkgs
-    readarray -t -d $'\n' unreferenced_pkgs < <(comm -23 <(upkg_resolve_links .upkg | sort) <(upkg_resolve_links .upkg/.tmp/root/.upkg | sort))
-    for dep_pkgpath in "${unreferenced_pkgs[@]}"; do
-      fatal "'%s' should not be installed" "$(basename "$dep_pkgpath")"
+    # Check if there are packages in .upkg/.packages/ that are not linked to from the temporary root
+    # This means they are no longer depended upon
+    # We don't need to check if there are new dependencies, upkg_install_fails during dry-run if a package is not already dedup'ed
+    for dedup_dir in .upkg/.packages/*; do
+      [[ -e .upkg/.tmp/root/.upkg/.packages/$(basename "$dedup_dir") ]] || fatal "'%s' should not be installed" "$(basename "$dedup_dir")"
     done
-    readarray -t -d $'\n' new_pkgs < <(comm -13 <(upkg_resolve_links .upkg | sort) <(upkg_resolve_links .upkg/.tmp/root/.upkg | sort))
-    for dep_pkgpath in "${new_pkgs[@]}"; do
-      fatal "'%s' is not installed" "$(basename "$dep_pkgpath")"
-    done
+
     local bin_dest new_bins=() unreferenced_bins=()
     # installed bins - current bins = new bins
     # current bins - installed bins = unreferenced bins
     readarray -t -d $'\n' unreferenced_bins < <(comm -23 <(upkg_resolve_links .upkg/.bin | sort) <(upkg_resolve_links .upkg/.tmp/root/.upkg/.bin | sort))
     for bin_dest in "${unreferenced_bins[@]}"; do
-      fatal "'%s' is not correctly linked from .upkg/.bin" "$(basename "$bin_dest")"
+      fatal "'%s' is not the linked to right package from .upkg/.bin" "$(basename "$bin_dest")"
     done
     readarray -t -d $'\n' new_bins < <(comm -13 <(upkg_resolve_links .upkg/.bin | sort) <(upkg_resolve_links .upkg/.tmp/root/.upkg/.bin | sort))
     for bin_dest in "${new_bins[@]}"; do
@@ -115,10 +123,6 @@ upkg_install_deps() {
   readarray -t -d $'\n' deps < <(jq -rc '(.dependencies // [])[]' "$pkgpath/upkg.json")
   [[ ${#deps[@]} -gt 0 ]] || return 0 # No deps -> nothing to do
   mkdir "$pkgpath/.upkg" 2>/dev/null || return 0 # .upkg exists -> another process is already installing the deps
-  # Let upkg_download create the real dedup directory, indicating something was actually fetched
-  if [[ $pkgpath != .upkg/.tmp/root ]]; then
-    ln -sT ../../ "$pkgpath/.upkg/.packages" # Dependency, link to the parent dedup directory
-  fi
 
   # Create sentinels dir where subprocesses create a file which indicates that
   # the shared lock on upkg.json has been acquired.
@@ -177,9 +181,8 @@ upkg_install_dep() {
   checksum=$(dep_checksum "$dep")
   pkgtype=$(dep_pkgtype "$dep")
 
-  local dedup_name dedup_glob is_dedup=false dedup_location # The actual current physical location of the deduplicated package
-  if [[ -e ".upkg/.packages" ]]; then
-
+  local dedup_name dedup_glob is_dedup=false
+  if [[ -e .upkg/.packages ]]; then
     if [[ $pkgtype = file ]]; then
       if dep_is_exec "$dep"; then
         dedup_glob=".upkg/.packages/*+x@$checksum"
@@ -191,13 +194,20 @@ upkg_install_dep() {
     else
       dedup_glob=".upkg/.packages/*.git@$checksum"
     fi
-    if dedup_location=$(compgen -G "$dedup_glob"); then
-      # Package already exists in the destination, all we need is the dedup_path so we can symlink it
+
+    if dedup_name=$(compgen -G "$dedup_glob"); then
+      dedup_name=$(basename "$dedup_name")
+      # Package already exists in the destination, symlink it
       $DRY_RUN || verbose "Skipping download of '%s'" "$pkgurl"
-      dedup_name=$(basename "$dedup_location")
       is_dedup=true
+
+      mkdir -p ".upkg/.tmp/root/.upkg/.packages"
+      # Place a symlink to the proper physical location of the dedup'ed package in the root package
+      # If this fails, some other install process already linked it. Also, I counted the ../'es, they're all there, don't worry
+      ln -sT "../../../../.packages/$dedup_name" ".upkg/.tmp/root/.upkg/.packages/$dedup_name" 2>/dev/null || true
     fi
   fi
+
   if ! $is_dedup; then
     if $DRY_RUN; then
       # Don't signal a fatal error to parent shell,
@@ -206,11 +216,11 @@ upkg_install_dep() {
       dry_run_fail "'%s' is not installed" "$pkgurl"
     fi
     # Obtain package
+    # No need to link here like we did when we dedup'ed. upkg_download() places the physical package in the root package
     dedup_name=$(upkg_download "$dep")
-    dedup_location=.upkg/.tmp/root/.upkg/.packages/$dedup_name
   fi
 
-  local dedup_pkgname pkgname
+  local dedup_path=".upkg/.tmp/root/.upkg/.packages/$dedup_name" dedup_pkgname pkgname
   dedup_pkgname=${dedup_name%@*}
 
   if ! pkgname="$(jq -re '.name // empty' <<<"$dep")"; then
@@ -224,66 +234,78 @@ upkg_install_dep() {
   fi
   pkgname=$(clean_pkgname "$pkgname")
 
-  local dedup_path=.packages/$dedup_name # The relative path to the deduplicated package from .upkg/
+  local packages_path
+  if [[ $pkgpath = .upkg/.tmp/root ]]; then
+    # The root package has .packages placed as a sibling to the package aliases
+    packages_path=.packages
+  else
+    # All packages are physically placed in .upkg/.packages of the root pkg, so this symlink will resolve
+    packages_path=../..
+  fi
+
   # Atomic operation, if this fails there is a duplicate
-  if ! ln -sT "$dedup_path" "$parent_pkgpath/.upkg/$pkgname" 2>/dev/null; then
+  if ! ln -sT "$packages_path/$dedup_name" "$parent_pkgpath/.upkg/$pkgname" 2>/dev/null; then
     local otherpkg_dedup_pkgname
     otherpkg_dedup_pkgname=$(basename "$(readlink "$parent_pkgpath/.upkg/$pkgname")")
     otherpkg_dedup_pkgname=${otherpkg_dedup_pkgname%@*}
     fatal "conflict: There is more than one package with the name '%s' ('%s' and '%s')" "$pkgname" "$dedup_pkgname" "$otherpkg_dedup_pkgname"
   fi
 
-  if [[ -f $dedup_location && -x $dedup_location ]]; then
+  if [[ -f $dedup_path && -x $dedup_path ]]; then
     # pkgurl is an executable file (and has been chmod'ed and validated as such in upkg_download), symlink from bin
-    upkg_link_cmd "../$dedup_path" "$parent_pkgpath/.upkg/.bin/$pkgname"
+    upkg_link_cmd "../$packages_path/$dedup_name" "$parent_pkgpath/.upkg/.bin/$pkgname"
 
   else
+    # All dependencies of dependencies are locked with checksums, so during a dry-run if we haven't failed already, we won't if we go deeper either
+    if ! $DRY_RUN && ! $is_dedup; then
+      # Recursively install deps of this package unless it is already dedup'ed
+      # Using the pkgname path instead of the dedup path allows us to create dependency tree without checksums
+      upkg_install_deps "$parent_pkgpath/.upkg/$pkgname"
+    fi
+
     local binpath binpaths=() binpaths_is_default=true
     # Check if there is a bin property in either the dep or in the upkg.json of the package itself
     if jq -re 'has("bin")' <<<"$dep" >/dev/null; then
       readarray -t -d $'\n' binpaths < <(jq -r '.bin[]' <<<"$dep")
       binpaths_is_default=false
-    elif [[ -e $dedup_location/upkg.json ]] && jq -re 'has("bin")' "$dedup_location/upkg.json" >/dev/null; then
-      readarray -t -d $'\n' binpaths < <(jq -r '.bin[]' "$dedup_location/upkg.json")
+    elif [[ -e $dedup_path/upkg.json ]] && jq -re 'has("bin")' "$dedup_path/upkg.json" >/dev/null; then
+      readarray -t -d $'\n' binpaths < <(jq -r '.bin[]' "$dedup_path/upkg.json")
       binpaths_is_default=false
     else
       binpaths=(bin)
     fi
-
     for binpath in "${binpaths[@]}"; do
-      if [[ ! -e "$dedup_location/$binpath" ]]; then
+
+      if [[ ! -e $dedup_path/$binpath ]]; then
         $binpaths_is_default || warning "bin path '%s' in the package '%s' does not exist, ignoring" "$binpath" "$pkgurl"
         continue
       fi
-      if [[ ! -x "$dedup_location/$binpath" ]]; then
+      if [[ ! -x $dedup_path/$binpath ]]; then
         # directories are executable so this works for both files & dirs
         $binpaths_is_default || warning "bin path '%s' in the package '%s' is not executable, ignoring" "$binpath" "$pkgurl"
         continue
       fi
-      local abs_binpath
-      abs_binpath=$(realpath "$dedup_location/$binpath")
-      if [[ $abs_binpath != "$(realpath "$dedup_location")"/* ]]; then
+
+      local resolved_binpath
+      resolved_binpath=$(realpath "$dedup_path/$binpath")
+
+      if [[ $resolved_binpath != "$(realpath "$PWD/.upkg")"/* ]]; then
         warning "bin path '%s' must be located in the package '%s', ignoring" "$binpath" "$pkgurl"
         continue
       fi
 
-      if [[ -f $dedup_location/$binpath ]]; then
+      if [[ -f $dedup_path/$binpath ]]; then
         command=$(basename "$binpath")
-        upkg_link_cmd "../$dedup_path/$binpath" "$parent_pkgpath/.upkg/.bin/$command"
+        upkg_link_cmd "../$packages_path/$dedup_name/$binpath" "$parent_pkgpath/.upkg/.bin/$command"
       else
-        for command in "$dedup_location/${binpath%'/'}"/*; do
+        for command in "$dedup_path/${binpath%'/'}"/*; do
           [[ -f "$command" && -x "$command" ]] || continue
           command=$(basename "$command")
-          upkg_link_cmd "../$dedup_path/${binpath%'/'}/$command" "$parent_pkgpath/.upkg/.bin/$command"
+          upkg_link_cmd "../$packages_path/$dedup_name/${binpath%'/'}/$command" "$parent_pkgpath/.upkg/.bin/$command"
         done
       fi
     done
   fi
-
-  ! $DRY_RUN || return 0 # All dependencies of dependencies are locked with checksums, so if we haven't failed already, we won't do if we go deeper
-  # Recursively install deps of this package unless it is already dedup'ed
-  # Using the pkgname path instead of the dedup path allows us to create dependency tree without checksums
-  $is_dedup || upkg_install_deps "$parent_pkgpath/.upkg/$pkgname"
 }
 
 upkg_link_cmd() {

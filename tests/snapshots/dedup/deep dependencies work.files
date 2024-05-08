@@ -3,23 +3,19 @@
 │   ├── [drwxr-xr-x]  .packages
 │   │   ├── [drwxr-xr-x]  dep-1.tar@51511148e1748167fbb0e4d5f0d46f8b45d06fe6cbb22d314e72d97cdbb2c4db
 │   │   │   ├── [drwxr-xr-x]  .upkg
-│   │   │   │   ├── [lrwxrwxrwx]  .packages -> ../../
-│   │   │   │   └── [lrwxrwxrwx]  dep-2 -> .packages/dep-2.tar@19a270455443770ee8db2e2f3b1b321bd48e1be756184ad80e6af796eade871e
+│   │   │   │   └── [lrwxrwxrwx]  dep-2 -> ../../dep-2.tar@19a270455443770ee8db2e2f3b1b321bd48e1be756184ad80e6af796eade871e
 │   │   │   └── [-rw-r--r--]  upkg.json
 │   │   ├── [drwxr-xr-x]  dep-2.tar@19a270455443770ee8db2e2f3b1b321bd48e1be756184ad80e6af796eade871e
 │   │   │   ├── [drwxr-xr-x]  .upkg
-│   │   │   │   ├── [lrwxrwxrwx]  .packages -> ../../
-│   │   │   │   └── [lrwxrwxrwx]  dep-3 -> .packages/dep-3.tar@43ef7ec15c6717ee46331599a33d791c7e6b5448eedcfd2b1391dca26a86bdf4
+│   │   │   │   └── [lrwxrwxrwx]  dep-3 -> ../../dep-3.tar@43ef7ec15c6717ee46331599a33d791c7e6b5448eedcfd2b1391dca26a86bdf4
 │   │   │   └── [-rw-r--r--]  upkg.json
 │   │   ├── [drwxr-xr-x]  dep-3.tar@43ef7ec15c6717ee46331599a33d791c7e6b5448eedcfd2b1391dca26a86bdf4
 │   │   │   ├── [drwxr-xr-x]  .upkg
-│   │   │   │   ├── [lrwxrwxrwx]  .packages -> ../../
-│   │   │   │   └── [lrwxrwxrwx]  dep-4 -> .packages/dep-4.tar@e59be1b9a797d85bc901502db1a4b9f7b194f17972c7d21ae1206808f32f33db
+│   │   │   │   └── [lrwxrwxrwx]  dep-4 -> ../../dep-4.tar@e59be1b9a797d85bc901502db1a4b9f7b194f17972c7d21ae1206808f32f33db
 │   │   │   └── [-rw-r--r--]  upkg.json
 │   │   ├── [drwxr-xr-x]  dep-4.tar@e59be1b9a797d85bc901502db1a4b9f7b194f17972c7d21ae1206808f32f33db
 │   │   │   ├── [drwxr-xr-x]  .upkg
-│   │   │   │   ├── [lrwxrwxrwx]  .packages -> ../../
-│   │   │   │   └── [lrwxrwxrwx]  dep-5 -> .packages/dep-5.tar@5a4173f8e0e51b3e5ec8d22e29a2110e84dd4b42dc6a7b56147869410cbe2373
+│   │   │   │   └── [lrwxrwxrwx]  dep-5 -> ../../dep-5.tar@5a4173f8e0e51b3e5ec8d22e29a2110e84dd4b42dc6a7b56147869410cbe2373
 │   │   │   └── [-rw-r--r--]  upkg.json
 │   │   └── [drwxr-xr-x]  dep-5.tar@5a4173f8e0e51b3e5ec8d22e29a2110e84dd4b42dc6a7b56147869410cbe2373
 │   │       └── [-rw-r--r--]  upkg.json

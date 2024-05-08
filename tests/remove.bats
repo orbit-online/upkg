@@ -36,6 +36,7 @@ teardown_file() { common_teardown_file; }
   run -0 upkg add "$PACKAGE_FIXTURES/$name1.tar" $TAR_SHASUM
   create_tar_package $name2
   run -0 upkg add "$PACKAGE_FIXTURES/$name2.tar" $TAR_SHASUM
+  tree -a . >&2
   run -0 upkg remove acme
   assert_snapshot_output
   assert_snapshot_path
@@ -76,7 +77,8 @@ teardown_file() { common_teardown_file; }
   local name=default/acme
   create_tar_package $name
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
-  rm .upkg/acme
+  upkgjson=$(cat upkg.json)
+  jq 'del(.dependencies[0])' <<<"$upkgjson" >upkg.json
   run -1 upkg remove non-existent
   assert_snapshot_output non-existent-not-in-sync
 }
@@ -86,7 +88,8 @@ teardown_file() { common_teardown_file; }
   local name=default/acme
   create_tar_package $name
   run -0 upkg add -g "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
-  rm "$HOME/.local/lib/upkg/.upkg/acme"
+  upkgjson=$(cat "$HOME/.local/lib/upkg/upkg.json")
+  jq 'del(.dependencies[0])' <<<"$upkgjson" >"$HOME/.local/lib/upkg/upkg.json"
   run -1 upkg remove -g non-existent
   assert_snapshot_output non-existent-not-in-sync
 }

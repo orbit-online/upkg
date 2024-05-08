@@ -18,15 +18,6 @@ sha256() {
   fi
 }
 
-# Descend through dependencies and resolve the links to .upkg/.packages directories
-upkg_list_referenced_pkgs() {
-  local pkgpath=$1 dep_pkgpath
-  for dep_pkgpath in $(upkg_resolve_links "$pkgpath/.upkg"); do
-    printf "%s\n" "$dep_pkgpath"
-    upkg_list_referenced_pkgs "$pkgpath/.upkg/$dep_pkgpath"
-  done
-}
-
 # List all commands in .upkg/.bin
 upkg_list_available_cmds() {
   local pkgpath=$1 cmdpath

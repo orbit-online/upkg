@@ -1,0 +1,10 @@
+{
+  "name": "meta",
+  "bin": [".upkg/.bin/root-exec.sh", "another-tool"],
+  "dependencies": [
+    {
+      "tar": "$PACKAGE_FIXTURES/default/scattered-executables.tar",
+      "sha256": "5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888"
+    }
+  ]
+}

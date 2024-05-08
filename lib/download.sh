@@ -20,8 +20,19 @@ upkg_download() {
     flock -s 9 # Block by trying to get a shared lock
   fi
 
+  local dedup_pkgname_suffix # avoid clashes between tar and file pkgtypes by suffixing them (and just do it for git repos as well)
+  case "$pkgtype" in
+    tar) dedup_pkgname_suffix=.tar ;;
+    file)
+      # Suffix the name with +x or -x so we don't end up clashing with a dedup'ed dependency where "exec" is different
+      if dep_is_exec "$dep"; then dedup_pkgname_suffix=+x
+      else dedup_pkgname_suffix=-x; fi
+      ;;
+    git) dedup_pkgname_suffix=.git
+  esac
+
   local dedup_pkgname
-  if [[ -e .upkg/.tmp/root/.upkg/.packages ]] && dedup_pkgname=$(compgen -G ".upkg/.tmp/root/.upkg/.packages/*@$checksum"); then
+  if [[ -e .upkg/.tmp/root/.upkg/.packages ]] && dedup_pkgname=$(compgen -G ".upkg/.tmp/root/.upkg/.packages/*$dedup_pkgname_suffix@$checksum"); then
     # The package has already been deduped
     processing "Already downloaded '%s'" "$pkgurl"
     # Get the dedup_pkgname from the dedup dir, output it, and exit early
@@ -42,10 +53,9 @@ upkg_download() {
   dedup_pkgname=${dedup_pkgname%%'?'*} # Remove query params
   dedup_pkgname=$(basename "$dedup_pkgname") # Remove path prefix
 
-  local dedup_pkgname_suffix # avoid clashes between tar and file pkgtypes by suffixing them (and just do it for git repos as well)
-  if [[ $pkgtype = tar ]]; then
+  case "$pkgtype" in
+    tar)
     local archivepath
-    dedup_pkgname_suffix=.tar
     # check if file was already downloaded by upkg_add to generate a checksum
     if [[ -e ".upkg/.tmp/prefetched/$checksum" ]]; then
       # archive was already downloaded by upkg_add to generate a checksum
@@ -63,8 +73,8 @@ upkg_download() {
 
     sha256 "$archivepath" "$checksum"
     tar -xf "$archivepath" -C "$pkgpath"
-
-  elif [[ $pkgtype = file ]]; then
+    ;;
+    file)
     # change the original $pkgpath which is a directory and an implicit lock
     pkgpath=$pkgpath.file
     if [[ -e ".upkg/.tmp/prefetched/$checksum" ]]; then
@@ -80,17 +90,9 @@ upkg_download() {
     fi
 
     sha256 "$pkgpath" "$checksum"
-    if dep_is_exec "$dep"; then
-      # file should be executable
-      chmod +x "$pkgpath"
-      # Suffix the name with +x or -x so we don't end up clashing with a dedup'ed dependency where "exec" is different
-      dedup_pkgname_suffix=+x
-    else
-      dedup_pkgname_suffix=-x
-    fi
-
-  elif [[ $pkgtype = git ]]; then
-    dedup_pkgname_suffix=.git
+    chmod "$dedup_pkgname_suffix" "$pkgpath"
+    ;;
+    git)
     local out
     out=$(git clone -q "${pkgurl%%'#'*}" "$pkgpath" 2>&1) || \
       fatal "Unable to clone '%s'. Error:\n%s" "$pkgurl" "$out"
@@ -98,10 +100,8 @@ upkg_download() {
       fatal "Unable to checkout '%s' from '%s'. Error:\n%s" "$checksum" "$pkgurl" "$out"
     # Remove a potential .git suffix, we add it later on
     dedup_pkgname=${dedup_pkgname%".git"}
-
-  else
-    fatal "Fetching of '%s' not implemented" "$pkgtype"
-  fi
+    ;;
+  esac
 
   [[ ! -e "$pkgpath/.upkg" ]] || fatal "The package '%s' contains a .upkg/ directory. Unable to install." "$pkgurl"
 

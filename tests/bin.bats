@@ -108,15 +108,33 @@ teardown_file() { common_teardown_file; }
 }
 
 # bats test_tags=tar
-@test "bin can only specify paths in package" {
-  local name=default/scattered-executables
-  create_tar_package $name
-  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
-
-  local name=invalid/zzz-hacky-binpaths
-  create_tar_package invalid/zzz-hacky-binpaths
+@test "bin can only specify paths in .upkg/" {
+  local name=invalid/disallowed-binpaths
   create_tar_package $name
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_output
   assert_snapshot_path
+}
+
+# bats test_tags=tar
+@test "bin can symlink to .upkg/.bin and .upkg/pkgname" {
+  create_tar_package default/scattered-executables
+  local name=default/metapackage
+  create_tar_package $name
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
+  assert_snapshot_output
+  assert_file_executable .upkg/.bin/another-tool
+  assert_file_executable .upkg/.bin/root-exec.sh
+}
+
+# bats test_tags=tar
+@test "bin can symlink to dependencies part deux" {
+  create_tar_package default/scattered-executables
+  local name=default/crafty-binpaths
+  create_tar_package $name
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
+  assert_snapshot_output
+  assert_file_executable .upkg/.bin/another-tool2
+  assert_file_executable .upkg/.bin/not-default-linked.sh
+  assert_file_executable .upkg/.bin/to-other-pkg
 }

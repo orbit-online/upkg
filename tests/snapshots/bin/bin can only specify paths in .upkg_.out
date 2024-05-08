@@ -1,0 +1,2 @@
+upkg: bin path 'sudo' must be located in the package '$BATS_RUN_TMPDIR/package-fixtures/invalid/disallowed-binpaths.tar', ignoring
+upkg: Added '$BATS_RUN_TMPDIR/package-fixtures/invalid/disallowed-binpaths.tar'
