@@ -1,0 +1,2 @@
+upkg: bin path 'non-existent' in the package '$BATS_RUN_TMPDIR/package-fixtures/default/scattered-executables.tar' does not exist, ignoring
+upkg: Added '$BATS_RUN_TMPDIR/package-fixtures/default/scattered-executables.tar'

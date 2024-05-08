@@ -1,0 +1,2 @@
+upkg: bin path 'tools/not-an-exec' in the package '$BATS_RUN_TMPDIR/package-fixtures/default/scattered-executables.tar' is not executable, ignoring
+upkg: Added '$BATS_RUN_TMPDIR/package-fixtures/default/scattered-executables.tar'

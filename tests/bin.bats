@@ -25,6 +25,7 @@ teardown_file() { common_teardown_file; }
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_output
   assert_snapshot_path
+  assert_file_executable .upkg/.bin/another-tool
 }
 
 # bats test_tags=tar
@@ -78,5 +79,43 @@ teardown_file() { common_teardown_file; }
   local name=default/acme
   create_tar_package $name
   run -1 upkg add -X "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
+  assert_snapshot_output
+}
+
+# bats test_tags=tar
+@test "complains about missing binpath" {
+  local name=default/scattered-executables
+  create_tar_package $name
+  run -0 upkg add -b non-existent "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
+  assert_snapshot_output
+}
+
+# bats test_tags=tar
+@test "complains about non-executable binpath" {
+  local name=default/scattered-executables
+  create_tar_package $name
+  run -0 upkg add -b tools/not-an-exec "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
+  assert_snapshot_output
+}
+
+# bats test_tags=tar
+@test "-b can be specified multiple times" {
+  local name=default/scattered-executables
+  create_tar_package $name
+  run -0 upkg add -b bin/not-default-linked.sh -b tools/tools-exec "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
+  assert_snapshot_output
+  assert_snapshot_path
+}
+
+# bats test_tags=tar
+@test "-b can only specify paths in package" {
+  local name=default/scattered-executables
+  create_tar_package $name
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
+
+  local name=invalid/zzz-hacky-binpaths
+  create_tar_package invalid/zzz-hacky-binpaths
+  create_tar_package $name
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_output
 }
