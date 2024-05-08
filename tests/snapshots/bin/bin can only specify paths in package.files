@@ -1,0 +1,33 @@
+[drwxr-xr-x]  .
+├── [drwxr-xr-x]  .upkg
+│   ├── [drwxr-xr-x]  .bin
+│   │   ├── [lrwxrwxrwx]  another-tool -> ../.packages/scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888/tools/another-tool
+│   │   ├── [lrwxrwxrwx]  bin-exec.sh -> ../.packages/scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888/bin/bin-exec.sh
+│   │   ├── [lrwxrwxrwx]  root-exec.sh -> ../.packages/scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888/root-exec.sh
+│   │   └── [lrwxrwxrwx]  tools-exec -> ../.packages/scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888/tools/tools-exec
+│   ├── [drwxr-xr-x]  .packages
+│   │   ├── [drwxr-xr-x]  scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888
+│   │   │   ├── [drwxr-xr-x]  bin
+│   │   │   │   ├── [-rwxr-xr-x]  bin-exec.sh
+│   │   │   │   └── [-rwxr-xr-x]  not-default-linked.sh
+│   │   │   ├── [-rwxr-xr-x]  root-exec.sh
+│   │   │   ├── [drwxr-xr-x]  tools
+│   │   │   │   ├── [-rwxr-xr-x]  another-tool
+│   │   │   │   ├── [-rw-r--r--]  not-an-exec
+│   │   │   │   └── [-rwxr-xr-x]  tools-exec
+│   │   │   └── [-rw-r--r--]  upkg.json
+│   │   └── [drwxr-xr-x]  zzz-hacky-binpaths.tar@3e7c58302df527b64058d6ef4a182047971e4ce42cbe0d2a38335113f5861cab
+│   │       ├── [drwxr-xr-x]  .upkg
+│   │       │   ├── [drwxr-xr-x]  .bin
+│   │       │   │   ├── [lrwxrwxrwx]  another-tool -> ../.packages/scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888/tools/another-tool
+│   │       │   │   ├── [lrwxrwxrwx]  bin-exec.sh -> ../.packages/scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888/bin/bin-exec.sh
+│   │       │   │   ├── [lrwxrwxrwx]  root-exec.sh -> ../.packages/scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888/root-exec.sh
+│   │       │   │   └── [lrwxrwxrwx]  tools-exec -> ../.packages/scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888/tools/tools-exec
+│   │       │   ├── [lrwxrwxrwx]  .packages -> ../../
+│   │       │   └── [lrwxrwxrwx]  scattered-executables -> .packages/scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888
+│   │       ├── [lrwxrwxrwx]  another-tool2 -> ../../../../../.bin/another-tool
+│   │       ├── [lrwxrwxrwx]  to-other-pkg -> ../../scattered-executables/root-exec.sh
+│   │       └── [-rw-r--r--]  upkg.json
+│   ├── [lrwxrwxrwx]  scattered-executables -> .packages/scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888
+│   └── [lrwxrwxrwx]  zzz-hacky-binpaths -> .packages/zzz-hacky-binpaths.tar@3e7c58302df527b64058d6ef4a182047971e4ce42cbe0d2a38335113f5861cab
+└── [-rw-r--r--]  upkg.json
