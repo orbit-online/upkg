@@ -1,3 +1,5 @@
 upkg: bin path '../../../../../.bin/another-tool' must be located in the package '$BATS_RUN_TMPDIR/package-fixtures/invalid/zzz-hacky-binpaths.tar', ignoring
 upkg: bin path '../../../../../.packages/scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888/tools/another-tool' must be located in the package '$BATS_RUN_TMPDIR/package-fixtures/invalid/zzz-hacky-binpaths.tar', ignoring
+upkg: bin path 'to-other-pkg' in the package '$BATS_RUN_TMPDIR/package-fixtures/invalid/zzz-hacky-binpaths.tar' does not exist, ignoring
+upkg: bin path 'another-tool2' must be located in the package '$BATS_RUN_TMPDIR/package-fixtures/invalid/zzz-hacky-binpaths.tar', ignoring
 upkg: Added '$BATS_RUN_TMPDIR/package-fixtures/invalid/zzz-hacky-binpaths.tar'
