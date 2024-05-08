@@ -252,18 +252,18 @@ upkg_install_dep() {
 
     for binpath in "${binpaths[@]}"; do
       if [[ ! -e "$dedup_location/$binpath" ]]; then
-        $binpaths_is_default || warning "bin path '%s' in the package '%s' does not exist, ignoring"
+        $binpaths_is_default || warning "bin path '%s' in the package '%s' does not exist, ignoring" "$binpath" "$pkgurl"
         continue
       fi
       if [[ ! -x "$dedup_location/$binpath" ]]; then
         # directories are executable so this works for both files & dirs
-        $binpaths_is_default || warning "bin path '%s' in the package '%s' is not executable, ignoring"
+        $binpaths_is_default || warning "bin path '%s' in the package '%s' is not executable, ignoring" "$binpath" "$pkgurl"
         continue
       fi
       local abs_binpath
       abs_binpath=$(realpath "$dedup_location/$binpath")
       if [[ $abs_binpath != "$(realpath "$dedup_location")"/* ]]; then
-        warning "bin path '%s' must be a subpath of the package '%s', ignoring" "$binpath" "$pkgurl"
+        warning "bin path '%s' must be located in the package '%s', ignoring" "$binpath" "$pkgurl"
         continue
       fi
 
@@ -271,10 +271,10 @@ upkg_install_dep() {
         command=$(basename "$binpath")
         upkg_link_cmd "../$dedup_path/$binpath" "$parent_pkgpath/.upkg/.bin/$command"
       else
-        for command in "$dedup_location/$binpath"/*; do
+        for command in "$dedup_location/${binpath%'/'}"/*; do
           [[ -f "$command" && -x "$command" ]] || continue
           command=$(basename "$command")
-          upkg_link_cmd "../$dedup_path/$binpath/$command" "$parent_pkgpath/.upkg/.bin/$command"
+          upkg_link_cmd "../$dedup_path/${binpath%'/'}/$command" "$parent_pkgpath/.upkg/.bin/$command"
         done
       fi
     done

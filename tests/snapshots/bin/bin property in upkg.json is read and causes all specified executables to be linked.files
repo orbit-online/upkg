@@ -1,10 +1,10 @@
 [drwxr-xr-x]  .
 ├── [drwxr-xr-x]  .upkg
 │   ├── [drwxr-xr-x]  .bin
-│   │   ├── [lrwxrwxrwx]  another-tool -> ../.packages/scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888/tools//another-tool
+│   │   ├── [lrwxrwxrwx]  another-tool -> ../.packages/scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888/tools/another-tool
 │   │   ├── [lrwxrwxrwx]  bin-exec.sh -> ../.packages/scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888/bin/bin-exec.sh
 │   │   ├── [lrwxrwxrwx]  root-exec.sh -> ../.packages/scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888/root-exec.sh
-│   │   └── [lrwxrwxrwx]  tools-exec -> ../.packages/scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888/tools//tools-exec
+│   │   └── [lrwxrwxrwx]  tools-exec -> ../.packages/scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888/tools/tools-exec
 │   ├── [drwxr-xr-x]  .packages
 │   │   └── [drwxr-xr-x]  scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888
 │   │       ├── [drwxr-xr-x]  bin
