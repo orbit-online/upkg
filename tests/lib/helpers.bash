@@ -177,8 +177,13 @@ assert_snapshot_output() {
     touch "$BATS_TEST_TMPDIR/snapshot-created"
   elif ${UPDATE_SNAPSHOTS:-false}; then
     # shellcheck disable=SC2001
-    replace_values <<<"$actual" > "$snapshot_path"
-    touch "$BATS_TEST_TMPDIR/snapshot-updated"
+    replace_values <<<"$actual" > "$snapshot_path.new"
+    if ! diff -q "$snapshot_path" "$snapshot_path.new" &>/dev/null; then
+      mv "$snapshot_path.new" "$snapshot_path"
+      touch "$BATS_TEST_TMPDIR/snapshot-updated"
+    else
+      rm "$snapshot_path.new"
+    fi
   fi
   assert_equals_diff "$(replace_vars "$snapshot_path")" "$actual"
 }
@@ -197,8 +202,13 @@ assert_snapshot_path() {
     get_file_structure "$actual_path" > "$snapshot_path"
     touch "$BATS_TEST_TMPDIR/snapshot-created"
   elif ${UPDATE_SNAPSHOTS:-false}; then
-    get_file_structure "$actual_path" > "$snapshot_path"
-    touch "$BATS_TEST_TMPDIR/snapshot-updated"
+    get_file_structure "$actual_path" > "$snapshot_path.new"
+    if ! diff -q "$snapshot_path" "$snapshot_path.new" &>/dev/null; then
+      mv "$snapshot_path.new" "$snapshot_path"
+      touch "$BATS_TEST_TMPDIR/snapshot-updated"
+    else
+      rm "$snapshot_path.new"
+    fi
   fi
   assert_equals_diff "$(cat "$snapshot_path")" "$(get_file_structure "$actual_path")"
 }
