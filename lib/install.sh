@@ -229,7 +229,7 @@ upkg_install_dep() {
     elif [[ $pkgtype = tar ]]; then
       pkgname=${dedup_pkgname%.tar} # Remove .tar suffix
     else
-      pkgname=${dedup_pkgname%.tar} # Remove .git suffix
+      pkgname=${dedup_pkgname%.git} # Remove .git suffix
     fi
   fi
   pkgname=$(clean_pkgname "$pkgname")
