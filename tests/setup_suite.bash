@@ -16,7 +16,6 @@ setup_suite() {
   mkdir -p "$PACKAGE_FIXTURES"
   export UPKG_SEQUENTIAL=true
   umask 022 # Make sure permissions of new files match what we expect
-  PYTHON=$(which python 2>/dev/null || which python3 2>/dev/null)
   setup_package_fixtures_httpd
   setup_package_fixtures_sshd
   check_package_fixture_template_permissions
@@ -119,12 +118,13 @@ setup_package_fixture_templates() {
 # Setup HTTP server to serve package fixtures
 setup_package_fixtures_httpd() {
   export SKIP_HTTPD_PKG_FIXTURES
-  if [[ -z $PYTHON ]]; then
+  local python
+  if ! python=$(which python 2>/dev/null || which python3 2>/dev/null); then
     SKIP_HTTPD_PKG_FIXTURES='python is not available. Use tests/run.sh to run the tests in a container.'
     return 0
   fi
   export HTTPD_PKG_FIXTURES_LOG=$BATS_RUN_TMPDIR/httpd.log
-  (cd "$PACKAGE_FIXTURES"; exec $PYTHON -u -m http.server -b localhost 0 &>"$HTTPD_PKG_FIXTURES_LOG") & HTTPD_PKG_FIXTURES_PID=$!
+  (cd "$PACKAGE_FIXTURES"; exec "$python" -u -m http.server -b localhost 0 &>"$HTTPD_PKG_FIXTURES_LOG") & HTTPD_PKG_FIXTURES_PID=$!
   local listening_line
   wait_timeout=1000
   until [[ -n $listening_line ]]; do
@@ -149,13 +149,13 @@ setup_package_fixtures_httpd() {
 # Setup SSH server to serve git package fixtures
 setup_package_fixtures_sshd() {
   export SKIP_SSHD_PKG_FIXTURES
-  if [[ -z $PYTHON ]]; then
+  local python
+  if ! python=$(which python 2>/dev/null || which python3 2>/dev/null); then
     SKIP_SSHD_PKG_FIXTURES='python is not available (needed to find a free port for sshd). Use tests/run.sh to run the tests in a container.'
     return 0
   fi
   local sshd
-  sshd=$(which sshd 2>/dev/null)
-  if [[ -n $ssh ]]; then
+  if ! sshd=$(which sshd 2>/dev/null); then
     SKIP_SSHD_PKG_FIXTURES='sshd is not available. Use tests/run.sh to run the tests in a container.'
     return 0
   fi
@@ -168,7 +168,7 @@ setup_package_fixtures_sshd() {
   local sshd_root="$BATS_RUN_TMPDIR/ssh/root" sshd_port
   export SSHD_PKG_FIXTURES_LOG=$sshd_root.log SSH_CONFIG=$sshd_root/ssh_config GIT_SSH_COMMAND
   mkdir -p "$sshd_root"
-  sshd_port=$(python3 -c 'import socket
+  sshd_port=$("$python" -c 'import socket
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind(("", 0))
 addr = s.getsockname()

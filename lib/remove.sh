@@ -14,10 +14,10 @@ upkg_remove() {
   # ... and then look it up in upkg.json
   if ! dep_idx=$(jq -re --arg pkgname "$pkgname" --arg checksum "$checksum" '
     .dependencies | to_entries[] | select(.value.name==$pkgname and (.value.sha1==$checksum or .value.sha256==$checksum)) | .key // empty
-  ' "upkg.json"); then # Check for name overrides first
-    if ! dep_idx=$(jq -re --arg pkgname "$pkgname" --arg checksum "$checksum" '
-      .dependencies | to_entries[] | select(.value.sha1==$checksum or .value.sha256==$checksum) | .key // empty
-    ' "upkg.json"); then # No name overrides, just find by checksum
+  ' upkg.json); then # Check for name overrides first
+    if ! dep_idx=$(jq -re --arg checksum "$checksum" '
+      .dependencies | to_entries[] | select((.value | has("name")==false) and (.value.sha1==$checksum or .value.sha256==$checksum)) | .key // empty
+    ' upkg.json); then # No name overrides, look for matching checksum without name override
       completed "'%s' is not installed" "$pkgname"
       return 0
     fi

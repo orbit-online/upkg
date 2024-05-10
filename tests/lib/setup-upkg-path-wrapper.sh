@@ -44,11 +44,11 @@ PATH="${RESTRICTED_BIN:-"%s"}" "%s" "$@"
     bzip2 xz lzip lzma lzop gzip compress zstd # tar compressions
   )
   for cmd in "${required_commands[@]}"; do
-    target=$(which "$cmd") || { printf "Unable to find required command '%s'" "$cmd" >&2; return 1; }
+    target=$(which "$cmd") || { printf "Unable to find required command '%s'\n" "$cmd" >&2; return 1; }
     ln -sT "$target" "$restricted_bin/$cmd"
   done
   for cmd in "${optional_commands[@]}"; do
-    target=$(which "$cmd") || { printf "Unable to find optional command '%s'" "$cmd" >&2; continue; }
+    target=$(which "$cmd") || { printf "Unable to find optional command '%s'\n" "$cmd" >&2; continue; }
     ln -sT "$target" "$restricted_bin/$cmd"
   done
   if [[ ! -e $restricted_bin/wget && ! -e $restricted_bin/curl ]]; then
