@@ -5,12 +5,13 @@
   "properties": {
     "$schema": { "type": "string" },
     "name": {
-      "description": "The name of this package. This will become the directory link name in .upkg/ of the parent package.\nA starting period (.), slashes (/), and newlines (\\n) will silently be replaced with underscore (_)",
+      "description": "The name of this package. This will become the directory link name in .upkg/.\nA starting period (.), slashes (/), and newlines (\\n) will be silently replaced with underscore (_)",
       "$ref": "#/definitions/name"
     },
     "bin": { "$ref": "#/definitions/bin" },
     "version": { "type": "string" },
     "dependencies": {
+      "description": "List of dependencies for this package. An array of objects.",
       "type": "array",
       "items": {
         "$ref": "#/definitions/dependency"
@@ -36,7 +37,7 @@
       "pattern": "^[0-9a-f]{40}$"
     },
     "bin": {
-      "description": "Paths relative to the package root to directories containing executables files or directly to executable files that should be linked to from .upkg/.bin (and /usr/local/bin or $HOME/.local/bin when installing globally).\nDefault: [bin/]",
+      "description": "Paths relative to the package root to directories containing executables files or directly to executable files that should be linked to from .upkg/.bin (and /usr/local/bin or $HOME/.local/bin when installing globally).\nDefault: `[bin/]`",
       "type": "array",
       "items": {
         "$ref": "#/definitions/relpath"
@@ -63,7 +64,7 @@
           "$ref": "#/definitions/sha256"
         },
         "name": {
-          "description": "A name override for the extracted archive directory.\nThis will become the directory link name in .upkg/ of the parent package.\nA starting period (.), slashes (/), and newlines (\\n) will silently be replaced with underscore (_).\n\nDefault: The basename of the path or URL",
+          "description": "A name override for the extracted archive directory.\nThis will become the directory link name in .upkg/ of the parent package.\nA starting period (.), slashes (/), and newlines (\\n) will be silently replaced with underscore (_).\n\nDefault: The basename of the path or URL",
           "$ref": "#/definitions/name"
         },
         "bin": { "$ref": "#/definitions/bin" }
@@ -82,11 +83,11 @@
           "$ref": "#/definitions/sha256"
         },
         "name": {
-          "description": "A name override for this file.\nThis will become the directory link name in .upkg/ of the parent package.\nA starting period (.), slashes (/), and newlines (\\n) will silently be replaced with underscore (_).\nDefault: The basename of the path or URL",
+          "description": "A name override for this file.\nThis will become the link name in .upkg/.\nA starting period (.), slashes (/), and newlines (\\n) will be silently replaced with underscore (_).\nDefault: The basename of the path or URL",
           "$ref": "#/definitions/name"
         },
         "bin": {
-          "description": "Set to [] to prevent the file from being linked to from .upkg/.bin (and /usr/local/bin or $HOME/.local/bin when installing globally)\nDefault: None",
+          "description": "Set to [] to prevent the file from being linked to from .upkg/.bin (and /usr/local/bin or $HOME/.local/bin when installing globally), no other values are allowed.",
           "const": [],
           "type": "array"
         }
@@ -106,11 +107,11 @@
           "$ref": "#/definitions/sha256"
         },
         "name": {
-          "description": "A name override for this file.\nThis will become the directory link name in .upkg/ of the parent package.\nA starting period (.), slashes (/), and newlines (\\n) will silently be replaced with underscore (_).\nDefault: The basename of the path or URL",
+          "description": "A name override for this file.\nThis will become the link name in .upkg/.\nA starting period (.), slashes (/), and newlines (\\n) will be silently replaced with underscore (_).\nDefault: The basename of the path or URL",
           "$ref": "#/definitions/name"
         },
         "exec": {
-          "description": "false implies bin=[]. Whether the file should be made executable (chmod +x).\nDefault: true",
+          "description": "Whether the file should be made executable (chmod +x). `false` implies `bin=[]`\nDefault: `true`",
           "const": false,
           "type": "boolean"
         }
@@ -126,7 +127,7 @@
           "type": "string"
         },
         "name": {
-          "description": "A name override for the cloned repository.\nThis will become the directory link name in .upkg/ of the parent package.\nA starting period (.), slashes (/), and newlines (\\n) will silently be replaced with underscore (_).\nDefault: The basename of the path or URL",
+          "description": "A name override for the cloned repository.\nThis will become the directory link name in .upkg/.\nA starting period (.), slashes (/), and newlines (\\n) will be silently replaced with underscore (_).\nDefault: The basename of the path or URL",
           "$ref": "#/definitions/name"
         },
         "bin": { "$ref": "#/definitions/bin" },
