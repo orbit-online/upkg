@@ -1,13 +1,10 @@
-name: Bundle
+name: Bundle as μpkg package
 
 on:
-  push:
-    branches: ['*']
-    tags: ['!v*']
   workflow_call: {}
 
 jobs:
-  bundle:
+  upkg-bundle:
     name: Create upkg.tar.gz
     runs-on: ubuntu-latest
     steps:

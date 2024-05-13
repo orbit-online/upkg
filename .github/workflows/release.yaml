@@ -5,8 +5,14 @@ on:
     tags: [ 'v*' ]
 
 jobs:
+  test:
+    uses: ./.github/workflows/test.yaml
+    secrets: inherit
+  install-bundle:
+    uses: ./.github/workflows/install-bundle.yaml
+    secrets: inherit
   create-release:
-    needs: [test, bundle]
+    needs: [test, install-bundle]
     runs-on: ubuntu-latest
     name: Create μpkg GitHub release
     environment: release
@@ -25,10 +31,14 @@ jobs:
         printf "message<<%s\n%s\n%s\n" "$eof" "$msg" "$eof" >> $GITHUB_OUTPUT
       env:
         REF: ${{ github.ref }}
-    - name: Download μpkg bundle
+    - name: Download μpkg package
       uses: actions/download-artifact@v4
       with:
         name: upkg.tar.gz
+    - name: Download μpkg install package
+      uses: actions/download-artifact@v4
+      with:
+        name: upkg-install.tar.gz
     - name: Create Release
       uses: ncipollo/release-action@v1
       with:
@@ -36,6 +46,6 @@ jobs:
         body: ${{ steps.tag-message.outputs.message }}
         draft: false
         prerelease: false
-        artifacts: upkg.tar.gz
+        artifacts: upkg.tar.gz,upkg-install.tar.gz
         artifactErrorsFailBuild: true
         artifactContentType: application/gzip
