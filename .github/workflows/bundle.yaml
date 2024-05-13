@@ -1,0 +1,32 @@
+name: Bundle
+
+on:
+  push:
+    branches: ['*']
+    tags: ['*']
+
+jobs:
+  bundle:
+    name: Create upkg.tar.gz
+    runs-on: ubuntu-latest
+    steps:
+    - id: program_version
+      uses: orbit-online/program-version@v1.0.0
+    - uses: actions/checkout@v4
+    - name: Write version to upkg.json
+      run: |
+        upkgjson=$(cat upkg.json)
+        jq --arg version "${{ steps.program_version.outputs.version }}" '.version=$version' <<<"$upkgjson" >upkg.json
+    - name: Download upkg dependencies
+      run: |
+        mkdir -p .upkg/docopt-lib.sh
+        wget -qO- .upkg/docopt-lib.sh "$(jq -r '.dependencies[0].tar' upkg.json)" | \
+        tar -xzC .upkg/docopt-lib.sh
+    - name: Create upkg.tar.gz
+      run: tar -czf upkg.tar.gz .upkg bin lib LICENSE README.md upkg.json upkg.schema.json
+    - name: Upload upkg.tar.gz
+      uses: actions/upload-artifact@v4
+      with:
+        name: upkg.tar.gz
+        path: upkg.tar.gz
+        retention-days: 90
