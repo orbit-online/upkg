@@ -3,10 +3,8 @@
   "name": "upkg",
   "dependencies": [
     {
-      "file": "https://raw.githubusercontent.com/andsens/docopt.sh/0447a7834ecb5120c112456d961f7fdb23e7bdef/docopt-lib.sh",
-      "sha256": "ed7ec6722fdce042cb3e7e03a89f365769dec937b9b5d640ef20807401afb946",
-      "name": "docopt-lib.sh",
-      "exec": false
+      "tar": "https://github.com/andsens/docopt.sh/releases/download/v2.0.0-alpha3/docopt-lib.sh-v2.0.0-alpha3.tar.gz",
+      "sha256": "efab2d2d7efb1e4eae76fd77eea7a0fb524ab7cd441e3b33159ee55ec57d243e"
     }
   ]
 }

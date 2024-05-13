@@ -30,7 +30,10 @@ jobs:
       with:
         path: upkg
     - name: Install dependencies
-      run: mkdir .upkg; wget -qO.upkg/docopt-lib.sh https://raw.githubusercontent.com/andsens/docopt.sh/0447a7834ecb5120c112456d961f7fdb23e7bdef/docopt-lib.sh
+      run: |
+        mkdir -p .upkg/docopt-lib.sh
+        wget -qO- "$(jq -r '.dependencies[0].tar' upkg.json)" | \
+          tar -xzC .upkg/docopt-lib.sh
       working-directory: upkg
     - name: Run tests
       run: bats --formatter tap13 --filter-tags '!shellcheck' tests | tee tests/results.tap
