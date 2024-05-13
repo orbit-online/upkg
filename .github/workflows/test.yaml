@@ -31,11 +31,9 @@ jobs:
       with:
         path: upkg
     - name: Install dependencies
-      run: |
-        mkdir -p .upkg/docopt-lib.sh
-        wget -qO- "$(jq -r '.dependencies[0].tar' upkg.json)" | \
-          tar -xzC .upkg/docopt-lib.sh
-      working-directory: upkg
+      uses: ./upkg/.github/actions/install-dependencies
+      with:
+        working-directory: upkg
     - name: Run tests
       run: bats --formatter tap13 --filter-tags '!shellcheck' tests | tee tests/results.tap
       working-directory: upkg

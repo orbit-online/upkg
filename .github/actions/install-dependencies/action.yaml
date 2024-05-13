@@ -1,0 +1,18 @@
+name: Install μpkg dependencies
+description: Read upkg.json and installs the dependencies without using μpkg
+
+inputs:
+  working-directory:
+    description: μpkg project root
+    default: '.'
+
+runs:
+  using: composite
+  steps:
+  - name: Install dependencies
+    run: |
+      mkdir -p .upkg/docopt-lib.sh
+      wget -qO- "$(jq -r '.dependencies[0].tar' upkg.json)" | \
+        tar -xzC .upkg/docopt-lib.sh
+    shell: bash
+    working-directory: ${{ inputs.working-directory }}
