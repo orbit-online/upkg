@@ -165,8 +165,8 @@ setup_package_fixtures_sshd() {
     SKIP_SSHD_PKG_FIXTURES="For SSH tests to pass \$TMPDIR must be set to a user owned directory with normal permissions. Set TMPDIR=$tmpdir or use tests/run.sh to run the tests in a container"
     return 0
   fi
-  local sshd_root="$BATS_RUN_TMPDIR/ssh/root" sshd_port
-  export SSHD_PKG_FIXTURES_LOG=$sshd_root.log SSH_CONFIG=$sshd_root/ssh_config GIT_SSH_COMMAND
+  local sshd_root="$BATS_RUN_TMPDIR/ssh.root" sshd_port
+  export SSHD_PKG_FIXTURES_LOG=$sshd_root/log SSH_CONFIG=$sshd_root/ssh_config GIT_SSH_COMMAND
   mkdir -p "$sshd_root"
   sshd_port=$("$python" -c 'import socket
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
