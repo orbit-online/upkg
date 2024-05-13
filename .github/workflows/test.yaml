@@ -2,8 +2,9 @@ name: Test
 
 on:
   push:
-    branches: [ '*' ]
-    tags: [ 'v*' ]
+    branches: ['*']
+    tags: ['!v*']
+  workflow_call: {}
 
 jobs:
   lint:

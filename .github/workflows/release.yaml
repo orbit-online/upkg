@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  push:
+    tags: [ 'v*' ]
+
+jobs:
+  create-release:
+    needs: [test, bundle]
+    runs-on: ubuntu-latest
+    name: Create μpkg GitHub release
+    environment: release
+    steps:
+    - id: program_version
+      uses: orbit-online/program-version@v1.0.0
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ steps.program_version.outputs.version }}
+    - name: Get release notes from tag
+      id: tag-message
+      run: |
+        eof="$(openssl rand -hex 8)"
+        msg=$(git tag -l --format='%(contents)' "${{ steps.version.outputs.tag }}")
+        msg=${msg%%'-----BEGIN'*}
+        printf "message<<%s\n%s\n%s\n" "$eof" "$msg" "$eof" >> $GITHUB_OUTPUT
+      env:
+        REF: ${{ github.ref }}
+    - name: Download μpkg bundle
+      uses: actions/download-artifact@v4
+      with:
+        name: upkg.tar.gz
+    - name: Create Release
+      uses: ncipollo/release-action@v1
+      with:
+        name: ${{ steps.program_version.outputs.version }}
+        body: ${{ steps.tag-message.outputs.message }}
+        draft: false
+        prerelease: false
+        artifacts: upkg.tar.gz
+        artifactErrorsFailBuild: true
+        artifactContentType: application/gzip

@@ -3,7 +3,8 @@ name: Bundle
 on:
   push:
     branches: ['*']
-    tags: ['*']
+    tags: ['!v*']
+  workflow_call: {}
 
 jobs:
   bundle:
@@ -29,4 +30,4 @@ jobs:
       with:
         name: upkg.tar.gz
         path: upkg.tar.gz
-        retention-days: 90
+        retention-days: 1
