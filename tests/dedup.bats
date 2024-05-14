@@ -9,9 +9,10 @@ setup() { common_setup; }
 teardown() { common_teardown; }
 teardown_file() { common_teardown_file; }
 
-# bats test_tags=tar
+# bats test_tags=file
 @test "deduplication does not change the executability of duplicated files" {
   local name=default/executable
+  create_file_package $name
   run -0 upkg add -p executable "$PACKAGE_FIXTURES/$name" $FILE_SHASUM
   run -0 upkg add -p not-executable -X "$PACKAGE_FIXTURES/$name" $FILE_SHASUM
   assert_file_executable .upkg/executable
