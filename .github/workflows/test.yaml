@@ -18,6 +18,19 @@ jobs:
         SHELLCHECK_OPTS: -x
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        bash-version:
+        - '4.4'
+        - '5.0'
+        - '5.1'
+        - '5.1.8'
+        - '5.1.12'
+        - '5.1.16'
+        - '5.2'
+        - '5.2.9'
+        - '5.2.15'
+        - '5.2.21'
     steps:
     - name: Install bats
       uses: bats-core/bats-action@2.0.0
@@ -33,11 +46,19 @@ jobs:
     - name: Install dependencies
       run: tools/install-deps.sh
       working-directory: upkg
+    - name: Cache bash versions
+      uses: actions/cache@v4
+      env:
+        cache-name: bash-version
+      with:
+        path: upkg/tests/assets/bash-versions/bash-${{ matrix.bash-version }}/bash
+        key: ${{ env.cache-name }}-${{ matrix.bash-version }}
     - name: Run tests
       run: bats --formatter tap13 --filter-tags '!shellcheck' --jobs 4 tests | tee tests/results.tap
       working-directory: upkg
       env:
         BATS_LIB_PATH: ${{ github.workspace }}/lib
+        TEST_BASH_VERSION: ${{ matrix.bash-version }}
         TMPDIR: ${{ github.workspace }}/upkg/tests/bats-tmp
     - name: Fail when tests are skipped
       run: '! grep -q "not ok" tests/results.tap'

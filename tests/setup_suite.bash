@@ -33,9 +33,11 @@ setup_upkg_path_wrapper() {
     export RESTRICTED_BIN=/restricted/restricted-bin
     export UPKG_WRAPPER_PATH=$PATH
   else
+    local bash_path
     export RESTRICTED_BIN=$BATS_RUN_TMPDIR/restricted-bin
     export UPKG_WRAPPER_PATH=$BATS_RUN_TMPDIR/upkg-wrapper-bin:$PATH
-    "$BATS_TEST_DIRNAME/lib/setup-upkg-path-wrapper.sh" "$(realpath "$BATS_TEST_DIRNAME/../bin/upkg")" "$BATS_RUN_TMPDIR"
+    [[ -z $TEST_BASH_VERSION ]] || bash_path=$("$BATS_TEST_DIRNAME/lib/get-bash.sh" "$TEST_BASH_VERSION")
+    "$BATS_TEST_DIRNAME/lib/setup-upkg-path-wrapper.sh" "$(realpath "$BATS_TEST_DIRNAME/../bin/upkg")" "$BATS_RUN_TMPDIR" "$bash_path"
   fi
 }
 

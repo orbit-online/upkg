@@ -7,7 +7,7 @@ shopt -s inherit_errexit nullglob
 main() {
   DOC="setup-upkg-path-wrapper.sh - Restrict upkg to the bare minimum of commands
 Usage:
-  setup-upkg-path-wrapper.sh <upkg-path> <restricted-basepath>
+  setup-upkg-path-wrapper.sh <upkg-path> <restricted-basepath> [<bash-path>]
 
 This script will create two directories:
   <restricted-basepath>/restricted-bin/:
@@ -18,9 +18,9 @@ This script will create two directories:
     forwards all arguments. Prepend this directory to \$PATH in order to invoke
     the wrapper script when running upkg.
 "
-  [[ $# -eq 2 && $1 != -h && $1 != --help ]] || { printf "%s\n" "$DOC"; return 1; }
+  [[ $# -ge 2 && $# -le 3 && $1 != -h && $1 != --help ]] || { printf "%s\n" "$DOC"; return 1; }
 
-  local upkg_path=$1 basepath=$2
+  local upkg_path=$1 basepath=$2 bash_path=$3
 
   # shellcheck disable=SC2154
   local \
@@ -34,7 +34,7 @@ PATH="${RESTRICTED_BIN:-"%s"}" "%s" "$@"
   chmod +x "$upkg_wrapper_bin/upkg"
 
   local cmd target required_commands=(
-    bash jq
+    jq
     basename dirname sort comm cut grep # string commands
     mv cp mkdir touch rm ln chmod cat readlink realpath # fs commands
     sleep flock # concurrency commands
@@ -43,6 +43,12 @@ PATH="${RESTRICTED_BIN:-"%s"}" "%s" "$@"
     wget curl ssh column
     bzip2 xz lzip lzma lzop gzip compress zstd # tar compressions
   )
+  if [[ -n $bash_path ]]; then
+    [[ -x $bash_path ]] || { printf "Unable to find required command '%s'\n" "$bash_path" >&2; return 1; }
+    ln -sT "$bash_path" "$restricted_bin/bash"
+  else
+    required_commands+=(bash)
+  fi
   for cmd in "${required_commands[@]}"; do
     target=$(which "$cmd") || { printf "Unable to find required command '%s'\n" "$cmd" >&2; return 1; }
     ln -sT "$target" "$restricted_bin/$cmd"
