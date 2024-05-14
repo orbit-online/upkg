@@ -1,5 +1,5 @@
 {
-  "$schema": "./upkg.schema.json",
+  "$schema": "upkg.schema.json",
   "name": "upkg",
   "dependencies": [
     {
