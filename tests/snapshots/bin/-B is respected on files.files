@@ -1,0 +1,6 @@
+[drwxr-xr-x]  .
+├── [drwxr-xr-x]  .upkg
+│   ├── [drwxr-xr-x]  .packages
+│   │   └── [-rwxr-xr-x]  executable+x@fb99eae951f1adc14d1a4a9a186c21930db2786b3208c94c7d9af382bd1048e5
+│   └── [lrwxrwxrwx]  executable -> .packages/executable+x@fb99eae951f1adc14d1a4a9a186c21930db2786b3208c94c7d9af382bd1048e5
+└── [-rw-r--r--]  upkg.json

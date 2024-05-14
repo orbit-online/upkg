@@ -47,6 +47,15 @@ teardown_file() { common_teardown_file; }
 }
 
 # bats test_tags=file
+@test "-B is respected on files" {
+  local name=default/executable
+  create_file_package $name
+  run -0 upkg add -B "$PACKAGE_FIXTURES/$name" $FILE_SHASUM
+  assert_snapshot_output
+  assert_snapshot_path
+}
+
+# bats test_tags=file
 @test "executable file is linked and made executable" {
   local name=default/executable
   create_file_package $name

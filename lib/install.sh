@@ -252,8 +252,10 @@ upkg_install_dep() {
   fi
 
   if [[ -f $dedup_path && -x $dedup_path ]]; then
-    # pkgurl is an executable file (and has been chmod'ed and validated as such in upkg_download), symlink from bin
-    upkg_link_cmd "../$packages_path/$dedup_name" "$parent_pkgpath/.upkg/.bin/$pkgname"
+    if ! jq -re 'has("bin")' <<<"$dep" >/dev/null; then
+      # pkgurl is an executable file and linking to .bin has not been disabled
+      upkg_link_cmd "../$packages_path/$dedup_name" "$parent_pkgpath/.upkg/.bin/$pkgname"
+    fi
 
   else
     # All dependencies of dependencies are locked with checksums, so during a dry-run if we haven't failed already, we won't if we go deeper either
