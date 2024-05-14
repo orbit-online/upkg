@@ -1,0 +1,32 @@
+name: Create μpkg install snapshot
+
+on:
+  push:
+    branches: ['*']
+    tags: ['!v*']
+  workflow_call: {}
+
+jobs:
+  create-package:
+    uses: ./.github/workflows/create-package.yaml
+    secrets: inherit
+  create-install-snapshot:
+    needs: [create-package]
+    name: Create upkg-install.tar.gz
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        path: upkg
+    - name: Download μpkg package
+      uses: actions/download-artifact@v4
+      with:
+        name: upkg.tar.gz
+    - name: Create install package
+      run: upkg/tools/create-install-snapshot.sh upkg.tar.gz upkg-install.tar.gz
+    - name: Upload upkg-install.tar.gz
+      uses: actions/upload-artifact@v4
+      with:
+        name: upkg-install.tar.gz
+        path: upkg-install.tar.gz
+        retention-days: 1

@@ -1,0 +1,32 @@
+[drwxr-xr-x]  .
+├── [drwxr-xr-x]  bin
+│   └── [lrwxrwxrwx]  upkg -> ../lib/upkg/.upkg/.bin/upkg
+└── [drwxr-xr-x]  lib
+    └── [drwxr-xr-x]  upkg
+        ├── [drwxr-xr-x]  .upkg
+        │   ├── [drwxr-xr-x]  .bin
+        │   │   └── [lrwxrwxrwx]  upkg -> ../.packages/upkg.tar@b3a34ac539850ac52caecda63e2b9153e801df221488bf5f9f61195dc6286e58/bin/upkg
+        │   ├── [drwxr-xr-x]  .packages
+        │   │   ├── [drwxr-xr-x]  docopt-lib.sh.tar@efab2d2d7efb1e4eae76fd77eea7a0fb524ab7cd441e3b33159ee55ec57d243e
+        │   │   │   ├── [-rw-r--r--]  docopt-lib.sh
+        │   │   │   └── [-rw-r--r--]  upkg.json
+        │   │   └── [drwxr-xr-x]  upkg.tar@b3a34ac539850ac52caecda63e2b9153e801df221488bf5f9f61195dc6286e58
+        │   │       ├── [drwxr-xr-x]  .upkg
+        │   │       │   └── [lrwxrwxrwx]  docopt-lib.sh -> ../../docopt-lib.sh.tar@efab2d2d7efb1e4eae76fd77eea7a0fb524ab7cd441e3b33159ee55ec57d243e
+        │   │       ├── [-rw-r--r--]  LICENSE
+        │   │       ├── [-rw-r--r--]  README.md
+        │   │       ├── [drwxr-xr-x]  bin
+        │   │       │   └── [-rwxr-xr-x]  upkg
+        │   │       ├── [drwxr-xr-x]  lib
+        │   │       │   ├── [-rw-r--r--]  add.sh
+        │   │       │   ├── [-rw-r--r--]  download.sh
+        │   │       │   ├── [-rw-r--r--]  install.sh
+        │   │       │   ├── [-rw-r--r--]  list.sh
+        │   │       │   ├── [-rw-r--r--]  log.sh
+        │   │       │   ├── [-rw-r--r--]  remove.sh
+        │   │       │   ├── [-rw-r--r--]  upkgjson.sh
+        │   │       │   └── [-rw-r--r--]  utils.sh
+        │   │       ├── [-rwxr-xr-x]  upkg.json
+        │   │       └── [-rw-r--r--]  upkg.schema.json
+        │   └── [lrwxrwxrwx]  upkg -> .packages/upkg.tar@b3a34ac539850ac52caecda63e2b9153e801df221488bf5f9f61195dc6286e58
+        └── [-rw-r--r--]  upkg.json

@@ -37,17 +37,21 @@ teardown_suite() {
 check_dependencies() {
   local out ret=0
   out=$("$BATS_TEST_DIRNAME/../bin/upkg" --help 2>&1) || ret=$?
-  [[ $ret = 0 ]] || fatal "Unable to invoke \`upkg --help\`. Make sure to run tools/install-deps.sh first. Output was:\n%s\n" "$out"
+  [[ $ret = 0 ]] || export SKIP_UPKG="Unable to invoke \`upkg --help\`. Make sure to run tools/install-deps.sh first. Output was:\n$out\n"
 }
 
 # Sets up a directory for upkg with only the barest of essentials and creates a upkg wrapper which overwrites PATH with it
 setup_upkg_path_wrapper() {
   ${RESTRICT_BIN:-true} || return 0
+  mkdir "$BATS_RUN_TMPDIR/upkg-error-bin"
+  cp "$BATS_TEST_DIRNAME/assets/upkg-error.sh" "$BATS_RUN_TMPDIR/upkg-error-bin/upkg"
+  export UPKG_ERROR_PATH=$BATS_RUN_TMPDIR/upkg-error-bin:$PATH
   if [[ -e /restricted/restricted-bin ]]; then
     export RESTRICTED_BIN=/restricted/restricted-bin
+    export UPKG_WRAPPER_PATH=$PATH
   else
     export RESTRICTED_BIN=$BATS_RUN_TMPDIR/restricted-bin
-    PATH=$BATS_RUN_TMPDIR/upkg-wrapper-bin:$PATH
+    export UPKG_WRAPPER_PATH=$BATS_RUN_TMPDIR/upkg-wrapper-bin:$PATH
     "$BATS_TEST_DIRNAME/lib/setup-upkg-path-wrapper.sh" "$(realpath "$BATS_TEST_DIRNAME/../bin/upkg")" "$BATS_RUN_TMPDIR"
   fi
 }

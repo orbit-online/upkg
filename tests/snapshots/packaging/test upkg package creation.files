@@ -1,0 +1,16 @@
+[drwxr-xr-x]  .
+├── [-rw-r--r--]  LICENSE
+├── [-rw-r--r--]  README.md
+├── [drwxr-xr-x]  bin
+│   └── [-rwxr-xr-x]  upkg
+├── [drwxr-xr-x]  lib
+│   ├── [-rw-r--r--]  add.sh
+│   ├── [-rw-r--r--]  download.sh
+│   ├── [-rw-r--r--]  install.sh
+│   ├── [-rw-r--r--]  list.sh
+│   ├── [-rw-r--r--]  log.sh
+│   ├── [-rw-r--r--]  remove.sh
+│   ├── [-rw-r--r--]  upkgjson.sh
+│   └── [-rw-r--r--]  utils.sh
+├── [-rwxr-xr-x]  upkg.json
+└── [-rw-r--r--]  upkg.schema.json

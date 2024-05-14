@@ -27,6 +27,12 @@ common_setup() {
   ! has_tag gzip || [[ -z $SKIP_GZIP ]] || skip "$GZIP"
   ! has_tag z || [[ -z $SKIP_COMPRESS ]] || skip "$COMPRESS"
   ! has_tag zstd || [[ -z $SKIP_ZSTD ]] || skip "$ZSTD"
+  if has_tag no-upkg; then
+    PATH=$UPKG_ERROR_PATH
+  else
+    PATH=$UPKG_WRAPPER_PATH
+    [[ -z $SKIP_UPKG ]] || skip "$SKIP_UPKG"
+  fi
   export \
     HOME=$BATS_TEST_TMPDIR/home \
     GLOBAL_INSTALL_PREFIX=$BATS_TEST_TMPDIR/usr \

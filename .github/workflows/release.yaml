@@ -8,11 +8,11 @@ jobs:
   test:
     uses: ./.github/workflows/test.yaml
     secrets: inherit
-  install-bundle:
-    uses: ./.github/workflows/install-bundle.yaml
+  create-install-snapshot:
+    uses: ./.github/workflows/create-install-snapshot.yaml
     secrets: inherit
   create-release:
-    needs: [test, install-bundle]
+    needs: [test, create-install-snapshot]
     runs-on: ubuntu-latest
     name: Create μpkg GitHub release
     environment: release

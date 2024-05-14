@@ -1,0 +1,23 @@
+name: Create μpkg package
+
+on:
+  workflow_call: {}
+
+jobs:
+  create-package:
+    name: Create upkg.tar.gz
+    runs-on: ubuntu-latest
+    steps:
+    - id: program_version
+      uses: orbit-online/program-version@v1.0.0
+    - uses: actions/checkout@v4
+      with:
+        path: upkg
+    - name: Create μpkg package
+      run: upkg/tools/create-package.sh "${{ steps.program_version.outputs.version }}" upkg.tar.gz
+    - name: Upload upkg.tar.gz
+      uses: actions/upload-artifact@v4
+      with:
+        name: upkg.tar.gz
+        path: upkg.tar.gz
+        retention-days: 1
