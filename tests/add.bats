@@ -102,3 +102,12 @@ teardown_file() { common_teardown_file; }
   assert_snapshot_path
   assert_dir_exists .upkg/acme-renamed
 }
+
+# bats test_tags=tar
+@test "can add relative paths globally" {
+  local name=default/acme-renamed
+  create_tar_package $name
+  cp "$PACKAGE_FIXTURES/$name.tar" "$(basename $name).tar"
+  run -0 upkg add -g "$(basename $name).tar" $TAR_SHASUM
+  assert_snapshot_output
+}

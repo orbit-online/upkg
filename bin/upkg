@@ -139,6 +139,7 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
   elif $_add; then
     if $___global; then
       [[ -e "$INSTALL_PREFIX/lib/upkg" ]] || mkdir -p "$INSTALL_PREFIX/lib/upkg"
+      [[ ! -e $_URL ]] || _URL=$(realpath "$_URL") # Make sure we have an absolute path before changing directories
       cd "$INSTALL_PREFIX/lib/upkg"
     fi
     if $___no_bin; then

@@ -1,0 +1,2 @@
+upkg: Linking 'acme.bin'
+upkg: Added '$BATS_TEST_TMPDIR/project/acme-renamed.tar'
