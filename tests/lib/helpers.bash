@@ -113,6 +113,7 @@ create_tar_package() {
   if [[ ! -e "$dest" ]]; then
     tar \
       --sort=name \
+      --mode='u+rwX,g-w,o-w' \
       --mtime="@${SOURCE_DATE_EPOCH}" \
       --owner=0 --group=0 --numeric-owner \
       -caf "$dest" -C "$tpl" .

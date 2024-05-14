@@ -19,7 +19,6 @@ setup_suite() {
   umask 022 # Make sure permissions of new files match what we expect
   setup_package_fixtures_httpd
   setup_package_fixtures_sshd
-  check_package_fixture_template_permissions
   setup_package_fixture_templates
 }
 
@@ -95,15 +94,6 @@ check_commands() {
   type compress &>/dev/null || export SKIP_COMPRESS='z compression is not available. Use tests/run.sh to run the tests in a container.'
   type zstd &>/dev/null || export SKIP_ZSTD='zstd compression is not available. Use tests/run.sh to run the tests in a container.'
   type shellcheck &>/dev/null || export SKIP_SHELLCHECK='shellcheck is not available. Use tests/run.sh to run the tests in a container.'
-}
-
-# Make sure the package-templates have the correct permissions (i.e. git checkout wasn't run with a 002 instead of 022 umask)
-check_package_fixture_template_permissions() {
-  local wrong_mode_paths
-  if wrong_mode_paths=$(find "$BATS_TEST_DIRNAME/package-templates" -not -type l -exec bash -c 'printf "%s %s\n" "$1" "$(stat -c %a "$1")"' -- \{\} \; | grep -v '644$\|755$'); then
-    printf "The following paths in tests/package-templates have incorrect permissions (fix with \`chmod -R u=rwX,g=rX,o=rX tests/package-templates\`):\n%s" "$wrong_mode_paths" >&2
-    return 1
-  fi
 }
 
 setup_package_fixture_templates() {

@@ -1,8 +1,8 @@
 [drwxr-xr-x]  .
 ├── [drwxr-xr-x]  .upkg
 │   ├── [drwxr-xr-x]  .packages
-│   │   └── [drwxr-xr-x]  disallowed-binpaths.tar@2da333f6d108fc04e2f998ca74c850aa6f023cbb0badc4f05bfdd570ed19ca5f
+│   │   └── [drwxr-xr-x]  disallowed-binpaths.tar@a7a79960bf7eaec91bf294863804110831592afd629f2d421273f3297f55718e
 │   │       ├── [lrwxrwxrwx]  sudo -> /usr/bin/sudo
 │   │       └── [-rw-r--r--]  upkg.json
-│   └── [lrwxrwxrwx]  disallowed-binpaths -> .packages/disallowed-binpaths.tar@2da333f6d108fc04e2f998ca74c850aa6f023cbb0badc4f05bfdd570ed19ca5f
+│   └── [lrwxrwxrwx]  disallowed-binpaths -> .packages/disallowed-binpaths.tar@a7a79960bf7eaec91bf294863804110831592afd629f2d421273f3297f55718e
 └── [-rw-r--r--]  upkg.json
