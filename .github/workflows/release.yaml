@@ -8,14 +8,17 @@ jobs:
   test:
     uses: ./.github/workflows/test.yaml
     secrets: inherit
-  create-install-snapshot:
-    uses: ./.github/workflows/create-install-snapshot.yaml
+  bundle:
+    uses: ./.github/workflows/bundle.yaml
     secrets: inherit
-  create-compat-install-snapshot:
-    uses: ./.github/workflows/create-compat-install-snapshot.yaml
+  upload-schema:
+    needs: [test]
+    uses: ./.github/workflows/upload-schema.yaml
     secrets: inherit
-  create-release:
-    needs: [test, create-install-snapshot, create-compat-install-snapshot]
+  release:
+    needs: [test, bundle]
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     name: Create GitHub release
     environment: release
@@ -34,8 +37,26 @@ jobs:
         printf "message<<%s\n%s\n%s\n" "$eof" "$msg" "$eof" >> $GITHUB_OUTPUT
       env:
         REF: ${{ github.ref }}
-    - name: Download all tarballs
+    - name: Download upkg.tar.gz
       uses: actions/download-artifact@v4
+      with:
+        name: upkg.tar.gz
+    - name: Download upkg.tar.gz
+      uses: actions/download-artifact@v4
+      with:
+        name: upkg-compat.tar.gz
+    - name: Download upkg-compat.tar.gz
+      uses: actions/download-artifact@v4
+      with:
+        name: upkg-compat.tar.gz
+    - name: Download upkg-install.tar.gz
+      uses: actions/download-artifact@v4
+      with:
+        name: upkg-install.tar.gz
+    - name: Download upkg-compat-install.tar.gz
+      uses: actions/download-artifact@v4
+      with:
+        name: upkg-compat-install.tar.gz
     - name: Create Release
       uses: ncipollo/release-action@v1
       with:
@@ -43,6 +64,6 @@ jobs:
         body: ${{ steps.tag-message.outputs.message }}
         draft: false
         prerelease: false
-        artifacts: upkg.tar.gz,upkg-compat.tar.gz,upkg-install.tar.gz,upkg-compat-install.tar.gz
+        artifacts: upkg.tar.gz,upkg-compat.tar.gz,upkg-install.tar.gz,upkg-compat-install.tar.gz,upkg.schema.json
         artifactErrorsFailBuild: true
         artifactContentType: application/gzip
