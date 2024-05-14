@@ -43,7 +43,6 @@ teardown_file() { common_teardown_file; }
   local name=default/acme
   create_tar_package $name $name.nottar .gz
   run -0 upkg add -t tar "$PACKAGE_FIXTURES/$name.nottar"
-  cp "$PACKAGE_FIXTURES/$name.nottar" /tmp/
   assert_snapshot_output nottar
   assert_snapshot_path
 }
