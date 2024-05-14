@@ -94,6 +94,7 @@ check_commands() {
   type gzip &>/dev/null || export SKIP_GZIP='gzip compression is not available. Use tests/run.sh to run the tests in a container.'
   type compress &>/dev/null || export SKIP_COMPRESS='z compression is not available. Use tests/run.sh to run the tests in a container.'
   type zstd &>/dev/null || export SKIP_ZSTD='zstd compression is not available. Use tests/run.sh to run the tests in a container.'
+  type shellcheck &>/dev/null || export SKIP_SHELLCHECK='shellcheck is not available. Use tests/run.sh to run the tests in a container.'
 }
 
 # Make sure the package-templates have the correct permissions (i.e. git checkout wasn't run with a 002 instead of 022 umask)

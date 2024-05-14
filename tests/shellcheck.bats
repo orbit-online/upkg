@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
 set -Eeo pipefail; shopt -s inherit_errexit
-
 # bats file_tags=shellcheck
+
 @test 'shellcheck upkg' {
-  type shellcheck &>/dev/null || skip 'shellcheck not installed'
+  [[ -z $SKIP_SHELLCHECK ]] || skip "$SKIP_SHELLCHECK"
   shellcheck -x "$BATS_TEST_DIRNAME/../bin/upkg"
 }
 
-# bats file_tags=shellcheck
 @test 'shellcheck tests' {
-  type shellcheck &>/dev/null || skip 'shellcheck not installed'
+  [[ -z $SKIP_SHELLCHECK ]] || skip "$SKIP_SHELLCHECK"
   (
     cd tests
     shellcheck -x -- *.bats
