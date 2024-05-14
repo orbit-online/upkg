@@ -1,22 +1,23 @@
 TODO:
-Describe meta package, depend on a bunch of binaries an symlink them out
-Use https://github.com/dominictarr/JSON.sh as fallback
-Add zip support
-Check wget support in busybox & alpine
-Check mac support
-Check freebsd support
-Kill running dep installs when first error is discovered
-Maybe rethink install_prefix
-Replace '[[...]] ||' with '[[...]] &&'
-Add update property to deps
-update script should update itself first
-update script: pass all arguments as env vars, make the upkg.json entry a single string
-tar: auto-detect whether to --strip-components 1, add strip-components to upkg.json
-Add uname regex filter for packages
-Warn when GIT_SSH_COMMAND is set but BatchMode!=yes
-Simulate `ln -T` with `ln -Fi <<<'n'` on BSD
-Streamline package names are reported in log messages
-Depend on records.sh rather than running our own logging
+
+- Describe meta package, depend on a bunch of binaries an symlink them out
+- Use https://github.com/dominictarr/JSON.sh as fallback
+- Add zip support
+- Check wget support in busybox & alpine
+- Check mac support
+- Check freebsd support
+- Kill running dep installs when first error is discovered
+- Maybe rethink install_prefix
+- Replace '[[...]] ||' with '[[...]] &&'
+- Add update property to deps
+- update script should update itself first
+- update script: pass all arguments as env vars, make the upkg.json entry a single string
+- tar: auto-detect whether to --strip-components 1, add strip-components to upkg.json
+- Add uname regex filter for packages
+- Warn when GIT_SSH_COMMAND is set but BatchMode!=yes
+- Simulate `ln -T` with `ln -Fi <<<'n'` on BSD
+- Streamline package names are reported in log messages
+- Depend on records.sh rather than running our own logging
 
 ## Testing
 
