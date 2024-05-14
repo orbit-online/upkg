@@ -3,6 +3,7 @@ set -Eeo pipefail; shopt -s inherit_errexit nullglob
 
 setup_suite() {
   bats_require_minimum_version 1.5.0
+  check_dependencies
   setup_upkg_path_wrapper
   # Optionally show diff with delta
   export DELTA=cat
@@ -31,6 +32,13 @@ teardown_suite() {
     kill -INT "$SSHD_PKG_FIXTURES_PID" 2>/dev/null
     wait "$SSHD_PKG_FIXTURES_PID" || printf "HTTP server exited with status code %d\n" "$?" >&2
   fi
+}
+
+# Checks if upkg dependencies are install by calling upkg --help
+check_dependencies() {
+  local out ret=0
+  out=$("$BATS_TEST_DIRNAME/../bin/upkg" --help 2>&1) || ret=$?
+  [[ $ret = 0 ]] || fatal "Unable to invoke \`upkg --help\`. Make sure to run tools/install-deps.sh first. Output was:\n%s\n" "$out"
 }
 
 # Sets up a directory for upkg with only the barest of essentials and creates a upkg wrapper which overwrites PATH with it

@@ -31,9 +31,8 @@ jobs:
       with:
         path: upkg
     - name: Install dependencies
-      uses: ./upkg/.github/actions/install-dependencies
-      with:
-        working-directory: upkg
+      run: tools/install-deps.sh
+      working-directory: upkg
     - name: Run tests
       run: bats --formatter tap13 --filter-tags '!shellcheck' tests | tee tests/results.tap
       working-directory: upkg

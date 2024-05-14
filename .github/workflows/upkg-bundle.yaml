@@ -19,9 +19,8 @@ jobs:
         jq --arg version "${{ steps.program_version.outputs.version }}" '.version=$version' <<<"$upkgjson" >upkg.json
       working-directory: upkg
     - name: Install dependencies
-      uses: ./upkg/.github/actions/install-dependencies
-      with:
-        working-directory: upkg
+      run: tools/install-deps.sh
+      working-directory: upkg
     - name: Create upkg.tar.gz
       run: tar -czC upkg -f upkg.tar.gz .upkg bin lib LICENSE README.md upkg.json upkg.schema.json
     - name: Upload upkg.tar.gz
