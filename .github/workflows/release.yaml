@@ -2,7 +2,7 @@ name: Release
 
 on:
   push:
-    tags: [ 'v*' ]
+    tags: ['v*']
 
 jobs:
   test:
@@ -14,7 +14,7 @@ jobs:
   create-release:
     needs: [test, create-install-snapshot]
     runs-on: ubuntu-latest
-    name: Create μpkg GitHub release
+    name: Create GitHub release
     environment: release
     steps:
     - id: program_version
@@ -31,14 +31,8 @@ jobs:
         printf "message<<%s\n%s\n%s\n" "$eof" "$msg" "$eof" >> $GITHUB_OUTPUT
       env:
         REF: ${{ github.ref }}
-    - name: Download μpkg package
+    - name: Download all tarballs
       uses: actions/download-artifact@v4
-      with:
-        name: upkg.tar.gz
-    - name: Download μpkg install package
-      uses: actions/download-artifact@v4
-      with:
-        name: upkg-install.tar.gz
     - name: Create Release
       uses: ncipollo/release-action@v1
       with:
@@ -46,6 +40,6 @@ jobs:
         body: ${{ steps.tag-message.outputs.message }}
         draft: false
         prerelease: false
-        artifacts: upkg.tar.gz,upkg-install.tar.gz
+        artifacts: upkg.tar.gz,upkg-compat.tar.gz,upkg-install.tar.gz,upkg-compat-install.tar.gz
         artifactErrorsFailBuild: true
         artifactContentType: application/gzip

@@ -1,10 +1,10 @@
-name: Create μpkg package
+name: Create μpkg bundle
 
 on:
   workflow_call: {}
 
 jobs:
-  create-package:
+  create-bundle:
     name: Create upkg.tar.gz
     runs-on: ubuntu-latest
     steps:
@@ -13,8 +13,9 @@ jobs:
     - uses: actions/checkout@v4
       with:
         path: upkg
-    - name: Create μpkg package
-      run: upkg/tools/create-package.sh "${{ steps.program_version.outputs.version }}" upkg.tar.gz
+    - name: Create μpkg bundle
+      run: upkg bundle -d ../upkg.tar.gz -V "${{ steps.program_version.outputs.version }}"
+      working-directory: upkg
     - name: Upload upkg.tar.gz
       uses: actions/upload-artifact@v4
       with:
