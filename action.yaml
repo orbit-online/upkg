@@ -1,11 +1,15 @@
-name: 'Install μpkg'
-description: 'Install μpkg'
+name: Install μpkg
+description: Install μpkg
 runs:
-  using: 'composite'
+  using: composite
   steps:
   - name: Install μpkg
     shell: bash
     run: |
       ref=$(basename "$GITHUB_ACTION_PATH")
-      src=$(wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/$ref/upkg.sh)
-      bash -c "set - install -g orbit-online/upkg@$ref; $src"
+      if [[ -z $INSTALL_PREFIX ]]; then
+        INSTALL_PREFIX=$HOME/.local
+        [[ $EUID != 0 ]] || INSTALL_PREFIX=/usr/local
+      fi
+      wget -qO- https://github.com/orbit-online/upkg-bundle/releases/download/$ref/upkg-install.tar.gz | \
+        tar -xzC "$INSTALL_PREFIX"
