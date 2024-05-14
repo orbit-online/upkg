@@ -129,8 +129,8 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
   ! $___quiet || QUIET=true
 
   if $_install; then
-    upkg_mktemp
     [[ -e "$PWD/upkg.json" ]] || fatal "No upkg.json found in '%s'" "$PWD"
+    upkg_mktemp
     ln -sT "$PWD/upkg.json" ".upkg/.tmp/root/upkg.json"
     upkg_install "$PWD"
     if $DRY_RUN; then completed 'All dependencies are up-to-date'
