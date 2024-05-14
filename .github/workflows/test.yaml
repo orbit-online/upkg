@@ -34,7 +34,7 @@ jobs:
       run: tools/install-deps.sh
       working-directory: upkg
     - name: Run tests
-      run: bats --formatter tap13 --filter-tags '!shellcheck' tests | tee tests/results.tap
+      run: bats --formatter tap13 --filter-tags '!shellcheck' --jobs 4 tests | tee tests/results.tap
       working-directory: upkg
       env:
         BATS_LIB_PATH: ${{ github.workspace }}/lib
