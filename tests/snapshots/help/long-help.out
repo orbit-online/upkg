@@ -4,15 +4,18 @@ Usage:
   upkg add [-qvgXB -b PATH... -p PKGNAME -t PKGTYPE] (URL|PATH) [SHA]
   upkg remove [-qnvg] PKGNAME
   upkg list [-qvg] [-- COLUMNOPTS...]
+  upkg bundle [-qv -d PATH] -V VERSION [PATHS...]
 
 Options:
-  -n --dry-run       Dry run, $?=1 if install is required
-  -q --quiet         Log only fatal errors
-  -v --verbose       Output verbose logs and disable writing to the same line
-  -g --global        Act globally
-  -X --no-exec       Do not chmod +x the file (implies --no-bin)
-  -B --no-bin        Do not link executables in package bin/ to .upkg/.bin
-  -b --bin=PATH      Link specified executables or contents of specified
-                     directory to .upkg/.bin (default: bin/)
-  -t --pkgtype=TYPE  Explicitly set the package type (tar, file, or git)
-  -p --pkgname=NAME  Override the package name link in .upkg
+  -n --dry-run          Dry run, $?=1 if install is required
+  -q --quiet            Log only fatal errors
+  -v --verbose          Output verbose logs and disable writing to the same line
+  -g --global           Act globally
+  -X --no-exec          Do not chmod +x the file (implies --no-bin)
+  -B --no-bin           Do not link executables in package bin/ to .upkg/.bin
+  -b --bin=PATH         Link specified executables or contents of specified
+                        directory to .upkg/.bin (default: bin/)
+  -t --pkgtype=TYPE     Explicitly set the package type (tar, file, or git)
+  -p --pkgname=NAME     Override the package name link in .upkg/
+  -d --dest=PATH        Package tarball destination (default: $pkgname.tar.gz)
+  -V --version=VERSION  Version of the package that is being bundle
