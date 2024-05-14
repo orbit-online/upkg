@@ -265,7 +265,7 @@ upkg_install_dep() {
       upkg_install_deps "$parent_pkgpath/.upkg/$pkgname"
     fi
 
-    local binpath binpaths=() binpaths_is_default=true
+    local binpath binpaths=(bin) binpaths_is_default=true
     # Check if there is a bin property in either the dep or in the upkg.json of the package itself
     if jq -re 'has("bin")' <<<"$dep" >/dev/null; then
       readarray -t -d $'\n' binpaths < <(jq -r '.bin[]' <<<"$dep")
@@ -273,11 +273,9 @@ upkg_install_dep() {
     elif [[ -e $dedup_path/upkg.json ]] && jq -re 'has("bin")' "$dedup_path/upkg.json" >/dev/null; then
       readarray -t -d $'\n' binpaths < <(jq -r '.bin[]' "$dedup_path/upkg.json")
       binpaths_is_default=false
-    else
-      binpaths=(bin)
     fi
-    for binpath in "${binpaths[@]}"; do
 
+    for binpath in "${binpaths[@]}"; do
       if [[ ! -e $dedup_path/$binpath ]]; then
         $binpaths_is_default || warning "bin path '%s' in the package '%s' does not exist, ignoring" "$binpath" "$pkgurl"
         continue
