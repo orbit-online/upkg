@@ -11,8 +11,11 @@ jobs:
   create-install-snapshot:
     uses: ./.github/workflows/create-install-snapshot.yaml
     secrets: inherit
+  create-compat-install-snapshot:
+    uses: ./.github/workflows/create-compat-install-snapshot.yaml
+    secrets: inherit
   create-release:
-    needs: [test, create-install-snapshot]
+    needs: [test, create-install-snapshot, create-compat-install-snapshot]
     runs-on: ubuntu-latest
     name: Create GitHub release
     environment: release

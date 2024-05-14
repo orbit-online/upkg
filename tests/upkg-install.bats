@@ -20,3 +20,18 @@ teardown_file() { common_teardown_file; }
   tar -xf upkg-install.tar.gz -C "$HOME/.local"
   assert_snapshot_path "" "$HOME/.local"
 }
+
+@test "test compat install package creation and installation" {
+  (
+    cd "$BATS_TEST_DIRNAME/.."
+    run -0 upkg bundle -d "$HOME/upkg.tar.gz" -V testing bin lib upkg.schema.json README.md LICENSE
+  )
+  run -0 "$BATS_TEST_DIRNAME/../tools/create-compat-install-snapshot.sh" "$HOME/upkg.tar.gz" upkg-compat.tar.gz upkg-compat-install.tar.gz
+  mkdir upkg
+  tar -xf upkg-compat.tar.gz -C "upkg"
+  assert_snapshot_path compat-bundle "upkg"
+
+  mkdir "$HOME/.local"
+  tar -xf upkg-compat-install.tar.gz -C "$HOME/.local"
+  assert_snapshot_path compat-install "$HOME/.local"
+}

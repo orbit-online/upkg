@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# shellcheck disable=2059,2064
+set -Eeo pipefail
+
+upkg() {
+  local pkgroot; pkgroot=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
+  if ! type "jq" >/dev/null 2>&1; then
+    printf -- "upkg: command not found: 'jq'\n" >&2
+    exit 1
+  fi
+  local upkg_new=$pkgroot/.upkg/upkg-new/bin/upkg
+  local upkg_old=$pkgroot/.upkg/upkg-old
+  case "$1" in
+    add|remove|bundle) exec "$upkg_new" "$@" ;;
+    uninstall|root) exec "$upkg_old" "$@" ;;
+    list)
+      if [[ $# -gt 2 ]]; then
+        exec "$upkg_new" "$@"
+      elif [[ $# -eq 2 && $2 = -g ]]; then
+        printf "μpkg legacy packages:\n"
+        "$upkg_old" "$@"
+        printf "μpkg packages:\n"
+        exec "$upkg_new" "$@"
+      elif is_legacy_pkgroot; then
+        exec "$upkg_old" "$@"
+      else
+        exec "$upkg_new" "$@"
+      fi
+      ;;
+    install)
+      if [[ $# -eq 1 ]] || [[ $# -eq 2 && $2 = -n ]]; then
+        if is_legacy_pkgroot; then
+          exec "$upkg_old" "$@"
+        else
+          exec "$upkg_new" "$@"
+        fi
+      else
+        exec "$upkg_old" "$@"
+      fi
+      ;;
+    *) exec "$upkg_new" --help ;;
+  esac
+}
+
+is_legacy_pkgroot() {
+  if [[ -e .upkg/.packages ]]; then
+    return 1
+  elif [[ -e upkg.json ]]; then
+    ! jq -re '.commands // .assets // (.dependencies | type=="array") // false' upkg.json >/dev/null || return 0
+  fi
+  # Assume new
+  return 1
+}
+
+upkg "$@"
