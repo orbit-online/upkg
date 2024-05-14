@@ -4,6 +4,9 @@ set -Eeo pipefail; shopt -s inherit_errexit
 bats_load_library bats-support
 bats_load_library bats-assert
 bats_load_library bats-file
+load 'lib/httpd'
+load 'lib/sshd'
+load 'lib/close-fds'
 
 common_setup_file() {
   export SNAPSHOTS_ROOT SNAPSHOTS
@@ -12,8 +15,6 @@ common_setup_file() {
 }
 
 common_setup() {
-  ! has_tag http || [[ -z $SKIP_HTTPD_PKG_FIXTURES ]] || skip "$SKIP_HTTPD_PKG_FIXTURES"
-  ! has_tag ssh || [[ -z $SKIP_SSHD_PKG_FIXTURES ]] || skip "$SKIP_SSHD_PKG_FIXTURES"
   ! has_tag tar || [[ -z $SKIP_TAR ]] || skip "$SKIP_TAR"
   ! has_tag git || [[ -z $SKIP_GIT ]] || skip "$SKIP_GIT"
   ! has_tag wget || [[ -z $SKIP_WGET ]] || skip "$SKIP_WGET"
@@ -33,11 +34,20 @@ common_setup() {
     PATH=$UPKG_WRAPPER_PATH
     [[ -z $SKIP_UPKG ]] || skip "$SKIP_UPKG"
   fi
+  if has_tag http; then
+    [[ -z $SKIP_HTTPD ]] || skip "$SKIP_HTTPD"
+    setup_package_fixtures_httpd
+  fi
+  if has_tag ssh; then
+    [[ -z $SKIP_SSHD ]] || skip "$SKIP_SSHD"
+    setup_package_fixtures_sshd
+  fi
   export \
     HOME=$BATS_TEST_TMPDIR/home \
     GLOBAL_INSTALL_PREFIX=$BATS_TEST_TMPDIR/usr \
-    PROJECT_ROOT=$BATS_TEST_TMPDIR/project
-  export CLEAR_FIXTURES=() SNAPSHOT_CREATED=false SNAPSHOT_UPDATED=false
+    PROJECT_ROOT=$BATS_TEST_TMPDIR/project \
+    TEST_PACKAGE_FIXTURES=$BATS_TEST_TMPDIR/package-fixtures
+  export SNAPSHOT_CREATED=false SNAPSHOT_UPDATED=false
   # EUID cannot be set, so even when running as root make sure to install to $HOME
   export INSTALL_PREFIX=$HOME/.local
   # Don't let upkg run installs in parallel, this results in non-deterministic ouput
@@ -47,38 +57,12 @@ common_setup() {
 
 common_teardown() {
   local ret=0
+  ! has_tag http || teardown_package_fixtures_httpd
+  ! has_tag ssh || teardown_package_fixtures_sshd
   if [[ -n $(jobs -p) ]]; then
     fail "There were unterminated background jobs after test completion"
     ret=1
   fi
-  if [[ -e $HTTPD_PKG_FIXTURES_LOG ]]; then
-    if has_tag http; then
-      # Output and clear server log after every test
-      printf -- "-- httpd logs --\n" >&2
-      cat "$HTTPD_PKG_FIXTURES_LOG" >&2
-      true >"$HTTPD_PKG_FIXTURES_LOG"
-    elif [[ $(stat -c %s "$HTTPD_PKG_FIXTURES_LOG") -gt 0 ]]; then
-      true >"$HTTPD_PKG_FIXTURES_LOG"
-      fail "HTTP server was accessed but test did not have 'http' tag, you must tag tests that access the HTTP server ('# bats test_tags=http')"
-      ret=1
-    fi
-  fi
-  if [[ -e $SSHD_PKG_FIXTURES_LOG ]]; then
-    if has_tag ssh; then
-      # Output and clear server log after every test
-      printf -- "-- sshd logs --\n" >&2
-      cat "$SSHD_PKG_FIXTURES_LOG" >&2
-      true >"$SSHD_PKG_FIXTURES_LOG"
-    elif [[ $(stat -c %s "$SSHD_PKG_FIXTURES_LOG") -gt 0 ]]; then
-      true >"$SSHD_PKG_FIXTURES_LOG"
-      fail "SSH server was accessed but test did not have 'ssh' tag, you must tag tests that access the SSH server ('# bats test_tags=ssh')"
-      ret=1
-    fi
-  fi
-  local fixture
-  for fixture in "${CLEAR_FIXTURES[@]}"; do
-    rm -rf "$fixture"
-  done
   if [[ -e $BATS_TEST_TMPDIR/snapshot-created ]]; then
     fail "Snapshots were created during this run. Inspect and validate them, then run the tests again to ensure that they are stable"
     ret=1
@@ -106,7 +90,6 @@ remove_commands() {
 
 create_tar_package() {
   local tpl=$PACKAGE_TEMPLATES/$1
-  local name_override=$2
   has_tag tar || fail "create_tar_package is used, but the test is not tagged with 'tar'"
   local compression_suffix=$3
   local dest=$PACKAGE_FIXTURES/$1.tar$compression_suffix
@@ -114,48 +97,61 @@ create_tar_package() {
     has_tag "${compression_suffix#\.}" || \
       fail "create_tar_package is used with ${compression_suffix#\.} compression, but the test is not tagged with '${compression_suffix#\.}'"
   fi
+  [[ -z $2 ]] || dest=$TEST_PACKAGE_FIXTURES/$2
   mkdir -p "$(dirname "$dest")"
-  # https://reproducible-builds.org/docs/archives/
-  if [[ ! -e "$dest" ]]; then
-    tar \
-      --sort=name \
-      --mode='u+rwX,g-w,o-w' \
-      --mtime="@${SOURCE_DATE_EPOCH}" \
-      --owner=0 --group=0 --numeric-owner \
-      -caf "$dest" -C "$tpl" .
-  fi
-  if [[ -n $name_override ]]; then
-    cp "$dest" "$PACKAGE_FIXTURES/$name_override"
-    CLEAR_FIXTURES+=("$PACKAGE_FIXTURES/$name_override")
-  fi
+  (
+    close_non_std_fds
+    exec 9<>"$dest.lock"
+    trap "exec 9>&-" EXIT # Release as soon as are done
+    if ! flock -nx 9; then
+      flock -s 9 # Wait for exclusive lock to be release (and tar to be finished)
+    else
+      # https://reproducible-builds.org/docs/archives/
+      [[ -e "$dest" ]] || tar \
+        --sort=name \
+        --mode='u+rwX,g-w,o-w' \
+        --mtime="@${SOURCE_DATE_EPOCH}" \
+        --owner=0 --group=0 --numeric-owner \
+        -caf "$dest" -C "$tpl" .
+    fi
+  )
   # shellcheck disable=SC2034
   TAR_SHASUM=$(shasum -a 256 "$dest" | cut -d' ' -f1)
 }
 
 create_file_package() {
   has_tag file || fail "create_file_package is used, but the test is not tagged with 'file'"
-  local tpl=$PACKAGE_TEMPLATES/$1 dest=$PACKAGE_FIXTURES/${2:-$1}
-  [[ -z $2 ]] || CLEAR_FIXTURES+=("$dest_name")
+  local tpl=$PACKAGE_TEMPLATES/$1 dest=$PACKAGE_FIXTURES/$1
+  [[ -z $2 ]] || dest=$TEST_PACKAGE_FIXTURES/$2
   mkdir -p "$(dirname "$dest")"
-  [[ -e $dest ]] || cp "$tpl" "$dest"
+  cp -n "$tpl" "$dest"
   # shellcheck disable=SC2034
   FILE_SHASUM=$(shasum -a 256 "$dest" | cut -d' ' -f1)
 }
 
 create_git_package() {
   has_tag git || fail "create_git_package is used, but the test is not tagged with 'git'"
-  local tpl=$PACKAGE_TEMPLATES/$1 working_copy=$PACKAGE_FIXTURES/$1.git-tmp dest=$PACKAGE_FIXTURES/${2:-$1}.git
-  [[ -z $2 ]] || CLEAR_FIXTURES+=("$dest")
-  if [[ ! -e $dest ]]; then
-    mkdir -p "$(dirname "$dest")"
-    mkdir "$working_copy"
-    git init -q  "$working_copy"
-    cp -r "$tpl/." "$working_copy/"
-    git -C "$working_copy" add -A
-    git -C "$working_copy" commit -q --no-gpg-sign -m 'Initial import'
-    git clone --bare "$working_copy" "$dest"
-    git -C "$dest" --bare update-server-info
-  fi
+  local tpl=$PACKAGE_TEMPLATES/$1 working_copy=$PACKAGE_FIXTURES/$1.git-tmp dest=$PACKAGE_FIXTURES/$1.git
+  [[ -z $2 ]] || dest=$TEST_PACKAGE_FIXTURES/$2.git
+  mkdir -p "$(dirname "$dest")"
+  (
+    close_non_std_fds
+    exec 9<>"$dest.lock"
+    trap "exec 9>&-" EXIT # Release as soon as we are done
+    if ! flock -nx 9; then
+      flock -s 9 # Wait for exclusive lock to be released (and git to be finished)
+    else
+      if [[ ! -e $dest ]]; then
+        mkdir "$working_copy"
+        git init -q  "$working_copy"
+        cp -r "$tpl/." "$working_copy/"
+        git -C "$working_copy" add -A
+        git -C "$working_copy" commit -q --no-gpg-sign -m 'Initial import'
+        git clone --bare "$working_copy" "$dest"
+        git -C "$dest" --bare update-server-info
+      fi
+    fi
+  )
   # shellcheck disable=SC2034
   GIT_COMMIT=$(git -C "$dest" rev-parse HEAD)
 }
@@ -222,18 +218,24 @@ assert_snapshot_path() {
 
 # shellcheck disable=SC2120
 replace_values() {
-  (if [[ -n $1 ]]; then cat "$1"; else cat; fi) | \
-  sed "s#$BATS_TEST_TMPDIR#\$BATS_TEST_TMPDIR#g" | \
-  sed "s#$BATS_RUN_TMPDIR#\$BATS_RUN_TMPDIR#g" | \
-  (if [[ -n $HTTPD_PKG_FIXTURES_ADDR ]]; then sed "s#$HTTPD_PKG_FIXTURES_ADDR#\$HTTPD_PKG_FIXTURES_ADDR#g"; else cat; fi)
+  local data
+  if [[ -n $1 ]]; then data=$(cat "$1")
+  else data=$(cat); fi
+  data=${data//"$BATS_TEST_TMPDIR"/\$BATS_TEST_TMPDIR}
+  data=${data//"$BATS_RUN_TMPDIR"/\$BATS_RUN_TMPDIR}
+  [[ -z $HTTPD_PKG_FIXTURES_ADDR ]] || data=${data//"$HTTPD_PKG_FIXTURES_ADDR"/\$HTTPD_PKG_FIXTURES_ADDR}
+  printf "%s\n" "$data"
 }
 
 # shellcheck disable=SC2120
 replace_vars() {
-  (if [[ -n $1 ]]; then cat "$1"; else cat; fi) | \
-  sed "s#\$BATS_TEST_TMPDIR#$BATS_TEST_TMPDIR#g" | \
-  sed "s#\$BATS_RUN_TMPDIR#$BATS_RUN_TMPDIR#g" | \
-  (if [[ -n $HTTPD_PKG_FIXTURES_ADDR ]]; then sed "s#\$HTTPD_PKG_FIXTURES_ADDR#$HTTPD_PKG_FIXTURES_ADDR#g"; else cat; fi)
+  local data
+  if [[ -n $1 ]]; then data=$(cat "$1")
+  else data=$(cat); fi
+  data=${data//\$BATS_TEST_TMPDIR/"$BATS_TEST_TMPDIR"}
+  data=${data//\$BATS_RUN_TMPDIR/"$BATS_RUN_TMPDIR"}
+  [[ -z $HTTPD_PKG_FIXTURES_ADDR ]] || data=${data//\$HTTPD_PKG_FIXTURES_ADDR/"$HTTPD_PKG_FIXTURES_ADDR"}
+  printf "%s\n" "$data"
 }
 
 get_file_structure() {

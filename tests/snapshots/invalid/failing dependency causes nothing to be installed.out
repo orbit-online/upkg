@@ -1,4 +1,6 @@
-upkg: Downloading $HTTPD_PKG_FIXTURES_ADDR/invalid/non-existent-dep.tar
-upkg: Error while downloading '$HTTPD_PKG_FIXTURES_ADDR/invalid/non-existent-dep.tar', server response:
-  HTTP/1.0 404 File not found
-  
+upkg: Downloading $HTTPD_PKG_FIXTURES_ADDR/invalid/failing-dependency.tar
+upkg: Downloading http://127.0.0.1:0/invalid/non-existent-dep.tar
+upkg: Error while downloading 'http://127.0.0.1:0/invalid/non-existent-dep.tar', server response:
+
+upkg: An error occurred while installing 'http://127.0.0.1:0/invalid/non-existent-dep.tar'
+upkg: An error occurred while installing '$HTTPD_PKG_FIXTURES_ADDR/invalid/failing-dependency.tar'

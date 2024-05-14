@@ -4,7 +4,7 @@ SHELL ["/bin/bash", "-Eeo", "pipefail", "-c"]
 RUN apt-get update && apt-get install -y --no-install-recommends \
   ca-certificates jq wget curl git \
   bzip2 xz-utils lunzip lzma lzop gzip ncompress zstd \
-  ssh tree bsdextrautils psmisc shellcheck python3 gettext openssh-server sudo && \
+  ssh tree bsdextrautils psmisc shellcheck python3 gettext openssh-server sudo parallel && \
   rm -rf /var/lib/apt/lists/*
 RUN wget -qO /tmp/delta.deb https://github.com/dandavison/delta/releases/download/0.17.0/git-delta_0.17.0_amd64.deb; \
   dpkg -i /tmp/delta.deb && rm /tmp/delta.deb

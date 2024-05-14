@@ -63,7 +63,7 @@ teardown_file() { common_teardown_file; }
 @test "failing dependency causes nothing to be installed" {
   local name=invalid/failing-dependency
   create_tar_package $name
-  run -1 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
+  run -1 upkg add "$HTTPD_PKG_FIXTURES_ADDR/$name.tar" $TAR_SHASUM
   assert_snapshot_output "" "${output//Server: SimpleHTTP*}" # server response has version and date in the output, which changes, so remove that part
   assert_snapshot_path shared/empty
 }

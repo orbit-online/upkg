@@ -1,2 +1,2 @@
-upkg: No checksum given for '$BATS_RUN_TMPDIR/package-fixtures/default/acme.nottar', determining now
-upkg: Added '$BATS_RUN_TMPDIR/package-fixtures/default/acme.nottar'
+upkg: No checksum given for '$BATS_TEST_TMPDIR/package-fixtures/default/acme.nottar', determining now
+upkg: Added '$BATS_TEST_TMPDIR/package-fixtures/default/acme.nottar'

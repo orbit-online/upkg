@@ -18,7 +18,7 @@ teardown_file() { common_teardown_file; }
 @test "git http repo install with -q is quiet" {
   local name=default/acme
   create_git_package $name
-  run -0 upkg add -q -t git -g $HTTPD_PKG_FIXTURES_ADDR/$name.git $GIT_COMMIT
+  run -0 upkg add -q -t git -g "$HTTPD_PKG_FIXTURES_ADDR/$name.git" $GIT_COMMIT
   assert_output ""
 }
 

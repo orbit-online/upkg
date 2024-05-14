@@ -15,7 +15,7 @@ teardown_file() { common_teardown_file; }
   create_git_package $name
   run -0 upkg add package-fixtures:"$PACKAGE_FIXTURES/$name.git" $GIT_COMMIT
   # Output is too unique to snapshot
-  assert_equal "$(wc -l "$SSHD_PKG_FIXTURES_LOG")" "3 $SSHD_PKG_FIXTURES_LOG" # should only have log lines from the clone
+  assert_equal "$(wc -l "$SSHD_ROOT/log")" "3 $SSHD_ROOT/log" # should only have log lines from the clone
   assert_snapshot_path shared/acme-git
 }
 
@@ -25,7 +25,7 @@ teardown_file() { common_teardown_file; }
   create_git_package $name
   run -0 upkg add package-fixtures:"$PACKAGE_FIXTURES/$name.git"
   # Output is too unique to snapshot
-  assert_equal "$(wc -l "$SSHD_PKG_FIXTURES_LOG")" "9 $SSHD_PKG_FIXTURES_LOG" # ls-remote causes more log lines
+  assert_equal "$(wc -l "$SSHD_ROOT/log")" "9 $SSHD_ROOT/log" # ls-remote causes more log lines
   assert_snapshot_path shared/acme-git
 }
 
@@ -33,7 +33,7 @@ teardown_file() { common_teardown_file; }
 @test "does not fail when .tar extension missing" {
   local name=default/acme
   create_tar_package $name $name.nottar
-  run -0 upkg add -t tar "$PACKAGE_FIXTURES/$name.nottar"
+  run -0 upkg add -t tar "$TEST_PACKAGE_FIXTURES/$name.nottar"
   assert_snapshot_output nottar
   assert_snapshot_path shared/acme
 }
@@ -42,7 +42,7 @@ teardown_file() { common_teardown_file; }
 @test "does not fail when .tar.gz extension missing" {
   local name=default/acme
   create_tar_package $name $name.nottar .gz
-  run -0 upkg add -t tar "$PACKAGE_FIXTURES/$name.nottar"
+  run -0 upkg add -t tar "$TEST_PACKAGE_FIXTURES/$name.nottar"
   assert_snapshot_output nottar
   assert_snapshot_path
 }
@@ -51,7 +51,7 @@ teardown_file() { common_teardown_file; }
 @test "does not fail when .tar.bzip2 extension missing" {
   local name=default/acme
   create_tar_package $name $name.nottar .bz2
-  run -0 upkg add -t tar "$PACKAGE_FIXTURES/$name.nottar"
+  run -0 upkg add -t tar "$TEST_PACKAGE_FIXTURES/$name.nottar"
   assert_snapshot_output nottar
   assert_snapshot_path
 }

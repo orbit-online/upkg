@@ -60,7 +60,7 @@ teardown_file() { common_teardown_file; }
 @test "tarball install via http with pkgname from package" {
   local name=default/acme
   create_tar_package $name
-  run -0 upkg add $HTTPD_PKG_FIXTURES_ADDR/$name.tar $TAR_SHASUM
+  run -0 upkg add "$HTTPD_PKG_FIXTURES_ADDR/$name.tar" $TAR_SHASUM
   assert_snapshot_output
   assert_snapshot_path shared/acme
   assert_dir_exists .upkg/acme
@@ -70,7 +70,7 @@ teardown_file() { common_teardown_file; }
 @test "git repo install via http succeeds" {
   local name=default/acme
   create_git_package $name
-  run -0 upkg add -t git -g $HTTPD_PKG_FIXTURES_ADDR/$name.git $GIT_COMMIT
+  run -0 upkg add -t git -g "$HTTPD_PKG_FIXTURES_ADDR/$name.git" $GIT_COMMIT
   assert_snapshot_output
   assert_snapshot_path acme-git-global "$HOME/.local"
 }
