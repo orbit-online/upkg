@@ -18,6 +18,7 @@ TODO:
 - Simulate `ln -T` with `ln -Fi <<<'n'` on BSD
 - Streamline package names are reported in log messages
 - Depend on records.sh rather than running our own logging
+- Test with all bash versions, like in docopt.sh
 
 ## Testing
 
