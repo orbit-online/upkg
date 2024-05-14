@@ -39,6 +39,9 @@ jobs:
       env:
         BATS_LIB_PATH: ${{ github.workspace }}/lib
         TMPDIR: ${{ github.workspace }}/upkg/tests/bats-tmp
+    - name: Fail when tests are skipped
+      run: '! grep -q "not ok" tests/results.tap'
+      working-directory: upkg
     - name: Generate test summary
       uses: test-summary/action@v2
       with:
