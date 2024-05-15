@@ -18,7 +18,7 @@ main() {
   trap "rm -rf \"$tmp\"" EXIT
 
   # Use μpkg to create the directory structure
-  INSTALL_PREFIX=$tmp "$PKGROOT/bin/upkg" add -qg "$tarball"
+  INSTALL_PREFIX=$tmp "$PKGROOT/bin/upkg" add -t tar -qg "$tarball"
 
   # Adjust the download URL of the package to point at the github release
   upkgjson=$(cat "$tmp/lib/upkg/upkg.json")
