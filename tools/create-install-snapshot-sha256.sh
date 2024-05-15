@@ -10,8 +10,8 @@ source "$PKGROOT/tools/common.sh"
 main() {
   local version=$1 tarball snapshot_dest
   [[ -n $version ]] || fatal "Usage: create-install-snapshot-sha256.sh VERSION"
-  tarball=$(mktemp)
-  snapshot_dest=$(mktemp)
+  tarball=$(mktemp --suffix .tar.gz)
+  snapshot_dest=$(mktemp --suffix .tar.gz)
   # shellcheck disable=SC2064
   trap "rm \"$tarball\" \"$snapshot_dest\"" EXIT
   # Don't include the README, it will contain the shasum of the bundle we are creating right now
