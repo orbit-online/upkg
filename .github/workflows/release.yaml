@@ -25,7 +25,7 @@ jobs:
       run: tools/install-deps.sh
       working-directory: upkg
     - name: Create μpkg bundle
-      run: bin/upkg bundle -d ../upkg.tar.gz -V "${{ steps.program_version.outputs.version }}" bin lib LICENSE
+      run: bin/upkg bundle -d ../upkg.tar.gz -V "${{ steps.program_version.outputs.version }}" bin lib LICENSE upkg.schema.json
       working-directory: upkg
     - name: Upload upkg.tar.gz
       uses: actions/upload-artifact@v4

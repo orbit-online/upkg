@@ -15,7 +15,7 @@ main() {
   # shellcheck disable=SC2064
   trap "rm \"$tarball\" \"$snapshot_dest\"" EXIT
   # Don't include the README, it will contain the shasum of the bundle we are creating right now
-  (cd "$PKGROOT"; "$PKGROOT/bin/upkg" bundle -qd "$tarball" -V "$version" bin lib LICENSE)
+  (cd "$PKGROOT"; "$PKGROOT/bin/upkg" bundle -qd "$tarball" -V "$version" bin lib LICENSE upkg.schema.json)
   "$PKGROOT/tools/create-install-snapshot.sh" "$tarball" "$snapshot_dest"
   shasum -a 256 "$snapshot_dest" | cut -d ' ' -f1
 }
