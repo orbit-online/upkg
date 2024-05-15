@@ -71,14 +71,12 @@ INSTALL_UPKG
 
 ### Install dependencies
 
-Installation dependencies are `ca-certificates`, `wget`, and `shasum`.
+Installation dependencies are `ca-certificates`, `wget`, and `shasum` (`jq` is
+included here so μpkg also works).
 
-For Debian based systems these dependencies are installable with
-`apt-get install -y ca-certificates` (`wget` and `shasum` are already installed).  
-For alpine docker images use `apk add --update ca-certificates bash perl-utils`
-(`wget` is already installed).  
-For Red Hat based systems use `dnf install -y ca-certificates bash perl-utils wget`
-(`shasum` is already installed).
+For Debian based systems these dependencies are installable with `apt-get install -y ca-certificates wget libdigest-sha-perl jq`.  
+For alpine docker images use `apk add --update ca-certificates wget bash perl-utils jq`.  
+For Red Hat based systems use `dnf install -y ca-certificates bash perl-utils wget` (`shasum` is already installed).
 
 ### Install guarantees
 
@@ -267,6 +265,7 @@ TODO
 - Simulate `ln -T` with `ln -Fi <<<'n'` on BSD
 - Streamline package names are reported in log messages
 - Depend on records.sh rather than running our own logging
+- Use sha256sum as fallback for shasum -a 256
 
 ## Alternatives
 
