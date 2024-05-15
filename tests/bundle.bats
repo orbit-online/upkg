@@ -58,11 +58,11 @@ teardown_file() { common_teardown_file; }
 @test "fails when paths specified in bin do not exist" {
   cp -r "$PACKAGE_TEMPLATES/default/scattered-executables/upkg.json" .
   run -1 upkg bundle -d scattered-executables.tar.gz -V v0.0.1
-  assert_snapshot_output
+  assert_snapshot_output "" "$(grep -v 'Option --mtime' <<<"$output")"
 }
 
 @test "fails when specified paths do not exist" {
   cp -r "$PACKAGE_TEMPLATES/default/acme/upkg.json" .
   run -1 upkg bundle -d acme.tar.gz -V v1.0.2 non-existent
-  assert_snapshot_output
+  assert_snapshot_output "" "$(grep -v 'Option --mtime' <<<"$output")"
 }
