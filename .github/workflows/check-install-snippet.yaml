@@ -15,4 +15,4 @@ jobs:
       run: |
         url=$(grep -Eom1 'u=https://github\.com/orbit-online/upkg/releases/download/[^/]+/upkg-install\.tar\.gz' README.md)
         sha256=$(grep -Eom1 'c=[0-9a-f]{64}' README.md)
-        wget -qO>(shasum -a 256 -c <(echo "${sha256#c=}  -")) "${url#u=}"
+        wget --server-response -qO>(shasum -a 256 -c <(echo "${sha256#c=}  -")) "${url#u=}"
