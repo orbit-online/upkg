@@ -33,32 +33,32 @@ Usage:
   upkg bundle [-qv -d PATH] -V VERSION [PATHS...]
 
 Options:
-  -n --dry-run          Dry run, \$?=1 if install is required
-  -q --quiet            Log only fatal errors
-  -v --verbose          Output verbose logs and disable writing to the same line
-  -g --global           Act globally
-  -X --no-exec          Do not chmod +x the file (implies --no-bin)
-  -B --no-bin           Do not link executables in package bin/ to .upkg/.bin
-  -b --bin=PATH         Link specified executables or contents of specified
-                        directory to .upkg/.bin (default: bin/)
-  -t --pkgtype=TYPE     Explicitly set the package type (tar, file, or git)
-  -p --pkgname=NAME     Override the package name link in .upkg/
-  -d --dest=PATH        Package tarball destination (default: \$pkgname.tar.gz)
-  -V --version=VERSION  Version of the package that is being bundled
+  -n --dry-run         Dry run, \$?=1 if install is required
+  -q --quiet           Log only fatal errors
+  -v --verbose         Output verbose logs and disable writing to the same line
+  -g --global          Act globally
+  -X --no-exec         Do not chmod +x the file (implies --no-bin)
+  -B --no-bin          Do not link executables in package bin/ to .upkg/.bin
+  -b --bin=PATH        Link specified executables or contents of specified
+                       directory to .upkg/.bin (default: bin/)
+  -t --pkgtype=TYPE    Explicitly set the package type (tar, file, or git)
+  -p --pkgname=NAME    Override the package name link in .upkg/
+  -d --dest=PATH       Package tarball destination (default: \$pkgname.tar.gz)
+  -V --pkgver=VERSION  Version of the package that is being bundled
 "
 # shellcheck disable=SC2317
 # docopt parser below, refresh this parser with `docopt.sh upkg`
 # shellcheck disable=2016,2086,2317,1090,1091,2034,2154
 docopt() { source "$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh" '2.0.0a3' || {
 ret=$?;printf -- "exit %d\n" "$ret";exit "$ret";};set -e
-trimmed_doc=${DOC:0:1062};usage=${DOC:36:216};digest=7b01d;options=('-n --dry-'\
+trimmed_doc=${DOC:0:1050};usage=${DOC:36:216};digest=03982;options=('-n --dry-'\
 'run 0' '-q --quiet 0' '-v --verbose 0' '-g --global 0' '-X --no-exec 0' '-B -'\
 '-no-bin 0' '-b --bin 1' '-p --pkgname 1' '-t --pkgtype 1' '-d --dest 1' '-V -'\
-'-version 1');node_0(){ switch __dry_run 0;};node_1(){ switch __quiet 1;}
+'-pkgver 1');node_0(){ switch __dry_run 0;};node_1(){ switch __quiet 1;}
 node_2(){ switch __verbose 2;};node_3(){ switch __global 3;};node_4(){ switch \
 __no_exec 4;};node_5(){ switch __no_bin 5;};node_6(){ value __bin 6 true;}
 node_7(){ value __pkgname 7;};node_8(){ value __pkgtype 8;};node_9(){ value \
-__dest 9;};node_10(){ value __version 10;};node_11(){ value URL a;};node_12(){
+__dest 9;};node_10(){ value __pkgver 10;};node_11(){ value URL a;};node_12(){
 value PATH a;};node_13(){ value SHA a;};node_14(){ value PKGNAME a;};node_15(){
 value COLUMNOPTS a true;};node_16(){ value PATHS a true;};node_17(){ switch \
 install a:install;};node_18(){ switch add a:add;};node_19(){ switch remove \
@@ -73,7 +73,7 @@ optional 1 2 9;};node_38(){ optional 39;};node_39(){ repeatable 16;};node_40(){
 choice 23 25 30 32 36;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" \
 "$1" >&2;printf "%s\n" "${DOC:36:216}" >&2;exit 1;}';local varnames=(__dry_run \
 __quiet __verbose __global __no_exec __no_bin __bin __pkgname __pkgtype __dest \
-__version URL PATH SHA PKGNAME COLUMNOPTS PATHS install add remove list bundle \
+__pkgver URL PATH SHA PKGNAME COLUMNOPTS PATHS install add remove list bundle \
 __) varname;for varname in "${varnames[@]}"; do unset "var_$varname";done
 parse 40 "$@";local p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do
 unset "$p$varname";done;if declare -p var___bin >/dev/null 2>&1; then eval \
@@ -85,7 +85,7 @@ then eval $p'PATHS=("${var_PATHS[@]}")';else eval $p'PATHS=()';fi;eval $p'__dr'\
 '=${var___verbose:-false};'$p'__global=${var___global:-false};'$p'__no_exec=${'\
 'var___no_exec:-false};'$p'__no_bin=${var___no_bin:-false};'$p'__pkgname=${var'\
 '___pkgname:-};'$p'__pkgtype=${var___pkgtype:-};'$p'__dest=${var___dest:-};'\
-$p'__version=${var___version:-};'$p'URL=${var_URL:-};'$p'PATH=${var_PATH:-};'\
+$p'__pkgver=${var___pkgver:-};'$p'URL=${var_URL:-};'$p'PATH=${var_PATH:-};'\
 $p'SHA=${var_SHA:-};'$p'PKGNAME=${var_PKGNAME:-};'$p'install=${var_install:-fa'\
 'lse};'$p'add=${var_add:-false};'$p'remove=${var_remove:-false};'$p'list=${var'\
 '_list:-false};'$p'bundle=${var_bundle:-false};'$p'__=${var___:-false};';local \
@@ -219,7 +219,7 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
       ___dest=$(jq -r .name upkg.json).tar.gz || fatal "Unable to determine package name"
     fi
     upkg_mktemp
-    upkg_bundle "$___version" "$___dest" "${_PATHS[@]}"
+    upkg_bundle "$___pkgver" "$___dest" "${_PATHS[@]}"
     completed "μpkg package tarball was successfully created at '%s'" "$___dest"
 
   else
