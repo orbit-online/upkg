@@ -70,6 +70,7 @@ teardown_file() { common_teardown_file; }
   run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   run -1 upkg remove -n acme
   assert_snapshot_output
+  assert_all_links_valid
 }
 
 # bats test_tags=tar
@@ -94,4 +95,5 @@ teardown_file() { common_teardown_file; }
   run -1 upkg install -n
   assert_snapshot_output
   assert_snapshot_path
+  assert_all_links_valid
 }
