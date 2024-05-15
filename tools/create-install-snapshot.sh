@@ -28,6 +28,7 @@ main() {
   # Create the snapshot tarball
   tar \
     --sort=name \
+    --mode='u+rwX,g-w,o-w' \
     --mtime="@${SOURCE_DATE_EPOCH}" \
     --owner=0 --group=0 --numeric-owner \
     -caf "$snapshot_dest" -C "$tmp" \
