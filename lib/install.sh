@@ -222,14 +222,16 @@ upkg_install_dep() {
 
   local dedup_path=".upkg/.tmp/root/.upkg/.packages/$dedup_name" dedup_pkgname pkgname
   dedup_pkgname=${dedup_name%@*}
-
-  if ! pkgname="$(jq -re '.name // empty' <<<"$dep")"; then
-    if [[ $pkgtype = file ]]; then
-      pkgname=${dedup_pkgname%?x} # Remove -x or +x dedup suffix
-    elif [[ $pkgtype = tar ]]; then
-      pkgname=${dedup_pkgname%.tar} # Remove .tar suffix
-    else
-      pkgname=${dedup_pkgname%.git} # Remove .git suffix
+  if ! pkgname="$(jq -re '.name // empty' <<<"$dep")" && ! pkgname=$(jq -re '.name // empty' "$dedup_path/upkg.json" 2>/dev/null); then
+    # Calculate the pkgname independently from what the dedup package is named
+    # Two different pkgurls may have the same shasum, in that case we still want distinct pkgnames based on the URL
+    pkgname=${pkgurl%%'#'*} # Remove trailing anchor
+    pkgname=${pkgname%%'?'*} # Remove query params
+    pkgname=$(basename "$pkgname") # Remove path prefix
+    if [[ $pkgtype = tar ]]; then
+      [[ ! $pkgname =~ (\.tar(\.[^.?#/]+)?)$ ]] || pkgname=${pkgname%"${BASH_REMATCH[1]}"} # Remove .tar or .tar.* suffix
+    elif [[ $pkgtype = git ]]; then
+      pkgname=${pkgname%.git} # Remove .git suffix
     fi
   fi
   pkgname=$(clean_pkgname "$pkgname")

@@ -42,3 +42,12 @@ teardown_file() { common_teardown_file; }
   run -0 upkg add -p file -t file "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
   assert_snapshot_path
 }
+
+# bats test_tags=file
+@test "deduping matching checksums does not clobber pkgnames" {
+  create_file_package default/executable
+  run -0 upkg add "$PACKAGE_FIXTURES/default/executable" $FILE_SHASUM
+  create_file_package default/non-executable
+  run -0 upkg add "$PACKAGE_FIXTURES/default/non-executable" $FILE_SHASUM
+  assert_snapshot_path
+}
