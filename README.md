@@ -1,29 +1,4 @@
-TODO:
-
-- Describe meta package, depend on a bunch of binaries an symlink them out
-- Use https://github.com/dominictarr/JSON.sh as fallback
-- Add zip support
-- Check wget support in busybox & alpine
-- Check mac support
-- Check freebsd support
-- Kill running dep installs when first error is discovered
-- Maybe rethink install_prefix
-- Replace '[[...]] ||' with '[[...]] &&'
-- Add update property to deps
-- update script should update itself first
-- update script: pass all arguments as env vars, make the upkg.json entry a single string
-- tar: auto-detect whether to --strip-components 1, add strip-components to upkg.json
-- Add uname regex filter for packages
-- Warn when GIT_SSH_COMMAND is set but BatchMode!=yes
-- Simulate `ln -T` with `ln -Fi <<<'n'` on BSD
-- Streamline package names are reported in log messages
-- Depend on records.sh rather than running our own logging
-
-## Testing
-
-diff --color=always -u --label expected --label actual tests/snapshots/package-templates.files <(cd tests/package-templates; tree -n -p --charset=UTF-8 -a -I .git .)
-
-# μpkg - A minimalist package manager
+# μpkg - A package manager for your system tooling
 
 μpkg is a package manager written in bash with just the bare minimum of features.  
 Its primary focus is allowing bash scripts to source dependencies like small
@@ -41,39 +16,58 @@ and global installation for user- or system-wide usage.
 - [Usage](#usage)
   - [Silent operation](#silent-operation)
   - [Available packages](#available-packages)
-  - [Installing packages without installing μpkg](#installing-packages-without-installing-μpkg)
 - [Authoring packages](#authoring-packages)
   - [Publishing](#publishing)
-  - [Upgrading](#upgrading)
-    - [Transactionality](#transactionality)
   - [Including dependencies](#including-dependencies)
   - [Checking dependencies](#checking-dependencies)
   - [Additional tips for scripting](#additional-tips-for-scripting)
   - [upkg.json](#upkg-json)
     - [dependencies](#dependencies)
-    - [files](#files)
-    - [commands](#commands)
     - [version](#version)
-- [Things that μpkg does not and will not support](#things-that-μpkg-does-not-and-will-not-support)
-- [Things that μpkg _might_ support in the future](#things-that-μpkg-might-support-in-the-future)
+- [Planned features](#planned-features)
 - [Alternatives](#alternatives)
 
 ## Dependencies
 
 - bash>=v4.4
-- git
+- shasum
 - jq
+
+To install git repos you will need `git` and possibly `ssh`, depending on the
+cloning method.
+
+To install files from URLs, you need either `wget` or `curl`. For tarballs you
+additionally need `tar` and a library that understand whichever compression
+method is used for an archive (often `gzip`).
+
+To install files from the local filesystem you need no additional dependencies
+at all.
 
 ## Installation
 
 Replace `bash -c ...` with `sudo bash -c ...` to install system-wide.  
-You can also paste this directly into a Dockerfile `RUN` command, no escaping needed.
+You can also paste this directly into a Dockerfile `RUN` command, no escaping
+needed.
+
+Have a look at [install.sh](https://github.com/orbit-online/upkg/blob/master/install.sh)
+to view a fully commented and non-minified version of this script.
 
 ```
-bash -ec 'src=$(wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.14.0/upkg.sh); \
-shasum -a 256 -c <(printf "8312d0fa0e47ff22387086021c8b096b899ff9344ca8622d80cc0d1d579dccff  -") <<<"$src"; \
-set - install -g orbit-online/upkg@v0.14.0; eval "$src"'
+bash -eo pipefail <<'INSTALL_UPKG'
+# Read the non-minified and fully documented version on github.com/orbit-online/upkg
+u=https://github.com/orbit-online/upkg/releases/download/v0.21.0/upkg-install.tar.gz
+c=3b0381760eee4f9b06a5a0c55aef08b65b4a25cca69488bcf366a8aa7f9d56f2;\
+t=$(mktemp);trap 'rm "$t"' EXIT;wget -qO"$t" "$u"||curl -fsLo"$t" "$u";shasum \
+-a 256 -c <(echo "$c  $t")>/dev/null;P=${INSTALL_PREFIX:-$([[ $EUID = 0 ]]&&\
+echo /usr/local||echo "$HOME/.local" )};[[ ! -e $P ]]||tar tzf "$t"|grep -v \
+"/$"|while read -r f;do [[ ! -e $P/$f ]]||{ echo "$P/$f already exists">&2;\
+exit 1; };done;mkdir -p "$P";tar xz -C "$P" -f "$t";echo>&2;echo "μpkg has \
+been installed and can now be invoked with \`upkg'">&2;type jq &>/dev/null\
+||echo "WARNING: \`jq' was not found in \$PATH. jq is a hard dependency.">&2\
+INSTALL_UPKG
 ```
+
+### Install dependencies
 
 Installation dependencies are `ca-certificates`, `wget`, and `shasum`.
 
@@ -83,6 +77,19 @@ For alpine docker images use `apk add --update ca-certificates bash perl-utils`
 (`wget` is already installed).  
 For Red Hat based systems use `dnf install -y ca-certificates bash perl-utils wget`
 (`shasum` is already installed).
+
+### Install guarantees
+
+The snippet matches the hardcoded checksum against the downloaded install
+snapshot, meaning if you copy this script around between e.g. Dockerfiles, you
+will always end up with the exact same version of μpkg (or, alternatively, the
+install process will fail).
+
+The script also never executes any downloaded code. The install snapshot archive
+is downloaded and then extracted. There is no post install execution.  
+This is also true for any dependencies that μpkg is told to install, meaning
+μpkg can safely be run as root to install scripts/tools that will only be run as
+unprivileged users.
 
 ### GitHub action
 
@@ -97,46 +104,31 @@ jobs:
     - uses: orbit-online/upkg@<VERSION>
 ```
 
-### Upgrading
-
-You can upgrade μpkg with μpkg (prefix with `sudo` if installed system-wide):
-
-```
-upkg install -g orbit-online/upkg@<VERSION>
-```
-
-Use `stable` for `<VERSION>` if you don't care about the specific version number
-and would just like to upgrade to the latest stable version.
-
 ## Usage
 
 ```
 μpkg - A minimalist package manager
 Usage:
-  upkg install [-n] [-g [remoteurl]user/pkg@<version>]
-  upkg uninstall -g user/pkg
-  upkg list [-g]
+  upkg install [-nqv]
+  upkg add [-qvgXB -b PATH... -p PKGNAME -t PKGTYPE] (URL|PATH) [SHA]
+  upkg remove [-qnvg] PKGNAME
+  upkg list [-qvg] [-- COLUMNOPTS...]
+  upkg bundle [-qv -d PATH] -V VERSION [PATHS...]
 
 Options:
-  -g  Act globally
-  -n  Dry run, $?=1 if install/upgrade is required
+  -n --dry-run         Dry run, \$?=1 if install is required
+  -q --quiet           Log only fatal errors
+  -v --verbose         Output verbose logs and disable writing to the same line
+  -g --global          Act globally
+  -X --no-exec         Do not chmod +x the file (implies --no-bin)
+  -B --no-bin          Do not link executables in package bin/ to .upkg/.bin
+  -b --bin=PATH        Link specified executables or contents of specified
+                       directory to .upkg/.bin (default: bin/)
+  -t --pkgtype=TYPE    Explicitly set the package type (tar, file, or git)
+  -p --pkgname=NAME    Override the package name link in .upkg/
+  -d --dest=PATH       Package tarball destination (default: \$pkgname.tar.gz)
+  -V --pkgver=VERSION  Version of the package that is being bundled
 ```
-
-`upkg install` looks for a `upkg.json` upwards from the current directory and
-recursively installs the specified dependencies (see
-[dependencies](#dependencies)). Use `-n` to check whether all dependencies are
-up-to-date without installing/upgrading anything, note that branch version are
-always considered out-of-date (see [Upgrading packages](#upgrading-packages)).
-
-`upkg install -g` installs the specified package and version (either a full git
-remote URL or a GitHub user/pkg shorthand) to `/usr/local/lib/upkg` (when root)
-or `$HOME/.local` (when not).
-
-`upkg uninstall -g` uninstalls a globally installed package (must be shorthand)
-and all its commands (see [commands](#commands)).
-
-`upkg list` shows the installed packages. When using `-g` for "global", package
-dependencies are not listed.
 
 ### Silent operation
 
@@ -152,37 +144,6 @@ Check out [PACKAGES.md](PACKAGES.md) for a curated list of available packages.
 You can also use the [`upkg` topic](https://github.com/topics/upkg) to
 look for other packages on GitHub.
 
-### Installing packages without installing μpkg
-
-If you take a closer look at [how upkg is installed](#installation) you will
-notice that `upkg.sh` is the install script for μpkg itself. The three lines
-of code do the following:
-
-1. Download `upkg.sh`
-2. Compare the download against the hardcoded checksum
-3. _Inject the installation parameters for `orbit-online/upkg` as if μpkg was called from the commandline_
-4. Evaluate the download
-
-With that in mind, you can modify the package name from point #3 and on the
-third line to install any package you like. For example:
-
-```
-bash -ec 'src=$(wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.14.0/upkg.sh); \
-shasum -a 256 -c <(printf "8312d0fa0e47ff22387086021c8b096b899ff9344ca8622d80cc0d1d579dccff  -") <<<"$src"; \
-set - install -g orbit-online/bitwarden-tools@v1.4.9; eval "$src"'
-```
-
-You can also install dependencies for a script with an accompanying `upkg.json`
-that you copied into e.g. a docker image like this:
-
-```
-COPY upkg.json /service
-COPY --chmod=0755 my-script.sh /service
-bash -ec 'src=$(wget -qO- https://raw.githubusercontent.com/orbit-online/upkg/v0.14.0/upkg.sh); \
-shasum -a 256 -c <(printf "8312d0fa0e47ff22387086021c8b096b899ff9344ca8622d80cc0d1d579dccff  -") <<<"$src"; \
-set - install; eval "$src"'
-```
-
 ## Authoring packages
 
 ### Publishing
@@ -192,27 +153,12 @@ via search.
 Additionally you can send a PR that updates [PACKAGES.md](PACKAGES.md) with a
 link to your package.
 
-### Upgrading
-
-You can run `upkg install` to upgrade all packages that have a moving version
-(i.e. a git branch). It is advisable to use tags or commit hashes as versions
-when publishing something that other packages may rely on to avoid bumping past
-breaking changes (tags are quickest to install since μpkg can shallow clone the
-repo).
-
-All packages that were installed using a commit hash or git tag as the version
-and are still referenced with the same version will be skipped during upgrade.
-This means a `upkg install` can almost become a no-op and be run automatically
-without sacrificing performance. Conversely branch versions will always be
-reinstalled, even when they are a dependency of a parent package that is version
-pinned via a tag or commit hash.
-
 #### Transactionality
 
 μpkg tries very hard to ensure that either everything is installed/upgraded or
 nothing is. Unhandled violations include (and are limited to) broken permissions
-(e.g. inconsistent ownership of files), insufficient diskspace, closure of
-stderr, or process termination.
+(e.g. inconsistent ownership of files), closure of stderr, or process
+termination.
 
 ### Including dependencies
 
@@ -235,10 +181,10 @@ Here's an example of a short script with a useful preamble:
 ```
 #!/usr/bin/env bash
 # shellcheck source-path=../
-set -eo pipefail; shopt -s inherit_errexit
+set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 PATH=$("$PKGROOT/.upkg/.bin/path_prepend" "$PKGROOT/.upkg/.bin")
-source "$PKGROOT/.upkg/orbit-online/records.sh/records.sh"
+source "$PKGROOT/.upkg/records.sh/records.sh"
 
 my_fn() {
   if ! do_something "$1"; then
@@ -254,7 +200,8 @@ The following things are happening here (line-by-line):
 
 1. Bash shebang
 2. Inform shellcheck about the package root so it can follow `source` calls
-3. Setup bash to fail on `$? != 0`, even when piping. Make sure that subshells inherit `set -e`.
+3. Setup bash to fail on `$? != 0`, even when piping.  
+   Make sure that subshells inherit `set -e` and that functions inherit traps (`set -E`).
 4. Determine the package root (the second `realpath` is to resolve the `/..`)
 5. Use [path-tools](https://github.com/orbit-online/path-tools) to prepend `.upkg/.bin` (like `PATH=...:$PATH` but if the path already exists it is _moved_ to the front)
 6. Include [records.sh](https://github.com/orbit-online/records.sh) for log tooling
@@ -268,7 +215,7 @@ up to date can be done with the `-n` dry-run switch:
 ```
 #!/usr/bin/env bash
 PKGROOT=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
-(cd "$PKGROOT/core"; UPKG_SILENT=true upkg install -n || {
+(cd "$PKGROOT"; UPKG_SILENT=true upkg install -n || {
   printf "my-script.sh: Dependencies are out of date. Run \`upkg install\` in \`%s\`\n" "$PKGROOT" >&2
   return 1
 })
@@ -290,107 +237,34 @@ located in `$pkgroot` (`source-path` is `./` by default).
 If you are calling scripts from the same package consider using
 [path-tools](https://github.com/orbit-online/path-tools) to avoid prepending
 the same `.upkg/bin` PATH multiple times (i.e. use
-`PATH=$("$pkgroot/.upkg/.bin/path_prepend" "$pkgroot/.upkg/.bin")` instead).
+`PATH=$("$pkgroot/.upkg/.bin/path_prepend" "$pkgroot/.upkg/.bin")` instead
+of `PATH=$pkgroot/.upkg/.bin:$PATH`.
 
 ### upkg.json
 
-`upkg.json` has no package name, version or description.
-There are 3 config keys you can specify (none are mandatory, but at least one
-key _must_ be present).  
-It is highly discouraged to specify non-standard keys for your own usage in this
-file.
+TODO
 
-#### dependencies
+## Planned features
 
-Dependencies of a package. A dictionary of git cloneable URLs or
-GitHub shorthands as keys and git branches/tags/commits as values.
-
-Dependencies will be installed under `.upkg` next to `upkg.json`.
-
-```
-{
-  ...
-  "dependencies": {
-    "orbit-online/records.sh": "v0.9.2",
-    "git@github.com:andsens/docopt.sh": "v1.0.0-upkg",
-    "orbit-online/bitwarden-tools": "master"
-  },
-  ...
-}
-```
-
-#### assets
-
-List of files and folders the package consists of. An array of paths relative to
-the repository root. Only items listed here and in [commands](#commands) will be
-part of the final package installation. All listed paths _must_ exist and
-folders _must_ have a trailing slash.
-
-```
-{
-  ...
-  "assets": [
-    "lib/common.sh",
-    "lib/commands.sh",
-    "bin/"
-  ],
-  ...
-}
-```
-
-#### commands
-
-List of commands this package provides. A dictionary of command names as keys
-and paths relative to the repository root. Note that the specified files _must_
-be marked as executable.
-
-```
-{
-  ...
-  "commands": {
-    "parse-spec": "bin/parse.sh",
-    "buildit": "bin/build.sh",
-    "checkit": "tools/check.sh"
-  },
-  ...
-}
-```
-
-When installing globally, the listed commands will be installed as symlinks to
-`/usr/local/bin` (when root) or `$HOME/.local/bin` (when not).  
-When uninstalling a package these symlinks are removed as well (provided they
-still point at the package).
-
-When installing locally, the listed commands will be installed to `.upkg/.bin`.
-
-#### version
-
-This field will be populated by μpkg with the version specified in the global
-install command or the dependency specification. It is used to determine whether
-an install command should overwrite or skip the package.  
-You _must not_ specify it.
-
-```
-{
-  ...
-  "version": "refs/tags/v0.9.2",
-  ...
-}
-```
-
-## Things that μpkg does not and will not support
-
-- `upkg run command` ([modify `$PATH` instead](#including-dependencies))
-- `upkg add/remove usr/package@version` to `upkg.json`
-- `~`, `^` or other version specifiers ([use branches for that](#upgrading-packages))
-- Package version locking
-- Package aliases (i.e. non user namespaced package names)
-
-## Things that μpkg _might_ support in the future
-
-- Installing packages via e.g. raw.githubusercontent.com or the local filesystem
-  to avoid the git dependency (would require `name` to be present in `upkg.json`)
 - Using something like `JSON.sh` to avoid the jq dependency
+- Describe meta package, depend on a bunch of binaries an symlink them out
+- Use https://github.com/dominictarr/JSON.sh as fallback
+- Add zip support
+- Check wget support in busybox & alpine
+- Check mac support
+- Check freebsd support
+- Kill running dep installs when first error is discovered
+- Maybe rethink install_prefix
+- Replace '[[...]] ||' with '[[...]] &&'
+- Add update property to deps
+- update script should update itself first
+- update script: pass all arguments as env vars, make the upkg.json entry a single string
+- tar: auto-detect whether to --strip-components 1, add strip-components to upkg.json
+- Add uname regex filter for packages
+- Warn when GIT_SSH_COMMAND is set but BatchMode!=yes
+- Simulate `ln -T` with `ln -Fi <<<'n'` on BSD
+- Streamline package names are reported in log messages
+- Depend on records.sh rather than running our own logging
 
 ## Alternatives
 
