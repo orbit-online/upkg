@@ -8,15 +8,104 @@ jobs:
   test:
     uses: ./.github/workflows/test.yaml
     secrets: inherit
-  bundle:
-    uses: ./.github/workflows/bundle.yaml
-    secrets: inherit
   upload-schema:
     needs: [test]
     uses: ./.github/workflows/upload-schema.yaml
     secrets: inherit
+  bundle:
+    name: Create upkg.tar.gz
+    runs-on: ubuntu-latest
+    steps:
+    - id: program_version
+      uses: orbit-online/program-version@v1.0.0
+    - uses: actions/checkout@v4
+      with:
+        path: upkg
+    - name: Install μpkg dependencies
+      run: tools/install-deps.sh
+      working-directory: upkg
+    - name: Create μpkg bundle
+      run: bin/upkg bundle -d ../upkg.tar.gz -V "${{ steps.program_version.outputs.version }}" bin lib LICENSE
+      working-directory: upkg
+    - name: Upload upkg.tar.gz
+      uses: actions/upload-artifact@v4
+      with:
+        name: upkg.tar.gz
+        path: upkg.tar.gz
+        retention-days: 1
+  create-install-snapshot:
+    needs: [bundle]
+    name: Create upkg-install.tar.gz
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        path: upkg
+    - name: Install μpkg dependencies
+      run: tools/install-deps.sh
+      working-directory: upkg
+    - name: Download μpkg bundle
+      uses: actions/download-artifact@v4
+      with:
+        name: upkg.tar.gz
+    - name: Create upkg-install snapshot
+      run: upkg/tools/create-install-snapshot.sh upkg.tar.gz upkg-install.tar.gz
+    - name: Upload upkg-install.tar.gz
+      uses: actions/upload-artifact@v4
+      with:
+        name: upkg-install.tar.gz
+        path: upkg-install.tar.gz
+        retention-days: 1
+  create-compat-install-snapshot:
+    needs: [bundle]
+    name: Create upkg-compat.tar.gz & upkg-compat-install.tar.gz
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        path: upkg
+    - name: Install μpkg dependencies
+      run: tools/install-deps.sh
+      working-directory: upkg
+    - name: Download μpkg bundle
+      uses: actions/download-artifact@v4
+      with:
+        name: upkg.tar.gz
+    - name: Create upkg-compat bundle & upkg-compat-install snapshot
+      run: upkg/tools/create-compat-install-snapshot.sh upkg.tar.gz upkg-compat.tar.gz upkg-compat-install.tar.gz
+    - name: Upload upkg-compat.tar.gz
+      uses: actions/upload-artifact@v4
+      with:
+        name: upkg-compat.tar.gz
+        path: upkg-compat.tar.gz
+        retention-days: 1
+    - name: Upload upkg-compat-install.tar.gz
+      uses: actions/upload-artifact@v4
+      with:
+        name: upkg-compat-install.tar.gz
+        path: upkg-compat-install.tar.gz
+        retention-days: 1
+  check-readme:
+    name: Check release URL
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Ensure that the README references the current release
+      run: |
+        release=$(grep -Eom1 'u=https://github\.com/orbit-online/upkg/releases/download/[^/]+/upkg-install\.tar\.gz' README.md)
+        release=${release#'u=https://github.com/orbit-online/upkg/releases/download/'}
+        release=${release#'/upkg-install.tar.gz'}
+        [[ $release = "${{ github.ref }}" ]] || printf "The current release (%s) is not the one referenced in the README (%s)" "${{ github.ref }}" "$release"
+    - name: Download upkg-install.tar.gz
+      uses: actions/download-artifact@v4
+      with:
+        name: upkg-install.tar.gz
+    - name: Verify the shasum in the README agains the install snapshot
+      run: |
+        sha256=$(grep -Eom1 'c=[0-9a-f]{64}' README.md)
+        shasum -a 256 -c <(echo "${sha256#c=}  upkg-install.tar.gz")
   release:
-    needs: [test, bundle]
+    needs: [test, bundle, create-install-snapshot, create-compat-install-snapshot, check-readme]
     permissions:
       contents: write
     runs-on: ubuntu-latest
