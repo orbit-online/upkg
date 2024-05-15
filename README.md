@@ -45,9 +45,11 @@ at all.
 
 ## Installation
 
-Replace `bash -c ...` with `sudo bash -c ...` to install system-wide.  
+Replace `bash ...` with `sudo bash ...` to install system-wide.  
 You can also paste this directly into a Dockerfile `RUN` command, no escaping
-needed.
+needed.  
+To install to a location other than `$HOME/.local` or `/usr/local` set
+`$INSTALL_PREFIX` with `sudo INSTALL_PREFIX=/opt bash ...`.
 
 Have a look at [install.sh](https://github.com/orbit-online/upkg/blob/master/install.sh)
 to view a fully commented and non-minified version of this script.
