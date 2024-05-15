@@ -25,8 +25,8 @@ teardown_file() { common_teardown_file; }
   tar -xf upkg-install.tar.gz -C "$HOME/.local"
   assert_all_links_valid "$HOME/.local"
   # Links validated, fix the ones with changing shasums before checking snapshot
-  ln -sf "../.packages/upkg.tar@STATIC" "$HOME/.local/lib/upkg/.upkg/.bin/upkg"
-  ln -sf ".packages/upkg.tar@STATIC" "$HOME/.local/lib/upkg/.upkg/upkg"
+  ln -sTf "../.packages/upkg.tar@STATIC" "$HOME/.local/lib/upkg/.upkg/.bin/upkg"
+  ln -sTf ".packages/upkg.tar@STATIC" "$HOME/.local/lib/upkg/.upkg/upkg"
   mv "$HOME/.local/lib/upkg/.upkg/.packages"/upkg.tar@* "$HOME/.local/lib/upkg/.upkg/.packages/upkg.tar@STATIC"
   assert_snapshot_path "" "$HOME/.local"
 }
@@ -51,11 +51,11 @@ teardown_file() { common_teardown_file; }
   tar -xf upkg-compat-install.tar.gz -C "$HOME/.local"
   assert_all_links_valid "$HOME/.local"
   # Links validated, fix the ones with changing shasums before checking snapshot
-  ln -sf ../.packages/upkg-compat.tar@STATIC "$HOME/.local/lib/upkg/.upkg/.bin/upkg"
-  ln -sf .packages/upkg-compat.tar@STATIC "$HOME/.local/lib/upkg/.upkg/upkg-compat"
-  ln -sf .packages/upkg-compat.tar@STATIC "$HOME/.local/lib/upkg/.upkg/upkg-compat"
+  ln -sTf ../.packages/upkg-compat.tar@STATIC "$HOME/.local/lib/upkg/.upkg/.bin/upkg"
+  ln -sTf .packages/upkg-compat.tar@STATIC "$HOME/.local/lib/upkg/.upkg/upkg-compat"
+  ln -sTf .packages/upkg-compat.tar@STATIC "$HOME/.local/lib/upkg/.upkg/upkg-compat"
   mv "$HOME/.local/lib/upkg/.upkg/.packages"/upkg-compat.tar@* "$HOME/.local/lib/upkg/.upkg/.packages/upkg-compat.tar@STATIC"
   mv "$HOME/.local/lib/upkg/.upkg/.packages"/upkg.tar@* "$HOME/.local/lib/upkg/.upkg/.packages/upkg.tar@STATIC"
-  ln -sf ../../upkg.tar@STATIC "$HOME/.local/lib/upkg/.upkg/.packages/upkg-compat.tar@STATIC/.upkg/upkg-new"
+  ln -sTf ../../upkg.tar@STATIC "$HOME/.local/lib/upkg/.upkg/.packages/upkg-compat.tar@STATIC/.upkg/upkg-new"
   assert_snapshot_path compat-install "$HOME/.local"
 }

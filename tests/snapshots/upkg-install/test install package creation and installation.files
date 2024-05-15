@@ -28,7 +28,6 @@
         │   │       │   ├── [-rw-r--r--]  upkgjson.sh
         │   │       │   └── [-rw-r--r--]  utils.sh
         │   │       ├── [-rw-r--r--]  upkg.json
-        │   │       ├── [-rw-r--r--]  upkg.schema.json
-        │   │       └── [lrwxrwxrwx]  upkg.tar@STATIC -> .packages/upkg.tar@STATIC
-        │   └── [lrwxrwxrwx]  upkg -> .packages/upkg.tar@96f30de3d293bc65686d2e3556cfbb90fb4cc37be863682e50de76108b3f724f
+        │   │       └── [-rw-r--r--]  upkg.schema.json
+        │   └── [lrwxrwxrwx]  upkg -> .packages/upkg.tar@STATIC
         └── [-rw-r--r--]  upkg.json
