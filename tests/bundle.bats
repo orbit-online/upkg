@@ -10,7 +10,7 @@ setup() { common_setup; }
 teardown() { common_teardown; }
 teardown_file() { common_teardown_file; }
 
-@test "test upkg bundling itself" {
+@test "upkg can bundle itself" {
   cp -r \
     "$BATS_TEST_DIRNAME/../bin" \
     "$BATS_TEST_DIRNAME/../lib" \
@@ -23,4 +23,46 @@ teardown_file() { common_teardown_file; }
   mkdir upkg
   tar -xf "$HOME/upkg.tar.gz" -C upkg
   assert_snapshot_path "" upkg
+}
+
+@test "bin path is default included when no path is specified" {
+  cp -r "$PACKAGE_TEMPLATES/default/acme"/* .
+  run -0 upkg bundle -d acme.tar.gz -V v1.0.2
+  mkdir acme
+  tar -xf acme.tar.gz -C acme
+  assert_snapshot_path "" acme
+}
+
+@test "fails when no upkg.json present" {
+  cp -r "$PACKAGE_TEMPLATES/default/acme"/* .
+  rm upkg.json
+  run -1 upkg bundle -d acme.tar.gz -V v1.0.2
+  assert_snapshot_output
+}
+
+@test "fails when there is nothing to bundle" {
+  cp -r "$PACKAGE_TEMPLATES/default/acme/upkg.json" .
+  run -1 upkg bundle -d acme.tar.gz -V v1.0.2
+  assert_snapshot_output
+}
+
+@test "bundles everything specified in bin property" {
+  cp -r "$PACKAGE_TEMPLATES/default/scattered-executables"/* .
+  run -0 upkg bundle -d scattered-executables.tar.gz -V v0.0.1
+  mkdir scattered-executables
+  tar -xf scattered-executables.tar.gz -C scattered-executables
+  assert_snapshot_path "" scattered-executables
+  assert_snapshot_output
+}
+
+@test "fails when paths specified in bin do not exist" {
+  cp -r "$PACKAGE_TEMPLATES/default/scattered-executables/upkg.json" .
+  run -1 upkg bundle -d scattered-executables.tar.gz -V v0.0.1
+  assert_snapshot_output
+}
+
+@test "fails when specified paths do not exist" {
+  cp -r "$PACKAGE_TEMPLATES/default/acme/upkg.json" .
+  run -1 upkg bundle -d acme.tar.gz -V v1.0.2 non-existent
+  assert_snapshot_output
 }

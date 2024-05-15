@@ -15,8 +15,8 @@ upkg_bundle() {
       fatal "No paths specified, \"bin\" is not set in upkg.json, and default \"bin/\" path does not exist. There are no files to create a package from."
     fi
     local opt_path
-    ! opt_path=$(compgen -G LICENSE*) || path+=("$opt_path")
-    ! opt_path=$(compgen -G README*) || path+=("$opt_path")
+    ! opt_path=$(compgen -G "LICENSE*") || path+=("$opt_path")
+    ! opt_path=$(compgen -G "README*") || path+=("$opt_path")
   fi
 
   # tmpfile for upkg.json so we can set the version without modifying the original

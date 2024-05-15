@@ -1,0 +1,4 @@
+[drwxr-xr-x]  .
+├── [drwxr-xr-x]  bin
+│   └── [-rwxr-xr-x]  acme.bin
+└── [-rw-r--r--]  upkg.json

@@ -1,0 +1,5 @@
+upkg: Failed to bundle. tar output:
+tar: Option --mtime: Treating date '@1704067200' as 2024-01-01 01:00:00
+tar: non-existent: Cannot stat: No such file or directory
+.upkg/.tmp/upkg.json
+tar: Exiting with failure status due to previous errors

@@ -1,0 +1,9 @@
+[drwxr-xr-x]  .
+├── [drwxr-xr-x]  bin
+│   └── [-rwxr-xr-x]  bin-exec.sh
+├── [-rwxr-xr-x]  root-exec.sh
+├── [drwxr-xr-x]  tools
+│   ├── [-rwxr-xr-x]  another-tool
+│   ├── [-rw-r--r--]  not-an-exec
+│   └── [-rwxr-xr-x]  tools-exec
+└── [-rw-r--r--]  upkg.json
