@@ -1,0 +1,78 @@
+[drwxr-xr-x]  .
+├── [drwxr-xr-x]  .upkg
+│   ├── [drwxr-xr-x]  .packages
+│   │   ├── [drwxr-xr-x]  acme-no-metadata.tar@8269ed897058ec43430168b2367ed8d588f2259ce6a373890dd0b1b96fd722c1
+│   │   │   └── [drwxr-xr-x]  bin
+│   │   │       └── [-rwxr-xr-x]  acme.bin
+│   │   ├── [drwxr-xr-x]  acme.tar@2fc13e1819bc3ed22ee1526d4f44ec20cd8748575e52a28e137f74fec2dd1160
+│   │   │   ├── [drwxr-xr-x]  bin
+│   │   │   │   └── [-rwxr-xr-x]  acme.bin
+│   │   │   └── [-rw-r--r--]  upkg.json
+│   │   ├── [drwxr-xr-x]  dep-1.tar@51511148e1748167fbb0e4d5f0d46f8b45d06fe6cbb22d314e72d97cdbb2c4db
+│   │   │   ├── [drwxr-xr-x]  .upkg
+│   │   │   │   └── [lrwxrwxrwx]  dep-2 -> ../../dep-2.tar@19a270455443770ee8db2e2f3b1b321bd48e1be756184ad80e6af796eade871e
+│   │   │   └── [-rw-r--r--]  upkg.json
+│   │   ├── [drwxr-xr-x]  dep-2.tar@19a270455443770ee8db2e2f3b1b321bd48e1be756184ad80e6af796eade871e
+│   │   │   ├── [drwxr-xr-x]  .upkg
+│   │   │   │   └── [lrwxrwxrwx]  dep-3 -> ../../dep-3.tar@43ef7ec15c6717ee46331599a33d791c7e6b5448eedcfd2b1391dca26a86bdf4
+│   │   │   └── [-rw-r--r--]  upkg.json
+│   │   ├── [drwxr-xr-x]  dep-3.tar@43ef7ec15c6717ee46331599a33d791c7e6b5448eedcfd2b1391dca26a86bdf4
+│   │   │   ├── [drwxr-xr-x]  .upkg
+│   │   │   │   └── [lrwxrwxrwx]  dep-4 -> ../../dep-4.tar@e59be1b9a797d85bc901502db1a4b9f7b194f17972c7d21ae1206808f32f33db
+│   │   │   └── [-rw-r--r--]  upkg.json
+│   │   ├── [drwxr-xr-x]  dep-4.tar@e59be1b9a797d85bc901502db1a4b9f7b194f17972c7d21ae1206808f32f33db
+│   │   │   ├── [drwxr-xr-x]  .upkg
+│   │   │   │   └── [lrwxrwxrwx]  dep-5 -> ../../dep-5.tar@5a4173f8e0e51b3e5ec8d22e29a2110e84dd4b42dc6a7b56147869410cbe2373
+│   │   │   └── [-rw-r--r--]  upkg.json
+│   │   ├── [drwxr-xr-x]  dep-5.tar@5a4173f8e0e51b3e5ec8d22e29a2110e84dd4b42dc6a7b56147869410cbe2373
+│   │   │   └── [-rw-r--r--]  upkg.json
+│   │   ├── [drwxr-xr-x]  dependomania.tar@STATIC
+│   │   │   ├── [drwxr-xr-x]  .upkg
+│   │   │   │   ├── [drwxr-xr-x]  .bin
+│   │   │   │   │   ├── [lrwxrwxrwx]  acme.bin -> ../../../acme.tar@2fc13e1819bc3ed22ee1526d4f44ec20cd8748575e52a28e137f74fec2dd1160/bin/acme.bin
+│   │   │   │   │   ├── [lrwxrwxrwx]  another-tool -> ../../../scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888/tools/another-tool
+│   │   │   │   │   ├── [lrwxrwxrwx]  bin-exec.sh -> ../../../scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888/bin/bin-exec.sh
+│   │   │   │   │   ├── [lrwxrwxrwx]  executable -> ../../../executable+x@fb99eae951f1adc14d1a4a9a186c21930db2786b3208c94c7d9af382bd1048e5
+│   │   │   │   │   ├── [lrwxrwxrwx]  root-exec.sh -> ../../../scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888/root-exec.sh
+│   │   │   │   │   └── [lrwxrwxrwx]  tools-exec -> ../../../scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888/tools/tools-exec
+│   │   │   │   ├── [lrwxrwxrwx]  acme -> ../../acme.tar@2fc13e1819bc3ed22ee1526d4f44ec20cd8748575e52a28e137f74fec2dd1160
+│   │   │   │   ├── [lrwxrwxrwx]  acme-no-metadata -> ../../acme-no-metadata.tar@8269ed897058ec43430168b2367ed8d588f2259ce6a373890dd0b1b96fd722c1
+│   │   │   │   ├── [lrwxrwxrwx]  dep-1 -> ../../dep-1.tar@51511148e1748167fbb0e4d5f0d46f8b45d06fe6cbb22d314e72d97cdbb2c4db
+│   │   │   │   ├── [lrwxrwxrwx]  dep-1-1 -> ../../dep-1.tar@51511148e1748167fbb0e4d5f0d46f8b45d06fe6cbb22d314e72d97cdbb2c4db
+│   │   │   │   ├── [lrwxrwxrwx]  dep-1-2 -> ../../dep-1.tar@51511148e1748167fbb0e4d5f0d46f8b45d06fe6cbb22d314e72d97cdbb2c4db
+│   │   │   │   ├── [lrwxrwxrwx]  dep-2 -> ../../dep-2.tar@19a270455443770ee8db2e2f3b1b321bd48e1be756184ad80e6af796eade871e
+│   │   │   │   ├── [lrwxrwxrwx]  dep-2-1 -> ../../dep-2.tar@19a270455443770ee8db2e2f3b1b321bd48e1be756184ad80e6af796eade871e
+│   │   │   │   ├── [lrwxrwxrwx]  dep-2-2 -> ../../dep-2.tar@19a270455443770ee8db2e2f3b1b321bd48e1be756184ad80e6af796eade871e
+│   │   │   │   ├── [lrwxrwxrwx]  dep-3 -> ../../dep-3.tar@43ef7ec15c6717ee46331599a33d791c7e6b5448eedcfd2b1391dca26a86bdf4
+│   │   │   │   ├── [lrwxrwxrwx]  dep-3-1 -> ../../dep-3.tar@43ef7ec15c6717ee46331599a33d791c7e6b5448eedcfd2b1391dca26a86bdf4
+│   │   │   │   ├── [lrwxrwxrwx]  dep-3-2 -> ../../dep-3.tar@43ef7ec15c6717ee46331599a33d791c7e6b5448eedcfd2b1391dca26a86bdf4
+│   │   │   │   ├── [lrwxrwxrwx]  dep-4 -> ../../dep-4.tar@e59be1b9a797d85bc901502db1a4b9f7b194f17972c7d21ae1206808f32f33db
+│   │   │   │   ├── [lrwxrwxrwx]  dep-4-1 -> ../../dep-4.tar@e59be1b9a797d85bc901502db1a4b9f7b194f17972c7d21ae1206808f32f33db
+│   │   │   │   ├── [lrwxrwxrwx]  dep-4-2 -> ../../dep-4.tar@e59be1b9a797d85bc901502db1a4b9f7b194f17972c7d21ae1206808f32f33db
+│   │   │   │   ├── [lrwxrwxrwx]  dep-5 -> ../../dep-5.tar@5a4173f8e0e51b3e5ec8d22e29a2110e84dd4b42dc6a7b56147869410cbe2373
+│   │   │   │   ├── [lrwxrwxrwx]  dep-5-1 -> ../../dep-5.tar@5a4173f8e0e51b3e5ec8d22e29a2110e84dd4b42dc6a7b56147869410cbe2373
+│   │   │   │   ├── [lrwxrwxrwx]  dep-5-2 -> ../../dep-5.tar@5a4173f8e0e51b3e5ec8d22e29a2110e84dd4b42dc6a7b56147869410cbe2373
+│   │   │   │   ├── [lrwxrwxrwx]  executable -> ../../executable+x@fb99eae951f1adc14d1a4a9a186c21930db2786b3208c94c7d9af382bd1048e5
+│   │   │   │   ├── [lrwxrwxrwx]  no-executables -> ../../no-executables.tar@e982460b5aa08f8916fdb8a11f15b7f1b3c87506ada001c8617795b31253b64a
+│   │   │   │   ├── [lrwxrwxrwx]  scattered-executables -> ../../scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888
+│   │   │   │   └── [lrwxrwxrwx]  spaces\ in\ name -> ../../spaces\ in\ name.tar@7a4ed55ce306b4e24355eb14cc7f6e4e6dc84896a4ddd75f474916d99348f655
+│   │   │   └── [-rw-r--r--]  upkg.json
+│   │   ├── [-rwxr-xr-x]  executable+x@fb99eae951f1adc14d1a4a9a186c21930db2786b3208c94c7d9af382bd1048e5
+│   │   ├── [drwxr-xr-x]  no-executables.tar@e982460b5aa08f8916fdb8a11f15b7f1b3c87506ada001c8617795b31253b64a
+│   │   │   ├── [-rw-r--r--]  asset.txt
+│   │   │   └── [drwxr-xr-x]  bin
+│   │   │       └── [-rw-r--r--]  non-executable.sh
+│   │   ├── [drwxr-xr-x]  scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888
+│   │   │   ├── [drwxr-xr-x]  bin
+│   │   │   │   ├── [-rwxr-xr-x]  bin-exec.sh
+│   │   │   │   └── [-rwxr-xr-x]  not-default-linked.sh
+│   │   │   ├── [-rwxr-xr-x]  root-exec.sh
+│   │   │   ├── [drwxr-xr-x]  tools
+│   │   │   │   ├── [-rwxr-xr-x]  another-tool
+│   │   │   │   ├── [-rw-r--r--]  not-an-exec
+│   │   │   │   └── [-rwxr-xr-x]  tools-exec
+│   │   │   └── [-rw-r--r--]  upkg.json
+│   │   └── [drwxr-xr-x]  spaces\ in\ name.tar@7a4ed55ce306b4e24355eb14cc7f6e4e6dc84896a4ddd75f474916d99348f655
+│   │       └── [-rw-r--r--]  upkg.json
+│   └── [lrwxrwxrwx]  dependomania -> .packages/dependomania.tar@STATIC
+└── [-rw-r--r--]  upkg.json
