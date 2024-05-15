@@ -58,7 +58,7 @@ to view a fully commented and non-minified version of this script.
 bash -eo pipefail <<'INSTALL_UPKG'
 # Read the non-minified and fully documented version on github.com/orbit-online/upkg
 u=https://github.com/orbit-online/upkg/releases/download/v0.21.0/upkg-install.tar.gz
-c=3b0381760eee4f9b06a5a0c55aef08b65b4a25cca69488bcf366a8aa7f9d56f2;\
+c=c01e2cbfb7f9ae05b55cb59d08cd85bc65760b6ab659d3cf36507483d7035dfd;\
 t=$(mktemp);trap 'rm "$t"' EXIT;wget -qO"$t" "$u"||curl -fsLo"$t" "$u";shasum \
 -a 256 -c <(echo "$c  $t")>/dev/null;P=${INSTALL_PREFIX:-$([[ $EUID = 0 ]]&&\
 echo /usr/local||echo "$HOME/.local" )};[[ ! -e $P ]]||tar tzf "$t"|grep -v \
