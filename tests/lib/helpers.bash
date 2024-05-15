@@ -216,6 +216,16 @@ assert_snapshot_path() {
   assert_equals_diff "$(cat "$snapshot_path")" "$(get_file_structure "$actual_path")"
 }
 
+assert_all_links_valid() {
+  shopt -s dotglob
+  local path=${1:-.} link_path
+  for link_path in "$path"/*; do
+    [[ -e $link_path ]] || fail "The symlink at '$link_path' points to a non-existent path: '$(readlink "$link_path")'"
+    [[ ! -d $link_path ]] || assert_all_links_valid "$link_path"
+  done
+  shopt -u dotglob
+}
+
 # shellcheck disable=SC2120
 replace_values() {
   local data

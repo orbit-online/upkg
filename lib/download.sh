@@ -37,7 +37,6 @@ upkg_download() {
     processing "Already downloaded '%s'" "$pkgurl"
     # Get the dedup_pkgname from the dedup dir, output it, and exit early
     dedup_pkgname=$(basename "$dedup_pkgname")
-    dedup_pkgname=${dedup_pkgname%@*}
     printf "%s\n" "$dedup_pkgname"
     return 0
   elif $already_downloading; then

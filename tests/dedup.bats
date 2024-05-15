@@ -51,3 +51,15 @@ teardown_file() { common_teardown_file; }
   run -0 upkg add "$PACKAGE_FIXTURES/default/non-executable" $FILE_SHASUM
   assert_snapshot_path
 }
+
+# bats test_tags=tar
+@test "dedup links to parent package are valid" {
+  create_tar_package default/dep-5
+  local name=default/triple-dep
+  create_tar_package $name
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
+  mv .upkg/.packages/triple-dep.tar@$TAR_SHASUM .upkg/.packages/triple-dep.tar@STATIC
+  ln -sf .packages/triple-dep.tar@STATIC .upkg/triple-dep
+  assert_snapshot_path
+  assert_all_links_valid
+}
