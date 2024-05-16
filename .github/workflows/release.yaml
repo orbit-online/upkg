@@ -155,6 +155,6 @@ jobs:
         body: ${{ steps.release.outputs.message }}
         draft: false
         prerelease: false
-        artifacts: upkg.tar.gz,upkg-compat.tar.gz,upkg-install.tar.gz,upkg-compat-install.tar.gz,upkg.schema.json
+        artifacts: upkg.tar.gz,upkg-compat.tar.gz,upkg-install.tar.gz,upkg-compat-install.tar.gz,upkg/upkg.schema.json
         artifactErrorsFailBuild: true
         artifactContentType: application/gzip
