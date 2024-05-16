@@ -13,148 +13,61 @@ jobs:
     uses: ./.github/workflows/upload-schema.yaml
     secrets: inherit
   bundle:
-    name: Create upkg.tar.gz
-    runs-on: ubuntu-latest
-    steps:
-    - id: program_version
-      uses: orbit-online/program-version@v1.0.0
-    - uses: actions/checkout@v4
-      with:
-        path: upkg
-    - name: Install μpkg dependencies
-      run: tools/install-deps.sh
-      working-directory: upkg
-    - name: Create μpkg bundle
-      run: bin/upkg bundle -d ../upkg.tar.gz -V "${{ steps.program_version.outputs.version }}" bin lib LICENSE upkg.schema.json
-      working-directory: upkg
-    - name: Upload upkg.tar.gz
-      uses: actions/upload-artifact@v4
-      with:
-        name: upkg.tar.gz
-        path: upkg.tar.gz
-        retention-days: 1
-  create-install-snapshot:
-    needs: [bundle]
-    name: Create upkg-install.tar.gz
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        path: upkg
-    - name: Install μpkg dependencies
-      run: tools/install-deps.sh
-      working-directory: upkg
-    - name: Download μpkg bundle
-      uses: actions/download-artifact@v4
-      with:
-        name: upkg.tar.gz
-    - name: Create upkg-install snapshot
-      run: upkg/tools/create-install-snapshot.sh upkg.tar.gz upkg-install.tar.gz
-    - name: Upload upkg-install.tar.gz
-      uses: actions/upload-artifact@v4
-      with:
-        name: upkg-install.tar.gz
-        path: upkg-install.tar.gz
-        retention-days: 1
-  create-compat-install-snapshot:
-    needs: [bundle]
-    name: Create upkg-compat.tar.gz & upkg-compat-install.tar.gz
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        path: upkg
-    - name: Install μpkg dependencies
-      run: tools/install-deps.sh
-      working-directory: upkg
-    - name: Download μpkg bundle
-      uses: actions/download-artifact@v4
-      with:
-        name: upkg.tar.gz
-    - name: Create upkg-compat bundle & upkg-compat-install snapshot
-      run: upkg/tools/create-compat-install-snapshot.sh upkg.tar.gz upkg-compat.tar.gz upkg-compat-install.tar.gz
-    - name: Upload upkg-compat.tar.gz
-      uses: actions/upload-artifact@v4
-      with:
-        name: upkg-compat.tar.gz
-        path: upkg-compat.tar.gz
-        retention-days: 1
-    - name: Upload upkg-compat-install.tar.gz
-      uses: actions/upload-artifact@v4
-      with:
-        name: upkg-compat-install.tar.gz
-        path: upkg-compat-install.tar.gz
-        retention-days: 1
-  check-readme-release:
-    name: Check release URL
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Ensure that the README references the current release
-      run: |
-        release=$(grep -Eom1 'u=https://github\.com/orbit-online/upkg/releases/download/[^/]+/upkg-install\.tar\.gz' README.md)
-        release=${release#'u=https://github.com/orbit-online/upkg/releases/download/'}
-        release=${release#'/upkg-install.tar.gz'}
-        [[ $release = "${{ github.ref }}" ]] || printf "The current release (%s) is not the one referenced in the README (%s)" "${{ github.ref }}" "$release"
-  check-readme-sha256:
-    name: Check release SHA-256
-    runs-on: ubuntu-latest
-    needs: [create-install-snapshot]
-    steps:
-    - uses: actions/checkout@v4
-    - name: Download upkg-install.tar.gz
-      uses: actions/download-artifact@v4
-      with:
-        name: upkg-install.tar.gz
-    - name: Verify the sha256 in the README agains the install snapshot
-      run: |
-        sha256=$(grep -Eom1 'c=[0-9a-f]{64}' README.md)
-        shasum -a 256 -c <(echo "${sha256#c=}  upkg-install.tar.gz")
-  release:
-    needs: [test, bundle, create-install-snapshot, create-compat-install-snapshot, check-readme-release, check-readme-sha256]
+    name: Release μpkg
+    environment: release
+    needs: [test]
     permissions:
       contents: write
     runs-on: ubuntu-latest
-    name: Create GitHub release
-    environment: release
     steps:
-    - id: program_version
-      uses: orbit-online/program-version@v1.0.0
     - uses: actions/checkout@v4
       with:
-        ref: ${{ steps.program_version.outputs.version }}
-        path: upkg
+        ref: ${{ github.ref }}
+    - name: Install μpkg dependencies
+      run: tools/install-deps.sh
+    - name: Setup current μpkg as bundler
+      run: |
+        mkdir -p "$HOME/.local/bin"
+        ln -s "$(realpath bin/upkg)" "$HOME/.local/bin/upkg"
+    - id: bundle
+      uses: orbit-online/upkg-bundle@v1
+      with:
+        paths: bin lib README.md LICENSE upkg.schema.json
+    - name: Create upkg-install snapshot
+      run: tools/create-install-snapshot.sh upkg.tar.gz upkg-install.tar.gz
+    - name: Create sha256 checksum of upkg-install.tar.gz
+      id: upkg-install-sha256
+      run: printf "sha256=%s\n" "$(shasum -a 256 "upkg-install.tar.gz" | cut -d ' ' -f1)" >> $GITHUB_OUTPUT
+    - name: Create upkg-compat bundle & upkg-compat-install snapshot
+      run: tools/create-compat-install-snapshot.sh upkg.tar.gz upkg-compat.tar.gz upkg-compat-install.tar.gz
     - uses: orbit-online/git-release@v1
       id: release
-      with:
-        working-directory: upkg
-    - name: Download upkg.tar.gz
-      uses: actions/download-artifact@v4
-      with:
-        name: upkg.tar.gz
-    - name: Download upkg.tar.gz
-      uses: actions/download-artifact@v4
-      with:
-        name: upkg-compat.tar.gz
-    - name: Download upkg-compat.tar.gz
-      uses: actions/download-artifact@v4
-      with:
-        name: upkg-compat.tar.gz
-    - name: Download upkg-install.tar.gz
-      uses: actions/download-artifact@v4
-      with:
-        name: upkg-install.tar.gz
-    - name: Download upkg-compat-install.tar.gz
-      uses: actions/download-artifact@v4
-      with:
-        name: upkg-compat-install.tar.gz
     - name: Create Release
       uses: ncipollo/release-action@v1
       with:
         name: ${{ steps.release.outputs.tag }}
-        body: ${{ steps.release.outputs.message }}
+        body: |
+          Install using this snippet. See the [README](https://github.com/orbit-online/upkg#installation) for details
+          and [install.sh](https://github.com/orbit-online/upkg/blob/master/install.sh) for a fully commented version.
+
+          ```
+          bash -eo pipefail <<'INSTALL_UPKG'
+          # Read the non-minified and fully documented version on github.com/orbit-online/upkg
+          u=https://github.com/orbit-online/upkg/releases/download/${{ steps.release.outputs.tag }}/upkg-install.tar.gz
+          c=${{ steps.upkg-install-sha256.outputs.sha256 }};\
+          t=$(mktemp);trap 'rm "$t"' EXIT;wget -qO"$t" "$u"||curl -fsLo"$t" "$u";shasum \
+          -a 256 -c <(echo "$c  $t")>/dev/null;P=${INSTALL_PREFIX:-$([[ $EUID = 0 ]]&&\
+          echo /usr/local||echo "$HOME/.local" )};[[ ! -e $P ]]||tar tzf "$t"|grep -v \
+          "/$"|while read -r f;do [[ ! -e $P/$f ]]||{ echo "$P/$f already exists">&2;\
+          exit 1; };done;mkdir -p "$P";tar xz -C "$P" -f "$t";echo>&2;echo "μpkg has \
+          been installed and can now be invoked with \`upkg'">&2;type jq &>/dev/null\
+          ||echo "WARNING: \`jq' was not found in \$PATH. jq is a hard dependency.">&2\
+          INSTALL_UPKG
+          ```
+
+          ${{ steps.release.outputs.message }}
         draft: false
         prerelease: false
-        artifacts: upkg.tar.gz,upkg-compat.tar.gz,upkg-install.tar.gz,upkg-compat-install.tar.gz,upkg/upkg.schema.json
+        artifacts: upkg.tar.gz,upkg-compat.tar.gz,upkg-install.tar.gz,upkg-compat-install.tar.gz,upkg.schema.json
         artifactErrorsFailBuild: true
         artifactContentType: application/gzip

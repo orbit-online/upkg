@@ -45,29 +45,17 @@ at all.
 
 ## Installation
 
+See [the latest release](https://github.com/orbit-online/upkg/releases/latest)
+for the install snippet.
+
 Replace `bash ...` with `sudo bash ...` to install system-wide.  
-You can also paste this directly into a Dockerfile `RUN` command, no escaping
-needed.  
+You can also paste the snippet directly into a Dockerfile `RUN` command,
+no escaping needed.  
 To install to a location other than `$HOME/.local` or `/usr/local` set
 `$INSTALL_PREFIX` with `sudo INSTALL_PREFIX=/opt bash ...`.
 
 Have a look at [install.sh](https://github.com/orbit-online/upkg/blob/master/install.sh)
-to view a fully commented and non-minified version of this script.
-
-```
-bash -eo pipefail <<'INSTALL_UPKG'
-# Read the non-minified and fully documented version on github.com/orbit-online/upkg
-u=https://github.com/orbit-online/upkg/releases/download/v0.21.1/upkg-install.tar.gz
-c=9e7395ddaba4ff7233644661f82f97ce06cdf882cf30bfa1e8070db04607d79f;\
-t=$(mktemp);trap 'rm "$t"' EXIT;wget -qO"$t" "$u"||curl -fsLo"$t" "$u";shasum \
--a 256 -c <(echo "$c  $t")>/dev/null;P=${INSTALL_PREFIX:-$([[ $EUID = 0 ]]&&\
-echo /usr/local||echo "$HOME/.local" )};[[ ! -e $P ]]||tar tzf "$t"|grep -v \
-"/$"|while read -r f;do [[ ! -e $P/$f ]]||{ echo "$P/$f already exists">&2;\
-exit 1; };done;mkdir -p "$P";tar xz -C "$P" -f "$t";echo>&2;echo "μpkg has \
-been installed and can now be invoked with \`upkg'">&2;type jq &>/dev/null\
-||echo "WARNING: \`jq' was not found in \$PATH. jq is a hard dependency.">&2\
-INSTALL_UPKG
-```
+to view a fully commented, non-minified version of this script.
 
 ### Install dependencies
 
