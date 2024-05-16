@@ -1,11 +1,17 @@
-# μpkg - A package manager for your system tooling
+# μpkg - A package manager for developers & ops
 
-μpkg is a package manager written in bash with just the bare minimum of features.  
-Its primary focus is allowing bash scripts to source dependencies like small
-logging functions or commands that shouldn't be tracked with those scripts.
+If you are tired of running the same `wget | tar xf; chmod` commands every time
+you need access to your tooling on a machine or in a container, or you keep
+copying the same snippets of code between countless projects, violating DRY
+because anything else is not feasible, this is the tool for you.
 
-μpkg supports installation to a local project with a `upkg.json` in its root,
-and global installation for user- or system-wide usage.
+μpkg and the accompanying GitHub actions securely automate handling dependencies,
+publishing small scripts, and installing binaries without requiring you to
+modify your existing infrastructure by virtue of being limited in scope and
+light on dependencies (bash, shasum & jq).
+
+μpkg can install arbitrary tarballs, files, and git repositories for use on your
+machine or as dependencies to your own scripts.
 
 ## Contents
 
