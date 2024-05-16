@@ -123,15 +123,11 @@ jobs:
     - uses: actions/checkout@v4
       with:
         ref: ${{ steps.program_version.outputs.version }}
-    - name: Get release notes from tag
-      id: tag-message
-      run: |
-        eof="$(openssl rand -hex 8)"
-        msg=$(git tag -l --format='%(contents)' "${{ steps.version.outputs.tag }}")
-        msg=${msg%%'-----BEGIN'*}
-        printf "message<<%s\n%s\n%s\n" "$eof" "$msg" "$eof" >> $GITHUB_OUTPUT
-      env:
-        REF: ${{ github.ref }}
+        path: upkg
+    - uses: orbit-online/git-release@v1
+      id: release
+      with:
+        working-directory: upkg
     - name: Download upkg.tar.gz
       uses: actions/download-artifact@v4
       with:
@@ -155,8 +151,8 @@ jobs:
     - name: Create Release
       uses: ncipollo/release-action@v1
       with:
-        name: ${{ steps.program_version.outputs.version }}
-        body: ${{ steps.tag-message.outputs.message }}
+        name: ${{ steps.release.outputs.tag }}
+        body: ${{ steps.release.outputs.message }}
         draft: false
         prerelease: false
         artifacts: upkg.tar.gz,upkg-compat.tar.gz,upkg-install.tar.gz,upkg-compat-install.tar.gz,upkg.schema.json
