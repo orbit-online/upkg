@@ -93,15 +93,15 @@ unprivileged users.
 
 ### GitHub action
 
-In GitHub workflows you can install μpkg with an action. The action version
-also determines the μpkg version that will be installed.
+In GitHub workflows you can install μpkg with an action.  
+Checkout [orbit-online/upkg-install](https://github.com/orbit-online/upkg-install) for details.
 
 ```
 jobs:
   compile:
     runs-on: ubuntu-latest
     steps:
-    - uses: orbit-online/upkg@<VERSION>
+    - uses: orbit-online/upkg-install@v1
 ```
 
 ## Usage
