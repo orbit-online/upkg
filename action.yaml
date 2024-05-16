@@ -1,12 +1,17 @@
 name: Install μpkg
 description: Install μpkg
+inputs:
+  upkg-version:
+    description: The version of μpkg to use for bundling
+    default: ""
+    required: false
 runs:
   using: composite
   steps:
   - name: Install μpkg
     shell: bash
     run: |
-      ref=$(basename "$GITHUB_ACTION_PATH")
+      ref=${{ inputs.upkg-version != "" && inputs.upkg-version || '$(basename "$GITHUB_ACTION_PATH")' }}
       if [[ -z $INSTALL_PREFIX ]]; then
         INSTALL_PREFIX=$HOME/.local
         [[ $EUID != 0 ]] || INSTALL_PREFIX=/usr/local
