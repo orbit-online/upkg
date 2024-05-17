@@ -54,14 +54,15 @@ jobs:
           bash -eo pipefail <<'INSTALL_UPKG'
           # Read the non-minified and fully documented version on github.com/orbit-online/upkg
           u=https://github.com/orbit-online/upkg/releases/download/${{ steps.release.outputs.tag }}/upkg-install.tar.gz
-          c=${{ steps.upkg-install-sha256.outputs.sha256 }};\
-          t=$(mktemp);trap 'rm "$t"' EXIT;wget -qO"$t" "$u"||curl -fsLo"$t" "$u";shasum \
-          -a 256 -c <(echo "$c  $t")>/dev/null;P=${INSTALL_PREFIX:-$([[ $EUID = 0 ]]&&\
-          echo /usr/local||echo "$HOME/.local" )};[[ ! -e $P ]]||tar tzf "$t"|grep -v \
-          "/$"|while read -r f;do [[ ! -e $P/$f ]]||{ echo "$P/$f already exists">&2;\
-          exit 1; };done;mkdir -p "$P";tar xz -C "$P" -f "$t";echo>&2;echo "μpkg has \
-          been installed and can now be invoked with \`upkg'">&2;type jq &>/dev/null\
-          ||echo "WARNING: \`jq' was not found in \$PATH. jq is a hard dependency.">&2\
+          c=${{ steps.upkg-install-sha256.outputs.sha256 }}; echo>&2; \
+          t=$(mktemp); trap 'rm "$t"' EXIT; wget -qO"$t" "$u" || curl -fsLo"$t" "$u"; \
+          shasum -a 256 -c <(echo "$c  $t") >/dev/null; \
+          P=${INSTALL_PREFIX:-$([[ $EUID = 0 ]]&&echo /usr/local||echo "$HOME/.local")}; \
+          mkdir -p "$P";cd "$P";for f in $(tar tzf "$t"); do [[ $f != */ && -e $f ]] && \
+          { echo "$f already exists">&2; exit 1; }; done; tar xzf "$t"; \
+          echo "μpkg has been installed and can now be invoked with 'upkg'" >&2; \
+          type jq &>/dev/null||echo "WARNING: 'jq' was not found in \$PATH. jq is a hard \
+          dependency." >&2 \
           INSTALL_UPKG
           ```
 

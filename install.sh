@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC2317
+# shellcheck disable=SC2164,SC2317
 
 ### This is the full version of the minified installation snippet in the README ###
 
@@ -40,6 +40,9 @@ u=https://github.com/orbit-online/upkg/releases/download/v0.20.0/upkg-install.ta
 # This ensures that the copied code always installs the same snapshot (or fails if the download URL returns a different snapshot)
 c=e3ce4efa9cf939bc58812b443c834a459e11583f9c195b4cc88193f3aec38495
 
+# Print an empty line to stderr to separate the install snippet from the log output that follows
+echo >&2
+
 # Create a temporary file `$t` to which we will download the install snapshot
 t=$(mktemp)
 
@@ -65,28 +68,25 @@ shasum -a 256 -c <(echo "$c  $t")>/dev/null
 # If we aren't, install to the users home directory in `.local`
 P=${INSTALL_PREFIX:-$([[ $EUID = 0 ]] && echo /usr/local || echo "$HOME/.local" )}
 
-# Check if the install prefix `$P` exists, if not we don't need to check whether
-# we are overwriting any files. Otherwise list the contents of the snapshot `$t`,
-# deselect any directories (exclude any archive entries ending in `/` with `grep`),
-# and loop over the files, checking whether any of them exist in `$P`. Fail the
-# script if any of the files exist.
+# Create the install prefix directory `$P` if it does not already exist.
+mkdir -p "$P"
+
+# cd to `$P`
+cd "$P"
+
+# Loop over the contents of the snapshot `$t`, exclude directories (archive
+# entries ending in `/`) and fail if any of them exist.
 # We don't use the `-k` switch from tar ("Don't replace existing files") to
 # simply extract the archive because that might result in an incomplete install.
-[[ ! -e $P ]] || tar tzf "$t" | grep -v "/$" | while read -r f; do
-  [[ ! -e $P/$f ]] || {
-    echo "$P/$f already exists">&2
+for f in $(tar tzf "$t"); do
+  [[ $f != */ && -e $f ]] && {
+    echo "$f already exists">&2
     exit 1
   }
 done
 
-# Create the install prefix directory `$P` if it does not already exist.
-mkdir -p "$P"
-
-# Extract (x) the compressed (z) snapshot (`-f $t`) to the install prefix (`-C $P`)
-tar xz -C "$P" -f "$t"
-
-# Print an empty line to stderr to separate the install snippet from the log output that follows
-echo >&2
+# Extract (x) the compressed (z) snapshot (`f "$t"`)
+tar xzf "$t"
 
 # Tell the user that μpkg has been installed
 echo "μpkg has been installed and can now be invoked with \`upkg'" >&2
