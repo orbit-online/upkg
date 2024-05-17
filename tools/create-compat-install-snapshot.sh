@@ -57,7 +57,7 @@ main() {
   old_checksum=$(shasum -a 256 "$tmp/upkg-compat-global.tar" | cut -d ' ' -f1)
   mv "$tmp_snapshot/lib/upkg/.upkg/.packages/upkg-compat.tar@$old_checksum" "$tmp_snapshot/lib/upkg/.upkg/.packages/upkg-compat.tar@$new_checksum"
   ln -sfT "../.packages/upkg-compat.tar@$new_checksum/bin/upkg" "$tmp_snapshot/lib/upkg/.upkg/.bin/upkg"
-  ln -sfT ".packages/upkg-compat.tar@$new_checksum/bin/upkg" "$tmp_snapshot/lib/upkg/.upkg/upkg-compat"
+  ln -sfT ".packages/upkg-compat.tar@$new_checksum" "$tmp_snapshot/lib/upkg/.upkg/upkg-compat"
   # Create the snapshot tarball
   tar \
     --sort=name \
