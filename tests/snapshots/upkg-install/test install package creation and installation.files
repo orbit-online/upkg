@@ -7,12 +7,14 @@
         │   ├── [drwxr-xr-x]  .bin
         │   │   └── [lrwxrwxrwx]  upkg -> ../.packages/upkg.tar@STATIC
         │   ├── [drwxr-xr-x]  .packages
-        │   │   ├── [drwxr-xr-x]  docopt-lib.sh.tar@efab2d2d7efb1e4eae76fd77eea7a0fb524ab7cd441e3b33159ee55ec57d243e
+        │   │   ├── [drwxr-xr-x]  docopt-lib.sh.tar@STATIC
+        │   │   │   ├── [-rw-r--r--]  LICENSE
+        │   │   │   ├── [-rw-r--r--]  README.adoc
         │   │   │   ├── [-rw-r--r--]  docopt-lib.sh
         │   │   │   └── [-rw-r--r--]  upkg.json
         │   │   └── [drwxr-xr-x]  upkg.tar@STATIC
         │   │       ├── [drwxr-xr-x]  .upkg
-        │   │       │   └── [lrwxrwxrwx]  docopt-lib.sh -> ../../docopt-lib.sh.tar@efab2d2d7efb1e4eae76fd77eea7a0fb524ab7cd441e3b33159ee55ec57d243e
+        │   │       │   └── [lrwxrwxrwx]  docopt-lib.sh -> ../../docopt-lib.sh.tar@STATIC
         │   │       ├── [-rw-r--r--]  LICENSE
         │   │       ├── [-rw-r--r--]  README.md
         │   │       ├── [drwxr-xr-x]  bin

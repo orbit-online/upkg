@@ -28,6 +28,9 @@ teardown_file() { common_teardown_file; }
   ln -sTf "../.packages/upkg.tar@STATIC" "$HOME/.local/lib/upkg/.upkg/.bin/upkg"
   ln -sTf ".packages/upkg.tar@STATIC" "$HOME/.local/lib/upkg/.upkg/upkg"
   mv "$HOME/.local/lib/upkg/.upkg/.packages"/upkg.tar@* "$HOME/.local/lib/upkg/.upkg/.packages/upkg.tar@STATIC"
+  mv "$HOME/.local/lib/upkg/.upkg/.packages"/docopt-lib.sh.tar@* "$HOME/.local/lib/upkg/.upkg/.packages/docopt-lib.sh.tar@STATIC"
+  ln -sTf "../../docopt-lib.sh.tar@STATIC" "$HOME/.local/lib/upkg/.upkg/.packages/upkg.tar@STATIC/.upkg/docopt-lib.sh"
+  assert_all_links_valid "$HOME/.local"
   assert_snapshot_path "" "$HOME/.local"
 }
 
@@ -56,6 +59,9 @@ teardown_file() { common_teardown_file; }
   ln -sTf .packages/upkg-compat.tar@STATIC "$HOME/.local/lib/upkg/.upkg/upkg-compat"
   mv "$HOME/.local/lib/upkg/.upkg/.packages"/upkg-compat.tar@* "$HOME/.local/lib/upkg/.upkg/.packages/upkg-compat.tar@STATIC"
   mv "$HOME/.local/lib/upkg/.upkg/.packages"/upkg.tar@* "$HOME/.local/lib/upkg/.upkg/.packages/upkg.tar@STATIC"
+  mv "$HOME/.local/lib/upkg/.upkg/.packages"/docopt-lib.sh.tar@* "$HOME/.local/lib/upkg/.upkg/.packages/docopt-lib.sh.tar@STATIC"
+  ln -sTf "../../docopt-lib.sh.tar@STATIC" "$HOME/.local/lib/upkg/.upkg/.packages/upkg.tar@STATIC/.upkg/docopt-lib.sh"
   ln -sTf ../../upkg.tar@STATIC "$HOME/.local/lib/upkg/.upkg/.packages/upkg-compat.tar@STATIC/.upkg/upkg-new"
+  assert_all_links_valid "$HOME/.local"
   assert_snapshot_path compat-install "$HOME/.local"
 }
