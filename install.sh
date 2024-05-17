@@ -21,7 +21,7 @@ exit 1
 # the line that follows as part of the same RUN command.
 
 # Set the download URL `$u` to the upkg-install.tar.gz install snapshot.
-# The contents look like this ():
+# The contents look like this:
 #   bin/upkg -> ../lib/upkg/.upkg/.bin/upkg
 #   lib/upkg/.upkg/.bin/upkg -> ../.packages/upkg.tar@a2f6d1a6c79269a071439f2a414573fa11bec888a673b5b487a9c9e8bfcd8626/bin/upkg
 #   lib/upkg/.upkg/.packages/docopt-lib.sh.tar@efab2d2d7efb1e4eae76fd77eea7a0fb524ab7cd441e3b33159ee55ec57d243e/docopt-lib.sh
