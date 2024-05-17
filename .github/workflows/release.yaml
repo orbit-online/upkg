@@ -47,8 +47,8 @@ jobs:
       with:
         name: ${{ steps.release.outputs.tag }}
         body: |
-          Install using this snippet. See the [README](https://github.com/orbit-online/upkg#installation) for details
-          and [install.sh](https://github.com/orbit-online/upkg/blob/master/install.sh) for a fully commented version.
+          Install using this snippet. See the [README](https://github.com/orbit-online/upkg/blob/${{ steps.release.outputs.tag }}/README.md#installation) for details
+          and [install.sh](https://github.com/orbit-online/upkg/blob/${{ steps.release.outputs.tag }}/install.sh) for a fully commented version.
 
           ```
           bash -eo pipefail <<'INSTALL_UPKG'
