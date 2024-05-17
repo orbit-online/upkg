@@ -26,7 +26,7 @@ main() {
 
   cp -r "$PKGROOT/compat/upkg.json" "$PKGROOT/compat/bin" "$PKGROOT/compat/README.md" "$PKGROOT/LICENSE" "$tmp_pkg"
   # Copy the version from UPKGTARBALL to upkg-compat
-  version=$(tar -xOf "$upkg_tarball" upkg.json | jq -r .version)
+  version=$(tar -xOf "$upkg_tarball" upkg.json | jq -re .version)
   (
     cd "$tmp_pkg"
     # Depend on new μpkg
@@ -44,8 +44,8 @@ main() {
   )
   # Create a global installation in tmp
   INSTALL_PREFIX=$tmp_snapshot "$PKGROOT/bin/upkg" add -qg "$tmp/upkg-compat-global.tar"
-  # Adjust the URL to new μpkg in upkg.json of upkg-compat by copying the previously adjuste upkg.json
-  cp "$tmp_pkg/upkg.json" "$tmp_snapshot/lib/upkg/.upkg/upkg-compat/upkg.json"
+  # Extract upkg.json from the bundle where both the URL is adjusted and the version is set
+  tar -xOf "$tarball_dest" upkg.json >"$tmp_pkg/upkg.json"
   # Adjust the URL and also the checksum for the upkg-compat tarball
   new_checksum=$(shasum -a 256 "$tarball_dest" | cut -d ' ' -f1)
   upkgjson=$(cat "$tmp_snapshot/lib/upkg/upkg.json")

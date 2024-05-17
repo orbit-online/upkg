@@ -4,8 +4,8 @@
   "dependencies": [
     {
       "name": "upkg-old",
-      "file": "https://github.com/orbit-online/upkg/raw/v0.13.0/upkg.sh",
-      "sha256": "43c20cf96f96fb40337cdd587088d465bdddfaa26c6e088b8090c519082193da",
+      "file": "https://github.com/orbit-online/upkg/raw/v0.13.1/upkg.sh",
+      "sha256": "b11f3e573cd09c5a6f794fb46687a4e3749b645884022573b9ca96b05b058299",
       "bin": []
     }
   ]

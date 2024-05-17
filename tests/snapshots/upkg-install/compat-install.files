@@ -15,13 +15,13 @@
         │   │   ├── [drwxr-xr-x]  upkg-compat.tar@STATIC
         │   │   │   ├── [drwxr-xr-x]  .upkg
         │   │   │   │   ├── [lrwxrwxrwx]  upkg-new -> ../../upkg.tar@STATIC
-        │   │   │   │   └── [lrwxrwxrwx]  upkg-old -> ../../upkg.sh+x@43c20cf96f96fb40337cdd587088d465bdddfaa26c6e088b8090c519082193da
+        │   │   │   │   └── [lrwxrwxrwx]  upkg-old -> ../../upkg.sh+x@b11f3e573cd09c5a6f794fb46687a4e3749b645884022573b9ca96b05b058299
         │   │   │   ├── [-rw-r--r--]  LICENSE
         │   │   │   ├── [-rw-r--r--]  README.md
         │   │   │   ├── [drwxr-xr-x]  bin
         │   │   │   │   └── [-rwxr-xr-x]  upkg
         │   │   │   └── [-rw-r--r--]  upkg.json
-        │   │   ├── [-rwxr-xr-x]  upkg.sh+x@43c20cf96f96fb40337cdd587088d465bdddfaa26c6e088b8090c519082193da
+        │   │   ├── [-rwxr-xr-x]  upkg.sh+x@b11f3e573cd09c5a6f794fb46687a4e3749b645884022573b9ca96b05b058299
         │   │   └── [drwxr-xr-x]  upkg.tar@STATIC
         │   │       ├── [drwxr-xr-x]  .upkg
         │   │       │   └── [lrwxrwxrwx]  docopt-lib.sh -> ../../docopt-lib.sh.tar@STATIC
