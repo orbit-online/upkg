@@ -217,7 +217,7 @@ upkg_uninstall() {
 
 upkg_list() {
   local pkgspath=${1:-} recursive=${2:?} indent=${3:-''} pkgpath pkgpaths pkgname pkgversion upkgversion
-  pkgpaths=$(find "$pkgspath" -mindepth 2 -maxdepth 2 -not -path "$pkgspath/.bin/*")
+  pkgpaths=$(find "$pkgspath" -mindepth 2 -maxdepth 2 \( -not -path "$pkgspath/.bin/*" -a -not -path "$pkgspath/.upkg/*" \))
   while [[ -n $pkgpaths ]] && read -r -d $'\n' pkgpath; do
     pkgname=${pkgpath#"$pkgspath/"} upkgversion="$(jq -r .version <"$pkgpath/upkg.json")"
     pkgversion=${upkgversion#'refs/heads/'}
