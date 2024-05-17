@@ -28,14 +28,14 @@ upkg() {
       fi
       ;;
     install)
-      if [[ $# -eq 1 ]] || [[ $# -eq 2 && $2 = -n ]]; then
-        if is_legacy_pkgroot; then
-          exec "$upkg_old" "$@"
-        else
-          exec "$upkg_new" "$@"
-        fi
-      else
+      local arg
+      for arg in "$@"; do
+        [[ $arg != */* ]] || exec "$upkg_old" "$@"
+      done
+      if is_legacy_pkgroot; then
         exec "$upkg_old" "$@"
+      else
+        exec "$upkg_new" "$@"
       fi
       ;;
     *) exec "$upkg_new" --help ;;
