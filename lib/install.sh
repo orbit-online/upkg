@@ -119,7 +119,7 @@ upkg_install_deps() {
   local pkgpath=$1 deps=()
 
   # Loads of early returns here
-  [[ -e "$pkgpath/upkg.json" ]] || return 0 # No upkg.json -> no deps -> nothing to do
+  [[ -e $pkgpath/upkg.json ]] || return 0 # No upkg.json -> no deps -> nothing to do
   readarray -t -d $'\n' deps < <(jq -rc '(.dependencies // [])[]' "$pkgpath/upkg.json")
   [[ ${#deps[@]} -gt 0 ]] || return 0 # No deps -> nothing to do
   mkdir "$pkgpath/.upkg" 2>/dev/null || return 0 # .upkg exists -> another process is already installing the deps
@@ -136,7 +136,7 @@ upkg_install_deps() {
     if ${UPKG_SEQUENTIAL:-false}; then
       # Wait for upkg_install_dep to take the exclusive lock before spawning the next subshell.
       # This way we ensure a deterministic install order
-      until [[ -e "$pkgpath/.upkg/.sentinels/$dep_idx.lock" || -e "$pkgpath/.upkg/.sentinels/$dep_idx.fail" ]]; do sleep .01; done
+      until [[ -e $pkgpath/.upkg/.sentinels/$dep_idx.lock || -e $pkgpath/.upkg/.sentinels/$dep_idx.fail ]]; do sleep .01; done
     fi
     # checksums are not unique across dependencies, so we use the dependencies array order as a key instead
     : $((dep_idx++))
@@ -145,7 +145,7 @@ upkg_install_deps() {
   dep_idx=0
   for dep in "${deps[@]}"; do
     # Wait for each lock sentinel to exist
-    until [[ -e "$pkgpath/.upkg/.sentinels/$dep_idx.lock" || -e "$pkgpath/.upkg/.sentinels/$dep_idx.fail" ]]; do sleep .01; done
+    until [[ -e $pkgpath/.upkg/.sentinels/$dep_idx.lock || -e $pkgpath/.upkg/.sentinels/$dep_idx.fail ]]; do sleep .01; done
     : $((dep_idx++))
   done
 
@@ -156,7 +156,7 @@ upkg_install_deps() {
   dep_idx=0
   for dep in "${deps[@]}"; do
     # Check that no processes failed
-    [[ ! -e "$pkgpath/.upkg/.sentinels/$dep_idx.fail" ]] || \
+    [[ ! -e $pkgpath/.upkg/.sentinels/$dep_idx.fail ]] || \
       fatal "An error occurred while installing '%s'" "$(dep_pkgurl "$dep")"
     [[ ! -e "$pkgpath/.upkg/.sentinels/$dep_idx.dry-run-fail" ]] || return 1 # dry-run install failed
     : $((dep_idx++))
@@ -201,7 +201,7 @@ upkg_install_dep() {
       $DRY_RUN || verbose "Skipping download of '%s'" "$pkgurl"
       is_dedup=true
 
-      mkdir -p ".upkg/.tmp/root/.upkg/.packages"
+      mkdir -p .upkg/.tmp/root/.upkg/.packages
       # Place a symlink to the proper physical location of the dedup'ed package in the root package
       # If this fails, some other install process already linked it. Also, I counted the ../'es, they're all there, don't worry
       ln -sT "../../../../.packages/$dedup_name" ".upkg/.tmp/root/.upkg/.packages/$dedup_name" 2>/dev/null || true
@@ -220,7 +220,7 @@ upkg_install_dep() {
     dedup_name=$(upkg_download "$dep")
   fi
 
-  local dedup_path=".upkg/.tmp/root/.upkg/.packages/$dedup_name" dedup_pkgname pkgname
+  local dedup_path=.upkg/.tmp/root/.upkg/.packages/$dedup_name dedup_pkgname pkgname
   dedup_pkgname=${dedup_name%@*}
   if ! pkgname="$(jq -re '.name // empty' <<<"$dep")" && ! pkgname=$(jq -re '.name // empty' "$dedup_path/upkg.json" 2>/dev/null); then
     # Calculate the pkgname independently from what the dedup package is named
@@ -301,7 +301,7 @@ upkg_install_dep() {
         upkg_link_cmd "../$packages_path/$dedup_name/$binpath" "$parent_pkgpath/.upkg/.bin/$command"
       else
         for command in "$dedup_path/${binpath%'/'}"/*; do
-          [[ -f "$command" && -x "$command" ]] || continue
+          [[ -f $command && -x $command ]] || continue
           command=$(basename "$command")
           upkg_link_cmd "../$packages_path/$dedup_name/${binpath%'/'}/$command" "$parent_pkgpath/.upkg/.bin/$command"
         done

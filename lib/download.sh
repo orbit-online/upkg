@@ -112,14 +112,14 @@ upkg_download() {
   dedup_pkgname=${dedup_pkgname}${dedup_pkgname_suffix}
 
   # Move to dedup path
-  mkdir -p ".upkg/.tmp/root/.upkg/.packages"
+  mkdir -p .upkg/.tmp/root/.upkg/.packages
   mv "$pkgpath" ".upkg/.tmp/root/.upkg/.packages/$dedup_pkgname@$checksum"
   printf "%s\n" "$dedup_pkgname@$checksum"
 }
 
 # Download a file using wget or curl
 upkg_fetch() {
-  local url="$1" dest="$2" out
+  local url=$1 dest=$2 out
   processing "Downloading %s" "$url"
   if type wget >/dev/null 2>&1; then
     out=$(wget --server-response -T "${UPKG_TIMEOUT:-10}" -t "${UPKG_FETCH_RETRIES:-2}" -qO "$dest" "$url" 2>&1) || \
@@ -133,7 +133,7 @@ upkg_fetch() {
 }
 
 upkg_head() {
-  local url="$1"
+  local url=$1
   verbose "Performing a HEAD request to %s" "$url"
   if type wget >/dev/null 2>&1; then
     wget --spider -T "${UPKG_TIMEOUT:-10}" -t "${UPKG_FETCH_RETRIES:-2}" -q "$url" &>/dev/null
