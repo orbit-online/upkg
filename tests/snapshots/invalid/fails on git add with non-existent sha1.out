@@ -1,3 +1,0 @@
-upkg: Unable to checkout '0123456789abcdef0123456789abcdef01234567' from '$BATS_RUN_TMPDIR/package-fixtures/default/acme.git'. Error:
-fatal: reference is not a tree: 0123456789abcdef0123456789abcdef01234567
-upkg: An error occurred while installing '$BATS_RUN_TMPDIR/package-fixtures/default/acme.git'

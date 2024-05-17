@@ -55,7 +55,7 @@ teardown_file() { common_teardown_file; }
   local name=default/acme
   create_git_package $name
   run -1 upkg add "$PACKAGE_FIXTURES/$name.git" 0123456789abcdef0123456789abcdef01234567
-  assert_snapshot_output
+  assert_output --partial "Unable to checkout '0123456789abcdef0123456789abcdef01234567'"
   assert_snapshot_path shared/empty
 }
 
