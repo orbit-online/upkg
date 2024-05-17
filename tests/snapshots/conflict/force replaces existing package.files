@@ -1,0 +1,7 @@
+[drwxr-xr-x]  .
+├── [drwxr-xr-x]  .upkg
+│   ├── [drwxr-xr-x]  .packages
+│   │   └── [drwxr-xr-x]  dep-5.tar@5a4173f8e0e51b3e5ec8d22e29a2110e84dd4b42dc6a7b56147869410cbe2373
+│   │       └── [-rw-r--r--]  upkg.json
+│   └── [lrwxrwxrwx]  acme -> .packages/dep-5.tar@5a4173f8e0e51b3e5ec8d22e29a2110e84dd4b42dc6a7b56147869410cbe2373
+└── [-rw-r--r--]  upkg.json

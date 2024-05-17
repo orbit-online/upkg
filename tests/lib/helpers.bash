@@ -147,7 +147,7 @@ create_git_package() {
         cp -r "$tpl/." "$working_copy/"
         git -C "$working_copy" add -A
         git -C "$working_copy" commit -q --no-gpg-sign -m 'Initial import'
-        git clone --bare "$working_copy" "$dest"
+        git clone -q --bare "$working_copy" "$dest"
         git -C "$dest" --bare update-server-info
       fi
     fi

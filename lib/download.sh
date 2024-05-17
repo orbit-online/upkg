@@ -20,7 +20,7 @@ upkg_download() {
     flock -s 9 # Block by trying to get a shared lock
   fi
 
-  local dedup_pkgname_suffix # avoid clashes between tar and file pkgtypes by suffixing them (and just do it for git repos as well)
+  local dedup_pkgname_suffix # avoid clashes between tar and file pkgtypes by suffixing them (and just do it for git repos for good measure)
   case "$pkgtype" in
     tar) dedup_pkgname_suffix=.tar ;;
     file)
@@ -47,18 +47,12 @@ upkg_download() {
     return 1
   fi
 
-  # Generate a preliminary dedup_pkgname (will be modified based on the pkgtype)
-  dedup_pkgname=${pkgurl%%'#'*} # Remove trailing anchor
-  dedup_pkgname=${dedup_pkgname%%'?'*} # Remove query params
-  dedup_pkgname=$(basename "$dedup_pkgname") # Remove path prefix
-
   case "$pkgtype" in
     tar)
     local archivepath
-    # check if file was already downloaded by upkg_add to generate a checksum
-    if [[ -e ".upkg/.tmp/prefetched/$checksum" ]]; then
-      # archive was already downloaded by upkg_add to generate a checksum
-      archivepath=".upkg/.tmp/prefetched/$checksum"
+    if [[ -e .upkg/.tmp/prefetched/$checksum ]]; then
+      # archive was already downloaded by upkg_add
+      archivepath=.upkg/.tmp/prefetched/$checksum
     elif [[ -e $pkgurl ]]; then
       # archive exists on the filesystem, extract from it directly
       archivepath=$pkgurl
@@ -67,8 +61,6 @@ upkg_download() {
       archivepath=$pkgpath.archive
       upkg_fetch "$pkgurl" "$archivepath"
     fi
-    # Remove the suffix so that it is just ".tar". This is only to avoid ".tar.gz.tar" and is not strictly necessary
-    [[ ! $dedup_pkgname =~ (\.tar(\.[^.?#/]+)?)$ ]] || dedup_pkgname=${dedup_pkgname%"${BASH_REMATCH[1]}"}
 
     sha256 "$archivepath" "$checksum"
     tar -xf "$archivepath" -C "$pkgpath"
@@ -76,9 +68,9 @@ upkg_download() {
     file)
     # change the original $pkgpath which is a directory and an implicit lock
     pkgpath=$pkgpath.file
-    if [[ -e ".upkg/.tmp/prefetched/$checksum" ]]; then
-      # file was already downloaded by upkg_add to generate a checksum
-      pkgpath=".upkg/.tmp/prefetched/$checksum"
+    if [[ -e .upkg/.tmp/prefetched/$checksum ]]; then
+      # file was already downloaded by upkg_add
+      pkgpath=.upkg/.tmp/prefetched/$checksum
     elif [[ -e $pkgurl ]]; then
       # file exists on the filesystem, copy it so it can be moved later on
       cp "$pkgurl" "$pkgpath"
@@ -92,24 +84,17 @@ upkg_download() {
     chmod "$dedup_pkgname_suffix" "$pkgpath"
     ;;
     git)
-    local out
-    out=$(git clone -q "${pkgurl%%'#'*}" "$pkgpath" 2>&1) || \
-      fatal "Unable to clone '%s'. Error:\n%s" "$pkgurl" "$out"
-    out=$(git -C "$pkgpath" checkout -q "$checksum" -- 2>&1) || \
-      fatal "Unable to checkout '%s' from '%s'. Error:\n%s" "$checksum" "$pkgurl" "$out"
-    # Remove a potential .git suffix, we add it later on
-    dedup_pkgname=${dedup_pkgname%".git"}
+    if [[ -e .upkg/.tmp/prefetched/$checksum ]]; then
+      # repo was already cloned by upkg_add
+      pkgpath=.upkg/.tmp/prefetched/$checksum
+    else
+      upkg_clone "${pkgurl%%'#'*}" "$pkgpath" "$checksum"
+    fi
     ;;
   esac
 
-  [[ ! -e "$pkgpath/.upkg" ]] || fatal "The package '%s' contains a .upkg/ directory. Unable to install." "$pkgurl"
-
-  local pkgname
-  if [[ -e "$pkgpath/upkg.json" ]] && pkgname=$(jq -re '.name // empty' "$pkgpath/upkg.json"); then
-    dedup_pkgname=$pkgname
-  fi
-  dedup_pkgname=$(clean_pkgname "$dedup_pkgname")
-  dedup_pkgname=${dedup_pkgname}${dedup_pkgname_suffix}
+  [[ ! -e $pkgpath/.upkg ]] || fatal "The package '%s' contains a .upkg/ directory. Unable to install." "$pkgurl"
+  dedup_pkgname=$(get_pkgname "$dep" "$pkgpath" false)$dedup_pkgname_suffix
 
   # Move to dedup path
   mkdir -p .upkg/.tmp/root/.upkg/.packages
@@ -141,5 +126,16 @@ upkg_head() {
     curl -I -fsL --connect-timeout "${UPKG_TIMEOUT:-10}" --retry "${UPKG_FETCH_RETRIES:-2}" "$url" &>/dev/null
   else
     fatal "Unable to download '%s', neither wget nor curl are available" "$url"
+  fi
+}
+
+upkg_clone() {
+  local url=$1 dest=$2 checksum=$3 out
+  out=$(git clone -q "$url" "$dest" 2>&1) || \
+    fatal "Unable to clone '%s'. Error:\n%s" "$url" "$out"
+  if [[ -n $checksum ]]; then
+    local out
+    out=$(git -C "$dest" checkout -q "$checksum" -- 2>&1) || \
+      fatal "Unable to checkout '%s' from '%s'. Error:\n%s" "$checksum" "$url" "$out"
   fi
 }

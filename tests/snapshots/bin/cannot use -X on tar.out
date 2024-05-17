@@ -2,7 +2,7 @@ upkg: --no-exec is only valid for files
 
 Usage:
   upkg install [-nqv]
-  upkg add [-qvgXB -b PATH... -p PKGNAME -t PKGTYPE] (URL|PATH) [SHA]
+  upkg add [-qvgfXB -b PATH... -p PKGNAME -t PKGTYPE] (URL|PATH) [SHA]
   upkg remove [-qnvg] PKGNAME
   upkg list [-qvg] [-- COLUMNOPTS...]
   upkg bundle [-qv -d PATH] -V VERSION [PATHS...

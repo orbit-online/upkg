@@ -1,3 +1,2 @@
 upkg: Unable to clone '$BATS_RUN_TMPDIR/package-fixtures/non-existent.git'. Error:
 fatal: repository '$BATS_RUN_TMPDIR/package-fixtures/non-existent.git' does not exist
-upkg: An error occurred while installing '$BATS_RUN_TMPDIR/package-fixtures/non-existent.git'

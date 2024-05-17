@@ -2,26 +2,45 @@
 
 # Add a package from upkg.json (optionally determine its checksum) and run upkg_install
 upkg_add() {
-  local pkgtype=$1 pkgurl=$2 checksum=$3 pkgname=$4 no_exec=$5 no_bin=$6
-        shift;     shift;    shift;      shift;     shift;     shift;    binpaths=("$@")
+  local pkgtype=$1 pkgurl=$2 checksum=$3 pkgname=$4 no_exec=$5 no_bin=$6 force=$7; shift 7
+  local binpaths=("$@")
+  local prefetch prefetchpath
 
   if [[ -z "$checksum" ]]; then
     # Autocalculate the checksum
     processing "No checksum given for '%s', determining now" "$pkgurl"
+    prefetch=true
+  elif $force && [[ -z $pkgname ]]; then
+    processing "No pkgname given for '%s', determining now" "$pkgurl"
+    prefetch=true
+  fi
+  if $prefetch; then
+    # Prefetch the package. Either because we need to determine the checksum
+    # or because --force has been specified, and we need to remove a conflicting
+    # package before installing (to that end we need to know the pkgname beforehand)
+    # ... or because of both
     if [[ $pkgtype != git ]]; then
       if [[ -e $pkgurl ]]; then
         # file exists locally on the filesystem
-        checksum=$(sha256 "$pkgurl")
+        [[ -n $checksum ]] || checksum=$(sha256 "$pkgurl") # Don't override checksum if it was already given
       else
         mkdir .upkg/.tmp/prefetched
-        local tmpfile=.upkg/.tmp/prefetched/tmpfile
-        upkg_fetch "$pkgurl" "$tmpfile"
-        checksum=$(sha256 "$tmpfile")
-        mv "$tmpfile" ".upkg/.tmp/prefetched/$checksum"
+        local prefetchpath=.upkg/.tmp/prefetched/tmpfile
+        upkg_fetch "$pkgurl" "$prefetchpath"
+        [[ -n $checksum ]] || checksum=$(sha256 "$prefetchpath")
+        mv "$prefetchpath" ".upkg/.tmp/prefetched/$checksum"
       fi
     else
       # pkgurl is a git archive
-      checksum=$(git ls-remote -q "$pkgurl" HEAD | grep $'\tHEAD$' | cut -f1)
+      mkdir .upkg/.tmp/prefetched
+      local prefetchpath=.upkg/.tmp/prefetched/tmprepo
+      if [[ -n $checksum ]]; then
+        upkg_clone "$pkgurl" "$prefetchpath" "$checksum"
+      else
+        upkg_clone "$pkgurl" "$prefetchpath"
+        checksum=$(git -C "$prefetchpath" rev-parse HEAD)
+      fi
+      mv "$prefetchpath" ".upkg/.tmp/prefetched/$checksum"
     fi
   fi
 
@@ -42,6 +61,14 @@ upkg_add() {
   # Modify upkg.json, but only in the temp dir, so a failure doesn't change anything
   local upkgjson={}
   [[ ! -e upkg.json ]] || upkgjson=$(cat upkg.json)
+
+  if $force; then
+    [[ -z $pkgname ]] || pkgname=$(get_pkgname "$dep" "$prefetchpath" true)
+    # Check if there is an existing package with the pkgname we are about to install, if so remove it from upkg.json first
+    dep_idx=$(get_dep_idx "$pkgname")
+    [[ -z $dep_idx ]] || upkgjson=$(jq -r --argjson dep_idx "$dep_idx" 'del(.dependencies[$dep_idx])' <<<"$upkgjson")
+  fi
+
   jq --argjson dep "$dep" '.dependencies+=[$dep]' <<<"$upkgjson" >.upkg/.tmp/root/upkg.json
   upkg_install
   cp .upkg/.tmp/root/upkg.json upkg.json

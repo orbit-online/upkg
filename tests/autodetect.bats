@@ -25,7 +25,7 @@ teardown_file() { common_teardown_file; }
   create_git_package $name
   run -0 upkg add package-fixtures:"$PACKAGE_FIXTURES/$name.git"
   # Output is too unique to snapshot
-  assert_equal "$(wc -l "$SSHD_ROOT/log")" "9 $SSHD_ROOT/log" # ls-remote causes more log lines
+  assert_equal "$(wc -l "$SSHD_ROOT/log")" "6 $SSHD_ROOT/log" # ls-remote causes more log lines
   assert_snapshot_path shared/acme-git
 }
 

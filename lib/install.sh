@@ -73,6 +73,16 @@ upkg_install() {
     for dedup_dir in .upkg/.packages/*; do
       [[ -e .upkg/.tmp/root/.upkg/.packages/$(basename "$dedup_dir") ]] || fatal "'%s' should not be installed" "$(basename "$dedup_dir")"
     done
+    # Check if there are links in .upkg/.tmp/root/.upkg/ that are not linked from .upkg/
+    # This means symlinks have been removed manually
+    for dedup_link in .upkg/.tmp/root/.upkg/*; do
+      [[ -e .upkg/$(basename "$dedup_link") ]] || fatal "'%s' is not linked in .upkg/" "$(basename "$dedup_link")"
+    done
+    # Check if there are packages in .upkg/ that are not linked to from the temporary root
+    # This means symlinks have been added manually
+    for dedup_link in .upkg/*; do
+      [[ -e .upkg/.tmp/root/.upkg/$(basename "$dedup_link") ]] || fatal "'%s' should not exist in .upkg/" "$(basename "$dedup_link")"
+    done
 
     local bin_dest new_bins=() unreferenced_bins=()
     # installed bins - current bins = new bins
@@ -222,19 +232,11 @@ upkg_install_dep() {
 
   local dedup_path=.upkg/.tmp/root/.upkg/.packages/$dedup_name dedup_pkgname pkgname
   dedup_pkgname=${dedup_name%@*}
-  if ! pkgname="$(jq -re '.name // empty' <<<"$dep")" && ! pkgname=$(jq -re '.name // empty' "$dedup_path/upkg.json" 2>/dev/null); then
-    # Calculate the pkgname independently from what the dedup package is named
-    # Two different pkgurls may have the same shasum, in that case we still want distinct pkgnames based on the URL
-    pkgname=${pkgurl%%'#'*} # Remove trailing anchor
-    pkgname=${pkgname%%'?'*} # Remove query params
-    pkgname=$(basename "$pkgname") # Remove path prefix
-    if [[ $pkgtype = tar ]]; then
-      [[ ! $pkgname =~ (\.tar(\.[^.?#/]+)?)$ ]] || pkgname=${pkgname%"${BASH_REMATCH[1]}"} # Remove .tar or .tar.* suffix
-    elif [[ $pkgtype = git ]]; then
-      pkgname=${pkgname%.git} # Remove .git suffix
-    fi
-  fi
-  pkgname=$(clean_pkgname "$pkgname")
+  # Calculate the pkgname independently from what the dedup package is named.
+  # Two or more pkgurls may have the same shasum, in which case upkg_download will only download one and return that
+  # dedup_name for the others and we want the basename for each URL as the pkgname. This only applies to packages
+  # whose pkgnames are derived from the URL (i.e. not applicable when overriding names or upkg.json has a name specified)
+  pkgname=$(get_pkgname "$dep" "$dedup_path" true)
 
   local packages_path
   if [[ $pkgpath = .upkg/.tmp/root ]]; then

@@ -97,3 +97,24 @@ teardown_file() { common_teardown_file; }
   assert_snapshot_path
   assert_all_links_valid
 }
+
+# bats test_tags=file
+@test "install when symlink is missing fails" {
+  local name=default/executable
+  create_file_package $name
+  run -0 upkg add -t file "$PACKAGE_FIXTURES/$name" $FILE_SHASUM
+  rm .upkg/executable
+  run -1 upkg install -n
+  assert_snapshot_output
+  assert_all_links_valid
+}
+
+# bats test_tags=file
+@test "install when bogus symlink is added fails" {
+  local name=default/executable
+  create_file_package $name
+  run -0 upkg add -t file "$PACKAGE_FIXTURES/$name" $FILE_SHASUM
+  ln -s .packages/non-existent .upkg/non-existent
+  run -1 upkg install -n
+  assert_snapshot_output
+}

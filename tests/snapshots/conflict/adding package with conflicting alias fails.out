@@ -1,0 +1,2 @@
+upkg: conflict: There is more than one package with the name 'acme' ('dep-5.tar' and 'acme.tar')
+upkg: An error occurred while installing '$BATS_RUN_TMPDIR/package-fixtures/default/dep-5.tar'
