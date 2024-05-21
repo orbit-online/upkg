@@ -63,7 +63,7 @@ upkg_add() {
   [[ ! -e upkg.json ]] || upkgjson=$(cat upkg.json)
 
   if $force; then
-    [[ -z $pkgname ]] || pkgname=$(get_pkgname "$dep" "$prefetchpath" true)
+    [[ -n $pkgname ]] || pkgname=$(get_pkgname "$dep" "$prefetchpath" true)
     # Check if there is an existing package with the pkgname we are about to install, if so remove it from upkg.json first
     dep_idx=$(get_dep_idx "$pkgname")
     [[ -z $dep_idx ]] || upkgjson=$(jq -r --argjson dep_idx "$dep_idx" 'del(.dependencies[$dep_idx])' <<<"$upkgjson")

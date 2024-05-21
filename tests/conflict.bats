@@ -88,6 +88,16 @@ teardown_file() { common_teardown_file; }
 }
 
 # bats test_tags=tar
+@test "force operates normally when replacing with same package" {
+  local name=default/acme
+  create_tar_package $name
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
+  run -0 upkg add -f "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
+  assert_snapshot_output
+  assert_snapshot_path
+}
+
+# bats test_tags=tar
 @test "force fails when .upkg/ symlinks are not in sync" {
   local \
     name1=default/acme
