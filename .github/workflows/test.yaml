@@ -16,6 +16,10 @@ jobs:
       uses: ludeeus/action-shellcheck@master
       env:
         SHELLCHECK_OPTS: -x
+      with:
+        ignore_paths: >-
+          .upkg
+          compat/.upkg
   test:
     runs-on: ubuntu-latest
     strategy:
