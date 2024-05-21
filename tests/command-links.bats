@@ -45,3 +45,14 @@ teardown_file() { common_teardown_file; }
   assert_snapshot_output
   assert_snapshot_path "" "$HOME/.local"
 }
+
+# bats test_tags=tar
+@test "command linking does not fail when encountering non symlinks in bin/" {
+  local name=default/acme
+  create_tar_package $name
+  mkdir -p "$HOME/.local/bin"
+  touch "$HOME/.local/bin/000"
+  run -0 upkg add -g "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
+  run -0 upkg add -fg "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
+  assert_snapshot_path "" "$HOME/.local"
+}

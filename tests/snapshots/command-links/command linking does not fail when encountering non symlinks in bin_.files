@@ -1,0 +1,16 @@
+[drwxr-xr-x]  .
+├── [drwxr-xr-x]  bin
+│   ├── [-rw-r--r--]  000
+│   └── [lrwxrwxrwx]  acme.bin -> ../lib/upkg/.upkg/.bin/acme.bin
+└── [drwxr-xr-x]  lib
+    └── [drwxr-xr-x]  upkg
+        ├── [drwxr-xr-x]  .upkg
+        │   ├── [drwxr-xr-x]  .bin
+        │   │   └── [lrwxrwxrwx]  acme.bin -> ../.packages/acme.tar@2fc13e1819bc3ed22ee1526d4f44ec20cd8748575e52a28e137f74fec2dd1160/bin/acme.bin
+        │   ├── [drwxr-xr-x]  .packages
+        │   │   └── [drwxr-xr-x]  acme.tar@2fc13e1819bc3ed22ee1526d4f44ec20cd8748575e52a28e137f74fec2dd1160
+        │   │       ├── [drwxr-xr-x]  bin
+        │   │       │   └── [-rwxr-xr-x]  acme.bin
+        │   │       └── [-rw-r--r--]  upkg.json
+        │   └── [lrwxrwxrwx]  acme -> .packages/acme.tar@2fc13e1819bc3ed22ee1526d4f44ec20cd8748575e52a28e137f74fec2dd1160
+        └── [-rw-r--r--]  upkg.json

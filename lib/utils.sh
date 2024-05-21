@@ -39,7 +39,7 @@ upkg_list_global_referenced_cmds() {
 upkg_resolve_links() {
   local path=$1 link
   for link in "$path"/*; do
-    readlink "$link"
+    [[ ! -L "$link" ]] || readlink "$link"
   done
 }
 
