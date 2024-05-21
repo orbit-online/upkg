@@ -222,7 +222,7 @@ $p'list=${var_list:-false};'$p'bundle=${var_bundle:-false};'$p'__=${var___:-fa'\
       [[ -e "$INSTALL_PREFIX/lib/upkg" ]] || return 0
       cd "$INSTALL_PREFIX/lib/upkg"
     fi
-    upkg_list "${COLUMNOPTS[@]}"
+    upkg_list "${_COLUMNOPTS[@]}"
 
   elif $_bundle; then
     [[ -e "$PWD/upkg.json" ]] || fatal "No upkg.json found in '%s'" "$PWD"
