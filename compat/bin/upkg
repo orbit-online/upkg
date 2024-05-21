@@ -40,7 +40,7 @@ upkg() {
         exec "$upkg_new" "$@"
       fi
       ;;
-    *) exec "$upkg_new" --help ;;
+    *) exec "$upkg_new" "$@" ;;
   esac
 }
 
