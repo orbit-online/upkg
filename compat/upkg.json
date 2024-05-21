@@ -7,6 +7,10 @@
       "file": "https://github.com/orbit-online/upkg/raw/v0.13.1/upkg.sh",
       "sha256": "b11f3e573cd09c5a6f794fb46687a4e3749b645884022573b9ca96b05b058299",
       "bin": []
+    },
+    {
+      "tar": "https://github.com/orbit-online/records.sh/releases/download/v1.0.0/records.sh.tar.gz",
+      "sha256": "0469f15f5b689cb29b30f2a3b233c61856eb209fc50c74ef141120bbf70697f1"
     }
   ]
 }

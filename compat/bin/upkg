@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
-# shellcheck disable=2059,2064
-set -Eeo pipefail
+# shellcheck source-path=.. disable=2059,2064
+set -Eeo pipefail; shopt -s inherit_errexit
 
 upkg() {
   local pkgroot; pkgroot=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
-  if ! type "jq" >/dev/null 2>&1; then
-    printf -- "upkg: command not found: 'jq'\n" >&2
-    exit 1
-  fi
+  source "$pkgroot/.upkg/records.sh/records.sh"
+  type "jq" >/dev/null 2>&1 || fatal "command not found: 'jq'"
   local upkg_new=$pkgroot/.upkg/upkg-new/bin/upkg
   local upkg_old=$pkgroot/.upkg/upkg-old
   case "$1" in
-    add|remove|bundle) exec "$upkg_new" "$@" ;;
+    add|remove)
+      ! is_legacy_pkgroot || fatal ".upkg looks to be managed by v0.13.0 still, please remove it before running μpkg v0.20.0+"
+      exec "$upkg_new" "$@"
+      ;;
+    bundle) exec "$upkg_new" "$@" ;;
     uninstall|root) exec "$upkg_old" "$@" ;;
     list)
       if [[ $# -gt 2 ]]; then
