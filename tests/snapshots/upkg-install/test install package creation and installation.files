@@ -5,7 +5,7 @@
     └── [drwxr-xr-x]  upkg
         ├── [drwxr-xr-x]  .upkg
         │   ├── [drwxr-xr-x]  .bin
-        │   │   └── [lrwxrwxrwx]  upkg -> ../.packages/upkg.tar@STATIC
+        │   │   └── [lrwxrwxrwx]  upkg -> ../.packages/upkg.tar@STATIC/bin/upkg
         │   ├── [drwxr-xr-x]  .packages
         │   │   ├── [drwxr-xr-x]  docopt-lib.sh.tar@STATIC
         │   │   │   ├── [-rw-r--r--]  LICENSE

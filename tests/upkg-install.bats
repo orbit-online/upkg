@@ -24,14 +24,21 @@ teardown_file() { common_teardown_file; }
   mkdir "$HOME/.local"
   tar -xf upkg-install.tar.gz -C "$HOME/.local"
   assert_all_links_valid "$HOME/.local"
+  run -0 "$HOME/.local/bin/upkg" --help
   # Links validated, fix the ones with changing shasums before checking snapshot
-  ln -sTf "../.packages/upkg.tar@STATIC" "$HOME/.local/lib/upkg/.upkg/.bin/upkg"
-  ln -sTf ".packages/upkg.tar@STATIC" "$HOME/.local/lib/upkg/.upkg/upkg"
-  mv "$HOME/.local/lib/upkg/.upkg/.packages"/upkg.tar@* "$HOME/.local/lib/upkg/.upkg/.packages/upkg.tar@STATIC"
-  mv "$HOME/.local/lib/upkg/.upkg/.packages"/docopt-lib.sh.tar@* "$HOME/.local/lib/upkg/.upkg/.packages/docopt-lib.sh.tar@STATIC"
-  ln -sTf "../../docopt-lib.sh.tar@STATIC" "$HOME/.local/lib/upkg/.upkg/.packages/upkg.tar@STATIC/.upkg/docopt-lib.sh"
+  mv "$HOME/.local/lib/upkg/.upkg/.packages"/upkg.tar@* \
+     "$HOME/.local/lib/upkg/.upkg/.packages"/upkg.tar@STATIC
+  ln -sTf                         .packages/upkg.tar@STATIC          "$HOME/.local/lib/upkg/.upkg/upkg"
+  ln -sTf                      ../.packages/upkg.tar@STATIC/bin/upkg "$HOME/.local/lib/upkg/.upkg/.bin/upkg"
+  local dep_pkgname
+  # shellcheck disable=SC2043
+  for dep_pkgname in docopt-lib.sh; do
+    mv "$HOME/.local/lib/upkg/.upkg/.packages"/$dep_pkgname.tar@* "$HOME/.local/lib/upkg/.upkg/.packages/$dep_pkgname.tar@STATIC"
+    ln -sTf ../../$dep_pkgname.tar@STATIC "$HOME/.local/lib/upkg/.upkg/.packages/upkg.tar@STATIC/.upkg/$dep_pkgname"
+  done
   assert_all_links_valid "$HOME/.local"
   assert_snapshot_path "" "$HOME/.local"
+  run -0 "$HOME/.local/bin/upkg" --help
 }
 
 @test "test compat install package creation and installation" {
@@ -53,15 +60,26 @@ teardown_file() { common_teardown_file; }
   mkdir "$HOME/.local"
   tar -xf upkg-compat-install.tar.gz -C "$HOME/.local"
   assert_all_links_valid "$HOME/.local"
+  run -0 "$HOME/.local/bin/upkg" --help
   # Links validated, fix the ones with changing shasums before checking snapshot
-  ln -sTf ../.packages/upkg-compat.tar@STATIC "$HOME/.local/lib/upkg/.upkg/.bin/upkg"
-  ln -sTf .packages/upkg-compat.tar@STATIC "$HOME/.local/lib/upkg/.upkg/upkg-compat"
-  ln -sTf .packages/upkg-compat.tar@STATIC "$HOME/.local/lib/upkg/.upkg/upkg-compat"
-  mv "$HOME/.local/lib/upkg/.upkg/.packages"/upkg-compat.tar@* "$HOME/.local/lib/upkg/.upkg/.packages/upkg-compat.tar@STATIC"
-  mv "$HOME/.local/lib/upkg/.upkg/.packages"/upkg.tar@* "$HOME/.local/lib/upkg/.upkg/.packages/upkg.tar@STATIC"
-  mv "$HOME/.local/lib/upkg/.upkg/.packages"/docopt-lib.sh.tar@* "$HOME/.local/lib/upkg/.upkg/.packages/docopt-lib.sh.tar@STATIC"
-  ln -sTf "../../docopt-lib.sh.tar@STATIC" "$HOME/.local/lib/upkg/.upkg/.packages/upkg.tar@STATIC/.upkg/docopt-lib.sh"
-  ln -sTf ../../upkg.tar@STATIC "$HOME/.local/lib/upkg/.upkg/.packages/upkg-compat.tar@STATIC/.upkg/upkg-new"
+  mv "$HOME/.local/lib/upkg/.upkg/.packages"/upkg-compat.tar@* \
+      "$HOME/.local/lib/upkg/.upkg/.packages/upkg-compat.tar@STATIC"
+  ln -sTf                          .packages/upkg-compat.tar@STATIC          "$HOME/.local/lib/upkg/.upkg/upkg-compat"
+  ln -sTf                       ../.packages/upkg-compat.tar@STATIC/bin/upkg "$HOME/.local/lib/upkg/.upkg/.bin/upkg"
+  mv "$HOME/.local/lib/upkg/.upkg/.packages"/upkg.tar@* \
+     "$HOME/.local/lib/upkg/.upkg/.packages"/upkg.tar@STATIC
+  ln -sTf                              ../../upkg.tar@STATIC "$HOME/.local/lib/upkg/.upkg/.packages/upkg-compat.tar@STATIC/.upkg/upkg-new"
+  local dep_pkgname
+  for dep_pkgname in docopt-lib.sh records.sh; do
+    mv "$HOME/.local/lib/upkg/.upkg/.packages"/$dep_pkgname.tar@* \
+       "$HOME/.local/lib/upkg/.upkg/.packages"/$dep_pkgname.tar@STATIC
+    ln -sTf                              ../../$dep_pkgname.tar@STATIC "$HOME/.local/lib/upkg/.upkg/.packages/upkg-compat.tar@STATIC/.upkg/$dep_pkgname"
+  done
+  # shellcheck disable=SC2043
+  for dep_pkgname in docopt-lib.sh; do
+    ln -sTf ../../$dep_pkgname.tar@STATIC "$HOME/.local/lib/upkg/.upkg/.packages/upkg.tar@STATIC/.upkg/$dep_pkgname"
+  done
   assert_all_links_valid "$HOME/.local"
   assert_snapshot_path compat-install "$HOME/.local"
+  run -0 "$HOME/.local/bin/upkg" --help
 }

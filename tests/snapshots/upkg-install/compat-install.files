@@ -5,15 +5,22 @@
     └── [drwxr-xr-x]  upkg
         ├── [drwxr-xr-x]  .upkg
         │   ├── [drwxr-xr-x]  .bin
-        │   │   └── [lrwxrwxrwx]  upkg -> ../.packages/upkg-compat.tar@STATIC
+        │   │   └── [lrwxrwxrwx]  upkg -> ../.packages/upkg-compat.tar@STATIC/bin/upkg
         │   ├── [drwxr-xr-x]  .packages
         │   │   ├── [drwxr-xr-x]  docopt-lib.sh.tar@STATIC
         │   │   │   ├── [-rw-r--r--]  LICENSE
         │   │   │   ├── [-rw-r--r--]  README.adoc
         │   │   │   ├── [-rw-r--r--]  docopt-lib.sh
         │   │   │   └── [-rw-r--r--]  upkg.json
+        │   │   ├── [drwxr-xr-x]  records.sh.tar@STATIC
+        │   │   │   ├── [-rw-r--r--]  LICENSE
+        │   │   │   ├── [-rw-r--r--]  README.md
+        │   │   │   ├── [-rw-r--r--]  records.sh
+        │   │   │   └── [-rw-r--r--]  upkg.json
         │   │   ├── [drwxr-xr-x]  upkg-compat.tar@STATIC
         │   │   │   ├── [drwxr-xr-x]  .upkg
+        │   │   │   │   ├── [lrwxrwxrwx]  docopt-lib.sh -> ../../docopt-lib.sh.tar@STATIC
+        │   │   │   │   ├── [lrwxrwxrwx]  records.sh -> ../../records.sh.tar@STATIC
         │   │   │   │   ├── [lrwxrwxrwx]  upkg-new -> ../../upkg.tar@STATIC
         │   │   │   │   └── [lrwxrwxrwx]  upkg-old -> ../../upkg.sh+x@b11f3e573cd09c5a6f794fb46687a4e3749b645884022573b9ca96b05b058299
         │   │   │   ├── [-rw-r--r--]  LICENSE
