@@ -4,6 +4,7 @@ set -Eeo pipefail; shopt -s inherit_errexit
 
 upkg() {
   local pkgroot; pkgroot=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
+  # shellcheck disable=SC1091
   source "$pkgroot/.upkg/records.sh/records.sh"
   type "jq" >/dev/null 2>&1 || fatal "command not found: 'jq'"
   local upkg_new=$pkgroot/.upkg/upkg-new/bin/upkg

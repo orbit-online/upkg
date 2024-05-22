@@ -5,6 +5,7 @@ set -Eeo pipefail; shopt -s inherit_errexit
 @test 'shellcheck upkg' {
   [[ -z $SKIP_SHELLCHECK ]] || skip "$SKIP_SHELLCHECK"
   shellcheck -x "$BATS_TEST_DIRNAME/../bin/upkg"
+  shellcheck -x "$BATS_TEST_DIRNAME/../compat/bin/upkg"
 }
 
 @test 'shellcheck tests' {
