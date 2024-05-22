@@ -49,7 +49,7 @@ is_legacy_pkgroot() {
   if [[ -e .upkg/.packages ]]; then
     return 1
   elif [[ -e upkg.json ]]; then
-    ! jq -re '.commands // .assets // (.dependencies | type=="array") // false' upkg.json >/dev/null || return 0
+    ! jq -re '.commands // .assets // (.dependencies | type!="array") // false' upkg.json >/dev/null || return 0
   fi
   # Assume new
   return 1
