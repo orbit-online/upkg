@@ -5,10 +5,12 @@ upkg_bundle() {
   local version=$1 dest=$2 pkgname=$3 tarout
   shift 3
   local paths=("$@")
+  local upkgjson={}
+  [[ ! -e upkg.json ]] || upkgjson=$(cat upkg.json)
 
   if [[ ${#paths[@]} -eq 0 ]]; then
-    if jq -re 'has("bin")' upkg.json >/dev/null; then
-      readarray -t -d $'\n' paths < <(jq -r '.bin[]' upkg.json)
+    if jq -re 'has("bin")' <<<"$upkgjson" >/dev/null; then
+      readarray -t -d $'\n' paths < <(jq -r '.bin[]' <<<"$upkgjson")
     elif [[ -e bin ]]; then
       paths=(bin)
     else
@@ -19,9 +21,7 @@ upkg_bundle() {
     ! opt_path=$(compgen -G "README*") || paths+=("$opt_path")
   fi
 
-  local upkgjson={}
-  [[ ! -e upkg.json ]] || upkgjson=$(cat upkg.json)
-  upkgjson=$(jq --arg version "$version" '.version=$version' <<<"$upkgjson")
+  [[ -z $version ]] || upkgjson=$(jq --arg version "$version" '.version=$version' <<<"$upkgjson")
   [[ -z $pkgname ]] || upkgjson=$(jq --arg pkgname "$pkgname" '.name=$pkgname' <<<"$upkgjson")
   # tmpfile for upkg.json so we can set the version without modifying the original
   printf "%s\n" "$upkgjson" >.upkg/.tmp/upkg.json
