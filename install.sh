@@ -20,6 +20,12 @@ exit 1
 # everything is one line), but in a Dockerfile this ensures that docker reads
 # the line that follows as part of the same RUN command.
 
+# Determine the installation prefix `$P`. If `$INSTALL_PREFIX` is set use that,
+# otherwise check if we are sudo (`$EUID = 0`), meaning we install to `/usr/local`.
+# If we aren't, install to the users home directory in `.local`
+# In the short version this is fixed to /usr/local
+P=${INSTALL_PREFIX:-$([[ $EUID = 0 ]] && echo /usr/local || echo "$HOME/.local" )}
+
 # Set the download URL `$u` to the upkg-install.tar.gz install snapshot.
 # The contents look like this:
 #   bin/upkg -> ../lib/upkg/.upkg/.bin/upkg
@@ -63,10 +69,8 @@ wget -qO"$t" "$u" || curl -fsLo"$t" "$u"
 # the script (see `bash -e` above) if the check fails.
 shasum -a 256 -c <(echo "$c  $t")>/dev/null
 
-# Determine the installation prefix `$P`. If `$INSTALL_PREFIX` is set use that,
-# otherwise check if we are sudo (`$EUID = 0`), meaning we install to `/usr/local`.
-# If we aren't, install to the users home directory in `.local`
-P=${INSTALL_PREFIX:-$([[ $EUID = 0 ]] && echo /usr/local || echo "$HOME/.local" )}
+# In the short version we skip the rest and simply run `tar xzC /usr/local -f "$t"``
+# (i.e. extract to /usr/local and overwrite existing files)
 
 # Create the install prefix directory `$P` if it does not already exist.
 mkdir -p "$P"
