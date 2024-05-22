@@ -33,13 +33,6 @@ teardown_file() { common_teardown_file; }
   assert_snapshot_path "" acme
 }
 
-@test "fails when no upkg.json present" {
-  cp -r "$PACKAGE_TEMPLATES/default/acme"/* .
-  rm upkg.json
-  run -1 upkg bundle -d acme.tar.gz -V v1.0.2
-  assert_snapshot_output
-}
-
 @test "fails when there is nothing to bundle" {
   cp -r "$PACKAGE_TEMPLATES/default/acme/upkg.json" .
   run -1 upkg bundle -d acme.tar.gz -V v1.0.2
@@ -65,4 +58,40 @@ teardown_file() { common_teardown_file; }
   cp -r "$PACKAGE_TEMPLATES/default/acme/upkg.json" .
   run -1 upkg bundle -d acme.tar.gz -V v1.0.2 non-existent
   assert_snapshot_output "" "$(grep -v 'Option --mtime' <<<"$output")"
+}
+
+@test "can bundle without upkg.json" {
+  cp -r "$PACKAGE_TEMPLATES/default/acme"/* .
+  rm upkg.json
+  run -0 upkg bundle -V v1.0.2
+  tar xOf package.tar.gz upkg.json | jq -re '. | if has("name") then false else true end'
+  assert_snapshot_output
+}
+
+@test "can override pkgname in bundle" {
+  cp -r "$PACKAGE_TEMPLATES/default/acme"/* .
+  rm upkg.json
+  run -0 upkg bundle -p acme-overridden -V v1.0.2
+  tar xOf acme-overridden.tar.gz upkg.json | jq -re '.name=="acme-overridden"'
+  assert_snapshot_output
+}
+
+@test "bundle falls back to package.tar.gz" {
+  cp -r "$PACKAGE_TEMPLATES/default/acme"/* .
+  rm upkg.json
+  run -0 upkg bundle -d acme.tar.gz -V v1.0.2
+  assert_snapshot_output
+}
+
+@test "bundle version is optional" {
+  cp -r "$PACKAGE_TEMPLATES/default/acme"/* .
+  run -0 upkg bundle
+  tar xOf acme.tar.gz upkg.json | jq -re '.version=="v1.0.2"'
+  assert_snapshot_output
+}
+
+@test "bundle version is not set if unspecified" {
+  cp -r "$PACKAGE_TEMPLATES/default/acme-no-metadata"/* .
+  run -0 upkg bundle
+  tar xOf package.tar.gz upkg.json | jq -re '. | if has("version") then false else true end'
 }

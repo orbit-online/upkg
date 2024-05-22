@@ -4,7 +4,7 @@ Usage:
   upkg add [-qvgfXB -b PATH... -p PKGNAME -t PKGTYPE] (URL|PATH) [SHA]
   upkg remove [-qnvg] PKGNAME
   upkg list [-qvg] [-- COLUMNOPTS...]
-  upkg bundle [-qv -d PATH -p PKGNAME] -V VERSION [PATHS...]
+  upkg bundle [-qv -d PATH -p PKGNAME -V VERSION] [PATHS...]
 
 Options:
   -n --dry-run         Dry run, $?=1 if install is required
