@@ -242,7 +242,16 @@ $p'list=${var_list:-false};'$p'bundle=${var_bundle:-false};'$p'__=${var___:-fa'\
 
     upkg_mktemp
     upkg_bundle "$___pkgver" "$___dest" "$___pkgname" "${_PATHS[@]}"
-    completed "μpkg package tarball was successfully created at '%s'" "$___dest"
+
+    if ! ${QUIET:-false}; then
+      if ! $VERBOSE && [[ -t 2 ]]; then
+        printf -- "\e[2K" >&2
+      fi
+      printf -- "upkg: μpkg package tarball was successfully created at '" >&2
+    fi
+    printf -- "%s" "$___dest"
+    ${QUIET:-false} || printf -- "'" >&2
+    trailing_newline
 
   else
     fatal "Not implemented"

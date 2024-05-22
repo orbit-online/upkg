@@ -95,3 +95,11 @@ teardown_file() { common_teardown_file; }
   run -0 upkg bundle
   tar xOf package.tar.gz upkg.json | jq -re '. | if has("version") then false else true end'
 }
+
+@test "bundle outputs package path to stdout" {
+  cp -r "$PACKAGE_TEMPLATES/default/acme"/* .
+  run -0 --separate-stderr upkg bundle
+  assert_equal "$output" "acme.tar.gz"
+  # shellcheck disable=SC2154
+  assert_snapshot_output "" "$stderr"
+}
