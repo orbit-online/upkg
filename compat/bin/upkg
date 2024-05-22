@@ -11,7 +11,7 @@ upkg() {
   local upkg_old=$pkgroot/.upkg/upkg-old
   case "$1" in
     add|remove)
-      ! is_legacy_pkgroot || fatal ".upkg looks to be managed by v0.13.0 still, please remove it before running μpkg v0.20.0+"
+      ! is_legacy_pkgroot || fatal "upkg.json or .upkg/ looks to be managed by v0.13.0 still, please adjust/remove it before running μpkg v0.20.0+"
       exec "$upkg_new" "$@"
       ;;
     bundle) exec "$upkg_new" "$@" ;;
@@ -49,7 +49,7 @@ is_legacy_pkgroot() {
   if [[ -e .upkg/.packages ]]; then
     return 1
   elif [[ -e upkg.json ]]; then
-    ! jq -re '.commands // .assets // (.dependencies | type!="array") // false' upkg.json >/dev/null || return 0
+    ! jq -re '.commands // .assets // (.dependencies // [] | type!="array") // false' upkg.json >/dev/null || return 0
   fi
   # Assume new
   return 1
