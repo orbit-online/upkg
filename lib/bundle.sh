@@ -2,8 +2,8 @@
 
 upkg_bundle() {
   # See https://reproducible-builds.org/docs/archives/ for more info on the weird tar parameters
-  local version=$1 dest=$2 tarout
-  shift 2
+  local version=$1 dest=$2 pkgname=$3 tarout
+  shift 3
   local paths=("$@")
 
   if [[ ${#paths[@]} -eq 0 ]]; then
@@ -19,8 +19,12 @@ upkg_bundle() {
     ! opt_path=$(compgen -G "README*") || paths+=("$opt_path")
   fi
 
+  local upkgjson={}
+  [[ ! -e upkg.json ]] || upkgjson=$(cat upkg.json)
+  upkgjson=$(jq --arg version "$version" '.version=$version' <<<"$upkgjson")
+  [[ -z $pkgname ]] || upkgjson=$(jq --arg pkgname "$pkgname" '.name=$pkgname' <<<"$upkgjson")
   # tmpfile for upkg.json so we can set the version without modifying the original
-  jq --arg version "$version" '.version=$version' upkg.json >.upkg/.tmp/upkg.json
+  printf "%s\n" "$upkgjson" >.upkg/.tmp/upkg.json
 
   # LC_ALL=C: Ensure stable file sorting
   # POSIXLY_CORRECT: Don't include atime & ctime in tar archives

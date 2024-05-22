@@ -4,7 +4,7 @@ Usage:
   upkg add [-qvgfXB -b PATH... -p PKGNAME -t PKGTYPE] (URL|PATH) [SHA]
   upkg remove [-qnvg] PKGNAME
   upkg list [-qvg] [-- COLUMNOPTS...]
-  upkg bundle [-qv -d PATH] -V VERSION [PATHS...]
+  upkg bundle [-qv -d PATH -p PKGNAME] -V VERSION [PATHS...]
 
 Options:
   -n --dry-run         Dry run, $?=1 if install is required
@@ -18,5 +18,6 @@ Options:
                        directory to .upkg/.bin (default: bin/)
   -t --pkgtype=TYPE    Explicitly set the package type (tar, file, or git)
   -p --pkgname=NAME    Override the package name link in .upkg/
+                       (or name property in upkg.json when bundling)
   -d --dest=PATH       Package tarball destination (default: $pkgname.tar.gz)
   -V --pkgver=VERSION  Version of the package that is being bundle
