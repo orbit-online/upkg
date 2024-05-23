@@ -94,12 +94,12 @@ upkg_download() {
   esac
 
   [[ ! -e $pkgpath/.upkg ]] || fatal "The package '%s' contains a .upkg/ directory. Unable to install." "$pkgurl"
-  dedup_pkgname=$(get_pkgname "$dep" "$pkgpath" false)$dedup_pkgname_suffix
+  dedup_pkgname=$(get_pkgname "$dep" "$pkgpath" false)$dedup_pkgname_suffix@$checksum
 
   # Move to dedup path
   mkdir -p .upkg/.tmp/root/.upkg/.packages
-  mv "$pkgpath" ".upkg/.tmp/root/.upkg/.packages/$dedup_pkgname@$checksum"
-  printf "%s\n" "$dedup_pkgname@$checksum"
+  mv "$pkgpath" ".upkg/.tmp/root/.upkg/.packages/$dedup_pkgname"
+  printf "%s\n" "$dedup_pkgname"
 }
 
 # Download a file using wget or curl
