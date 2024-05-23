@@ -40,7 +40,7 @@ upkg_list_referenced_pkgs() {
   local pkgpath=$1 pkglink dedup_pkgname
   while read -r -d $'\0' pkglink; do
     dedup_pkgname=$(basename "$pkglink")
-    printf ".upkg/.packages/%s\n" "$dedup_pkgname"
+    printf ".upkg/.packages/%s\0" "$dedup_pkgname"
     upkg_list_referenced_pkgs ".upkg/.packages/$dedup_pkgname"
   done < <(upkg_resolve_links "$pkgpath/.upkg")
 }

@@ -62,9 +62,9 @@ upkg_install() {
       # Remove all unreferenced packages
       # all pkgs - referenced pkgs = unreferenced pkgs
       local unreferenced_pkgs
-      readarray -t -d $'\n' unreferenced_pkgs < <(comm -23 \
-        <(for pkg in .upkg/.packages/*; do printf "%s\n" "$pkg"; done | sort) \
-        <(upkg_list_referenced_pkgs . | sort)
+      readarray -t -d $'\n' unreferenced_pkgs < <(comm -z23 \
+        <(for pkg in .upkg/.packages/*; do printf "%s\0" "$pkg"; done | sort -z) \
+        <(upkg_list_referenced_pkgs . | sort -z )
       )
 
       for dedup_dir in "${unreferenced_pkgs[@]}"; do
