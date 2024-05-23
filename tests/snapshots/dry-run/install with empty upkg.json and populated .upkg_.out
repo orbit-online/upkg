@@ -1,1 +1,3 @@
-upkg: 'acme.tar@2fc13e1819bc3ed22ee1526d4f44ec20cd8748575e52a28e137f74fec2dd1160' should not be installed
+upkg: 'acme' is no longer depended upon or has changed
+upkg: 'acme.bin' is not linked to right package from .upkg/.bin
+upkg: .upkg/ is not up-to-date

@@ -1,1 +1,2 @@
-upkg: 'executable' is not linked in .upkg/
+upkg: 'executable' is a new dependency
+upkg: .upkg/ is not up-to-date

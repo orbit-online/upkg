@@ -63,3 +63,38 @@ teardown_file() { common_teardown_file; }
   assert_snapshot_path
   assert_all_links_valid
 }
+
+# bats test_tags=tar
+@test "deep dedup is correctly detected on second install" {
+  local archives=(1 2 3 4 5) i
+  for i in "${archives[@]}"; do
+    create_tar_package "default/dep-$i"
+    ln -s "$PACKAGE_FIXTURES/default/dep-$i.tar" "dep-$i.tar"
+  done
+  export DEBUG=1
+  run -0 upkg add "$PACKAGE_FIXTURES/default/dep-1.tar"
+  for i in "${archives[@]}"; do
+    rm "dep-$i.tar"
+  done
+  export DEBUG=1
+  upkg install
+  assert_snapshot_path
+  assert_snapshot_path
+}
+
+
+# bats test_tags=tar
+@test "dedup stays when first level dep is removed" {
+  local archives=(1 2 3 4 5) i
+  for i in "${archives[@]}"; do
+    create_tar_package "default/dep-$i"
+    ln -s "$PACKAGE_FIXTURES/default/dep-$i.tar" "dep-$i.tar"
+  done
+  run -0 upkg add "$PACKAGE_FIXTURES/default/dep-5.tar"
+  run -0 upkg add "$PACKAGE_FIXTURES/default/dep-1.tar"
+  run -0 upkg remove dep-5
+  for i in "${archives[@]}"; do
+    rm "dep-$i.tar"
+  done
+  assert_snapshot_path
+}

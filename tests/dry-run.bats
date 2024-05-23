@@ -118,3 +118,18 @@ teardown_file() { common_teardown_file; }
   run -1 upkg install -n
   assert_snapshot_output
 }
+
+# bats test_tags=tar
+@test "first level install shortcut works" {
+  local archives=(1 2 3 4 5) i
+  for i in "${archives[@]}"; do
+    create_tar_package "default/dep-$i"
+    ln -s "$PACKAGE_FIXTURES/default/dep-$i.tar" "dep-$i.tar"
+  done
+  run -0 upkg add "$PACKAGE_FIXTURES/default/dep-1.tar"
+  for i in "${archives[@]}"; do
+    rm "dep-$i.tar"
+  done
+  run -0 upkg install -n
+  assert_snapshot_output
+}

@@ -122,6 +122,7 @@ $p'list=${var_list:-false};'$p'bundle=${var_bundle:-false};'$p'__=${var___:-fa'\
     fatal "--quiet and --verbose are mutually exclusive"
   fi
 
+  DRY_RUN_EXIT=0
   DRY_RUN=false
   ! $___dry_run || DRY_RUN=true
   VERBOSE=false
@@ -136,8 +137,13 @@ $p'list=${var_list:-false};'$p'bundle=${var_bundle:-false};'$p'__=${var___:-fa'\
     upkg_mktemp
     ln -sT "$PWD/upkg.json" ".upkg/.tmp/root/upkg.json"
     upkg_install "$PWD"
-    if $DRY_RUN; then completed 'All dependencies are up-to-date'
-    else completed 'Installed all dependencies'; fi
+    if $DRY_RUN; then
+      if [[ $DRY_RUN_EXIT -eq 0 ]]; then completed 'All dependencies are up-to-date'
+      else completed '.upkg/ is not up-to-date'; fi
+      return $DRY_RUN_EXIT
+    else
+      completed 'Installed all dependencies'
+    fi
 
   elif $_add; then
     if $___global; then
@@ -169,9 +175,12 @@ $p'list=${var_list:-false};'$p'bundle=${var_bundle:-false};'$p'__=${var___:-fa'\
         set -e
         # shellcheck disable=SC2034
         DRY_RUN=true
+        # shellcheck disable=SC2034
+        QUIET=true
         upkg_mktemp
-        ln -sT "$PWD/upkg.json" ".upkg/.tmp/root/upkg.json"
-        upkg_install 2>/dev/null
+        cp "$PWD/upkg.json" ".upkg/.tmp/root/upkg.json"
+        upkg_install
+        return $DRY_RUN_EXIT
       ); ret=$?; set -e
       [[ $ret -eq 0 ]] || fatal "Unable to --force replace with '%s'. upkg.json is not in sync with .upkg/" "$_URL"
     fi
@@ -196,11 +205,14 @@ $p'list=${var_list:-false};'$p'bundle=${var_bundle:-false};'$p'__=${var___:-fa'\
     local ret=0
     set +e; (
       set -e
-      # shellcheck disable=SC2030
+      # shellcheck disable=SC2034
       DRY_RUN=true
+      # shellcheck disable=SC2030
+      QUIET=true
       upkg_mktemp
-      ln -sT "$PWD/upkg.json" ".upkg/.tmp/root/upkg.json"
-      upkg_install 2>/dev/null
+      cp "$PWD/upkg.json" ".upkg/.tmp/root/upkg.json"
+      upkg_install
+      return $DRY_RUN_EXIT
     ); ret=$?; set -e
 
     local pkgname
@@ -243,6 +255,7 @@ $p'list=${var_list:-false};'$p'bundle=${var_bundle:-false};'$p'__=${var___:-fa'\
     upkg_mktemp
     upkg_bundle "$___pkgver" "$___dest" "$___pkgname" "${_PATHS[@]}"
 
+    # shellcheck disable=SC2031
     if ! ${QUIET:-false}; then
       if ! $VERBOSE && [[ -t 2 ]]; then
         printf -- "\e[2K" >&2
@@ -250,6 +263,7 @@ $p'list=${var_list:-false};'$p'bundle=${var_bundle:-false};'$p'__=${var___:-fa'\
       printf -- "upkg: μpkg package tarball was successfully created at '" >&2
     fi
     printf -- "%s" "$___dest"
+    # shellcheck disable=SC2031
     ${QUIET:-false} || printf -- "'" >&2
     trailing_newline
 

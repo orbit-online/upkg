@@ -1,0 +1,27 @@
+[drwxr-xr-x]  .
+├── [drwxr-xr-x]  bin
+│   ├── [lrwxrwxrwx]  another-tool -> ../lib/upkg/.upkg/.bin/another-tool
+│   ├── [lrwxrwxrwx]  bin-exec.sh -> ../lib/upkg/.upkg/.bin/bin-exec.sh
+│   ├── [lrwxrwxrwx]  root-exec.sh -> ../lib/upkg/.upkg/.bin/root-exec.sh
+│   └── [lrwxrwxrwx]  tools-exec -> ../lib/upkg/.upkg/.bin/tools-exec
+└── [drwxr-xr-x]  lib
+    └── [drwxr-xr-x]  upkg
+        ├── [drwxr-xr-x]  .upkg
+        │   ├── [drwxr-xr-x]  .bin
+        │   │   ├── [lrwxrwxrwx]  another-tool -> ../.packages/scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888/tools/another-tool
+        │   │   ├── [lrwxrwxrwx]  bin-exec.sh -> ../.packages/scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888/bin/bin-exec.sh
+        │   │   ├── [lrwxrwxrwx]  root-exec.sh -> ../.packages/scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888/root-exec.sh
+        │   │   └── [lrwxrwxrwx]  tools-exec -> ../.packages/scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888/tools/tools-exec
+        │   ├── [drwxr-xr-x]  .packages
+        │   │   └── [drwxr-xr-x]  scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888
+        │   │       ├── [drwxr-xr-x]  bin
+        │   │       │   ├── [-rwxr-xr-x]  bin-exec.sh
+        │   │       │   └── [-rwxr-xr-x]  not-default-linked.sh
+        │   │       ├── [-rwxr-xr-x]  root-exec.sh
+        │   │       ├── [drwxr-xr-x]  tools
+        │   │       │   ├── [-rwxr-xr-x]  another-tool
+        │   │       │   ├── [-rw-r--r--]  not-an-exec
+        │   │       │   └── [-rwxr-xr-x]  tools-exec
+        │   │       └── [-rw-r--r--]  upkg.json
+        │   └── [lrwxrwxrwx]  scattered-executables -> .packages/scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888
+        └── [-rw-r--r--]  upkg.json

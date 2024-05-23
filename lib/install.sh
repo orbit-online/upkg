@@ -31,69 +31,89 @@ upkg_install() {
     done
   fi
 
-  local dedup_dir dedup_link
-  # Copy new packages and all symlinks from .upkg/.tmp
   if ! $DRY_RUN; then
-    # .bin/ and all pkgname symlinks are fully rebuilt during install, so we just remove it and copy it over
-    rm -rf .upkg/.bin
-    rm -f .upkg/* # "*" works here because we don't have nullglob on and dotglob off, meaning don't match .packages/ and .tmp/
-    for dedup_dir in .upkg/.packages/*; do
-      # Remove all dedup packages that are no longer referenced.
-      # .upkg/.tmp/root/.upkg/.packages contains all packages of the entire subtree
-      [[ -e .upkg/.tmp/root/.upkg/.packages/$(basename "$dedup_dir") ]] || rm -rf "$dedup_dir"
-    done
-    if [[ -e .upkg/.tmp/root/.upkg ]]; then # .upkg in the root is only created when something needs installing
-      mkdir -p .upkg/.packages
-      local new_packages=false
-      for dedup_link in .upkg/.tmp/root/.upkg/.packages/*; do
-        # Remove all deduplication symlinks in the temporary package root
-        if [[ -L $dedup_link ]]; then
-          rm "$dedup_link"
+    if [[ -e .upkg/.tmp/root/.upkg/.packages ]]; then
+      # .bin/ and all symlinks in .upkg/ are fully rebuilt during install, so we just replace everything
+      rm -rf .upkg/.bin
+      rm -f .upkg/* # "*" works here because we don't have nullglob on and dotglob off, meaning don't match .packages/ and .tmp/
+      # Move all command links
+      [[ ! -e .upkg/.tmp/root/.upkg/.bin ]] || mv -nt .upkg/ .upkg/.tmp/root/.upkg/.bin
+      # Move all direct package dependencies
+      mv -nt .upkg .upkg/.tmp/root/.upkg/*
+
+      local dedup_dir new_dedup_dir
+      # Check if there are packages in .upkg/.tmp/root/.upkg/.packages/ that do not exist in .upkg/
+      # Meaning there are new dependencies
+      for new_dedup_dir in .upkg/.tmp/root/.upkg/.packages/*; do
+        dedup_dir=.upkg/.packages/$(basename "$new_dedup_dir")
+        if [[ ! -e $dedup_dir ]]; then
+          mkdir -p .upkg/.packages
+          # Move the new package
+          mv -nt .upkg/.packages "$new_dedup_dir"
+        elif [[ ! -L "$new_dedup_dir" ]]; then
+          # This should never happen, it means that upkg_install_dep didn't detect an already dedup'ed package
+          fatal "INTERNAL ERROR: '%s' was not dedup'ed"
         else
-          # Not a symlink to already dedup'ed packages, so new packages were downloaded
-          new_packages=true
+          # Cleanup the deduplication symlink
+          rm "$new_dedup_dir"
         fi
       done
-      # Cleanup complete, move all:
-      # * physical packages (unless nothing new was downloaded)
-      ! $new_packages || mv -nt .upkg/.packages .upkg/.tmp/root/.upkg/.packages/*
-      # * binary links
-      [[ ! -e .upkg/.tmp/root/.upkg/.bin ]] || mv -nt .upkg/ .upkg/.tmp/root/.upkg/.bin
-      # * direct package dependencies
-      mv -nt .upkg .upkg/.tmp/root/.upkg/*
+
+      # Remove all unreferenced packages
+      # all pkgs - referenced pkgs = unreferenced pkgs
+      local unreferenced_pkgs
+      readarray -t -d $'\n' unreferenced_pkgs < <(comm -23 \
+        <(for pkg in .upkg/.packages/*; do printf "%s\n" "$pkg"; done | sort) \
+        <(upkg_list_referenced_pkgs . | sort)
+      )
+
+      for dedup_dir in "${unreferenced_pkgs[@]}"; do
+        [[ -n $dedup_dir ]] || continue # See above
+        # Remove dedup package that is no longer referenced by any dependency
+        rm -rf "$dedup_dir"
+      done
     else
       # The install resulted in all deps being removed. Don't keep the .upkg/ dir around
       rm -rf .upkg
     fi
 
   else
-    # Check if there are packages in .upkg/.packages/ that are not linked to from the temporary root
-    # This means they are no longer depended upon
-    # We don't need to check if there are new dependencies, upkg_install_fails during dry-run if a package is not already dedup'ed
-    for dedup_dir in .upkg/.packages/*; do
-      [[ -e .upkg/.tmp/root/.upkg/.packages/$(basename "$dedup_dir") ]] || fatal "'%s' should not be installed" "$(basename "$dedup_dir")"
-    done
-    # Check if there are links in .upkg/.tmp/root/.upkg/ that are not linked from .upkg/
-    # This means symlinks have been removed manually
-    for dedup_link in .upkg/.tmp/root/.upkg/*; do
-      [[ -e .upkg/$(basename "$dedup_link") ]] || fatal "'%s' is not linked in .upkg/" "$(basename "$dedup_link")"
-    done
-    # Check if there are packages in .upkg/ that are not linked to from the temporary root
-    # This means symlinks have been added manually
+    local dedup_link new_dedup_link
+    # Check if the linked packages in .upkg/ are different from the ones .upkg/.tmp/root/.upkg/
+    # This means a dependency has been removed or changed
     for dedup_link in .upkg/*; do
-      [[ -e .upkg/.tmp/root/.upkg/$(basename "$dedup_link") ]] || fatal "'%s' should not exist in .upkg/" "$(basename "$dedup_link")"
+      new_dedup_link=.upkg/.tmp/root/.upkg/$(basename "$dedup_link")
+      if [[ -e $new_dedup_link ]]; then
+        if [[ $(readlink "$dedup_link") != $(readlink "$new_dedup_link") ]]; then
+          dry_run_error "The dependency '%s' has changed" "$(basename "$dedup_link")"
+        else
+          # Cleanup the dedup link in .upkg/.tmp/root/.upkg/ so the loop below can be simpler
+          rm "$new_dedup_link"
+        fi
+      else
+        dry_run_error "'%s' is no longer depended upon or has changed" "$(basename "$dedup_link")"
+      fi
+    done
+
+    # Check if there are links remaining in .upkg/.tmp/root/.upkg/
+    # This means a dependency to an existing dedup package has been added
+    for new_dedup_link in .upkg/.tmp/root/.upkg/*; do
+      new_dedup_link=.upkg/$(basename "$new_dedup_link")
+      dry_run_error "'%s' is a new dependency" "$(basename "$new_dedup_link")"
     done
 
     local bin_dest new_bins=() unreferenced_bins=()
     # installed bins - current bins = new bins
     # current bins - installed bins = unreferenced bins
-    readarray -t -d $'\n' unreferenced_bins < <(comm -23 <(upkg_resolve_links .upkg/.bin | sort) <(upkg_resolve_links .upkg/.tmp/root/.upkg/.bin | sort))
+    readarray -t -d $'\0' unreferenced_bins < <(comm -z23 <(upkg_resolve_links .upkg/.bin | sort -z) <(upkg_resolve_links .upkg/.tmp/root/.upkg/.bin | sort -z))
     for bin_dest in "${unreferenced_bins[@]}"; do
-      fatal "'%s' is not the linked to right package from .upkg/.bin" "$(basename "$bin_dest")"
+      [[ -n $bin_dest ]] || continue # See above
+      dry_run_error "'%s' is not linked to right package from .upkg/.bin" "$(basename "$bin_dest")"
     done
-    readarray -t -d $'\n' new_bins < <(comm -13 <(upkg_resolve_links .upkg/.bin | sort) <(upkg_resolve_links .upkg/.tmp/root/.upkg/.bin | sort))
+    readarray -t -d $'\0' new_bins < <(comm -z13 <(upkg_resolve_links .upkg/.bin | sort -z) <(upkg_resolve_links .upkg/.tmp/root/.upkg/.bin | sort -z))
     for bin_dest in "${new_bins[@]}"; do
-      fatal "'%s' is not linked from .upkg/.bin" "$(basename "$bin_dest")"
+      [[ -n $bin_dest ]] || continue # See above
+      dry_run_error "'%s' is not linked from .upkg/.bin" "$(basename "$bin_dest")"
     done
   fi
 
@@ -107,19 +127,26 @@ upkg_install() {
     for cmd in "${new_links[@]}"; do
       [[ -n $cmd ]] || continue # See above
       # Same loop again, this time we are sure none of the new links exist
-      ! $DRY_RUN || dry_run_fail "'%s' was not symlinked" "$INSTALL_PREFIX/bin/$cmd"
-      processing "Linking '%s'" "$cmd"
-      mkdir -p "$INSTALL_PREFIX/bin"
-      ln -sT "../lib/upkg/.upkg/.bin/$cmd" "$INSTALL_PREFIX/bin/$cmd"
+      if $DRY_RUN; then
+        dry_run_error "'%s' was not symlinked" "$INSTALL_PREFIX/bin/$cmd"
+      else
+        processing "Linking '%s'" "$cmd"
+        mkdir -p "$INSTALL_PREFIX/bin"
+        ln -sT "../lib/upkg/.upkg/.bin/$cmd" "$INSTALL_PREFIX/bin/$cmd"
+      fi
     done
+
     # available - global = old links
     local removed_links=()
     readarray -t -d $'\n' removed_links < <(comm -13 <(printf "%s\n" "$available_cmds") <(printf "%s\n" "$global_cmds"))
     for cmd in "${removed_links[@]}"; do
       [[ -n $cmd ]] || continue # See above
       # Remove all old links
-      ! $DRY_RUN || dry_run_fail "'%s' should not be symlinked" "$INSTALL_PREFIX/bin/$cmd"
-      rm "$INSTALL_PREFIX/bin/$cmd"
+      if $DRY_RUN; then
+        dry_run_error "'%s' should not be symlinked" "$INSTALL_PREFIX/bin/$cmd"
+      else
+        rm "$INSTALL_PREFIX/bin/$cmd"
+      fi
     done
   fi
 }
@@ -168,7 +195,12 @@ upkg_install_deps() {
     # Check that no processes failed
     [[ ! -e $pkgpath/.upkg/.sentinels/$dep_idx.fail ]] || \
       fatal "An error occurred while installing '%s'" "$(dep_pkgurl "$dep")"
-    [[ ! -e "$pkgpath/.upkg/.sentinels/$dep_idx.dry-run-fail" ]] || return 1 # dry-run install failed
+    if [[ -e "$pkgpath/.upkg/.sentinels/$dep_idx.dry-run-fail" ]]; then
+      # We don't descend into dependencies during dry-run
+      # Meaning we are not in a backgrounded subshell, meaning setting this will have an effect
+      # shellcheck disable=SC2034
+      DRY_RUN_EXIT=1
+    fi
     : $((dep_idx++))
   done
   rm -rf "$pkgpath/.upkg/.sentinels" # Done, remove the lock sentinels
@@ -220,10 +252,9 @@ upkg_install_dep() {
 
   if ! $is_dedup; then
     if $DRY_RUN; then
-      # Don't signal a fatal error to parent shell,
-      trap "" ERR
       touch "$parent_pkgpath/.upkg/.sentinels/$dep_idx.dry-run-fail"
-      dry_run_fail "'%s' is not installed" "$pkgurl"
+      dry_run_error "'%s' is not installed" "$pkgurl"
+      return 1
     fi
     # Obtain package
     # No need to link here like we did when we dedup'ed. upkg_download() places the physical package in the root package
@@ -262,7 +293,8 @@ upkg_install_dep() {
     fi
 
   else
-    # All dependencies of dependencies are locked with checksums, so during a dry-run if we haven't failed already, we won't if we go deeper either
+    # All dependencies of dependencies are locked with checksums, so during a dry-run if we haven't failed already,
+    # we won't if we go deeper either. For packages are dedup'ed we have already done the work.
     if ! $DRY_RUN && ! $is_dedup; then
       # Recursively install deps of this package unless it is already dedup'ed
       # Using the pkgname path instead of the dedup path allows us to create dependency tree without checksums

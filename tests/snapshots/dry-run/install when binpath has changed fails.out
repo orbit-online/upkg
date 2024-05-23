@@ -1,1 +1,2 @@
-upkg: 'acme.bin' is not the linked to right package from .upkg/.bin
+upkg: 'acme.bin' is not linked to right package from .upkg/.bin
+upkg: .upkg/ is not up-to-date

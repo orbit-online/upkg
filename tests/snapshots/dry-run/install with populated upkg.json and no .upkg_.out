@@ -1,1 +1,2 @@
 upkg: '$BATS_RUN_TMPDIR/package-fixtures/default/acme.tar' is not installed
+upkg: .upkg/ is not up-to-date

@@ -147,3 +147,39 @@ teardown_file() { common_teardown_file; }
   assert_file_executable .upkg/.bin/not-default-linked.sh
   assert_file_executable .upkg/.bin/to-other-pkg
 }
+
+# bats test_tags=tar
+@test "handles commands with spaces" {
+  local name=default/command-with-spaces
+  create_tar_package $name
+  run -0 upkg add -g "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
+  assert_snapshot_path "" "$HOME/.local"
+  assert_file_executable "$HOME/.local/lib/upkg/.upkg/.bin/command with spaces.bin"
+  assert_file_executable "$HOME/.local/bin/command with spaces.bin"
+}
+
+# bats test_tags=tar
+@test "removes old commands" {
+  local \
+    name1=default/command-with-spaces
+    name2=default/scattered-executables
+  create_tar_package $name1
+  run -0 upkg add -g "$PACKAGE_FIXTURES/$name1.tar" $TAR_SHASUM
+  create_tar_package $name2
+  run -0 upkg add -g "$PACKAGE_FIXTURES/$name2.tar" $TAR_SHASUM
+  run -0 upkg remove -g command-with-spaces
+  assert_snapshot_path "" "$HOME/.local"
+}
+
+# bats test_tags=tar
+@test "removes old commands 2" {
+  local \
+    name1=default/command-with-spaces
+    name2=default/scattered-executables
+  create_tar_package $name1
+  run -0 upkg add -g "$PACKAGE_FIXTURES/$name1.tar" $TAR_SHASUM
+  create_tar_package $name2
+  run -0 upkg add -g "$PACKAGE_FIXTURES/$name2.tar" $TAR_SHASUM
+  run -0 upkg remove -g scattered-executables
+  assert_snapshot_path "" "$HOME/.local"
+}

@@ -32,15 +32,22 @@ warning() {
   fi
 }
 
-# Special function for dry-run. Like fatal but can be silenced
-dry_run_fail() {
-  ! ${QUIET:-false} || return 0
-  local tpl=$1; shift
-  if ! $VERBOSE && [[ -t 2 ]]; then
-    printf -- "\e[2Kupkg: $tpl\n" "$@" >&2
-  else
-    printf -- "upkg: $tpl\n" "$@" >&2
+# Special functions for dry-run.
+dry_run_error() {
+  # shellcheck disable=SC2034
+  DRY_RUN_EXIT=1
+  if ! ${QUIET:-false}; then
+    local tpl=$1; shift
+    if ! $VERBOSE && [[ -t 2 ]]; then
+      printf -- "\e[2Kupkg: $tpl\n" "$@" >&2
+    else
+      printf -- "upkg: $tpl\n" "$@" >&2
+    fi
   fi
+}
+
+dry_run_fail() {
+  dry_run_error "$@"
   return 1
 }
 

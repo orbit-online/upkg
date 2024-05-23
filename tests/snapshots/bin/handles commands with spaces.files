@@ -1,0 +1,14 @@
+[drwxr-xr-x]  .
+├── [drwxr-xr-x]  bin
+│   └── [lrwxrwxrwx]  command\ with\ spaces.bin -> ../lib/upkg/.upkg/.bin/command\ with\ spaces.bin
+└── [drwxr-xr-x]  lib
+    └── [drwxr-xr-x]  upkg
+        ├── [drwxr-xr-x]  .upkg
+        │   ├── [drwxr-xr-x]  .bin
+        │   │   └── [lrwxrwxrwx]  command\ with\ spaces.bin -> ../.packages/command-with-spaces.tar@7623e8b0ba79cf7193de095955452b1fd5ac7ae123824f5c695f9ece106143b4/bin/command\ with\ spaces.bin
+        │   ├── [drwxr-xr-x]  .packages
+        │   │   └── [drwxr-xr-x]  command-with-spaces.tar@7623e8b0ba79cf7193de095955452b1fd5ac7ae123824f5c695f9ece106143b4
+        │   │       └── [drwxr-xr-x]  bin
+        │   │           └── [-rwxr-xr-x]  command\ with\ spaces.bin
+        │   └── [lrwxrwxrwx]  command-with-spaces -> .packages/command-with-spaces.tar@7623e8b0ba79cf7193de095955452b1fd5ac7ae123824f5c695f9ece106143b4
+        └── [-rw-r--r--]  upkg.json
