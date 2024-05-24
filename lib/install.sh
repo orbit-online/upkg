@@ -27,7 +27,7 @@ upkg_install() {
       # None of the new links should exist, if they do they don't point to upkg (otherwise they would be in the available list)
       [[ ! -e "$INSTALL_PREFIX/bin/$cmd" ]] || \
         fatal "conflict: the command '%s' already exists in '%s' but does not point to '%s'" \
-          "$cmd" "$INSTALL_PREFIX/bin" "$INSTALL_PREFIX/lib/upkg"
+          "$cmd" "$INSTALL_PREFIX/bin" "$INSTALL_PREFIX/lib/upkg/.upkg/.bin"
     done
   fi
 
