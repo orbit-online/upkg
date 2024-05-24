@@ -133,10 +133,10 @@ $p'list=${var_list:-false};'$p'bundle=${var_bundle:-false};'$p'__=${var___:-fa'\
   ! $___quiet || QUIET=true
 
   if $_install; then
-    [[ -e "$PWD/upkg.json" ]] || fatal "No upkg.json found in '%s'" "$PWD"
+    [[ -e upkg.json ]] || fatal "No upkg.json found in '%s'" "$PWD"
     upkg_mktemp
-    ln -sT "$PWD/upkg.json" ".upkg/.tmp/root/upkg.json"
-    upkg_install "$PWD"
+    cp upkg.json .upkg/.tmp/root/upkg.json
+    upkg_install
     if $DRY_RUN; then
       if [[ $DRY_RUN_EXIT -eq 0 ]]; then completed 'All dependencies are up-to-date'
       else completed '.upkg/ is not up-to-date'; fi
@@ -178,7 +178,7 @@ $p'list=${var_list:-false};'$p'bundle=${var_bundle:-false};'$p'__=${var___:-fa'\
         # shellcheck disable=SC2034
         QUIET=true
         upkg_mktemp
-        cp "$PWD/upkg.json" ".upkg/.tmp/root/upkg.json"
+        printf "%s\n" "$(cat upkg.json 2>/dev/null || printf -- '{}')" >.upkg/.tmp/root/upkg.json
         upkg_install
         return $DRY_RUN_EXIT
       ); ret=$?; set -e
@@ -210,7 +210,7 @@ $p'list=${var_list:-false};'$p'bundle=${var_bundle:-false};'$p'__=${var___:-fa'\
       # shellcheck disable=SC2030
       QUIET=true
       upkg_mktemp
-      cp "$PWD/upkg.json" ".upkg/.tmp/root/upkg.json"
+      printf "%s\n" "$(cat upkg.json 2>/dev/null || printf -- '{}')" >.upkg/.tmp/root/upkg.json
       upkg_install
       return $DRY_RUN_EXIT
     ); ret=$?; set -e
