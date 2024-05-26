@@ -261,6 +261,8 @@ TODO
 - Depend on records.sh rather than running our own logging
 - Use sha256sum as fallback for shasum -a 256
 - Add -g switch to install. Allowing upkg.json in $HOME/.local to be tracked by dotfiles trackers
+- Depend on upkg.json as a file as a metadata package
+- Make install script immune to indentation
 
 ## Alternatives
 
