@@ -53,6 +53,8 @@ upkg_resolve_links() {
 }
 
 # Idempotently create a temporary directory
+# Since we do this at the start of all operations that modify .upkg/ this is also an
+# implicit of whether .upkg/ is writeable.
 upkg_mktemp() {
   local keep_dotupkg=false
   mkdir .upkg 2>/dev/null || keep_dotupkg=true
