@@ -131,6 +131,7 @@ upkg_head() {
 
 upkg_clone() {
   local url=$1 dest=$2 checksum=$3 out
+  processing "Cloning %s" "$url"
   out=$(git clone -q "$url" "$dest" 2>&1) || \
     fatal "Unable to clone '%s'. Error:\n%s" "$url" "$out"
   if [[ -n $checksum ]]; then
