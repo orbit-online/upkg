@@ -263,6 +263,7 @@ TODO
 - Add -g switch to install. Allowing upkg.json in $HOME/.local to be tracked by dotfiles trackers
 - Depend on upkg.json as a file as a metadata package
 - Make install script immune to indentation
+- Document command promotion by specifying binpaths in .upkg/bin
 
 ## Alternatives
 

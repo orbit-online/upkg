@@ -2,7 +2,8 @@
   "bin": [
     ".upkg/scattered-executables/bin/not-default-linked.sh",
     "to-other-pkg",
-    "another-tool2"
+    "another-tool2",
+    ".upkg/.bin/bin-exec.sh"
   ],
   "dependencies": [
     {

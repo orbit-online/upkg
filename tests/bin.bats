@@ -146,6 +146,7 @@ teardown_file() { common_teardown_file; }
   assert_file_executable .upkg/.bin/another-tool2
   assert_file_executable .upkg/.bin/not-default-linked.sh
   assert_file_executable .upkg/.bin/to-other-pkg
+  assert_file_executable .upkg/.bin/bin-exec.sh
 }
 
 # bats test_tags=tar
