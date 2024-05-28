@@ -107,14 +107,17 @@ setup_package_fixture_templates() {
   export PACKAGE_TEMPLATES
   PACKAGE_TEMPLATES=$BATS_RUN_TMPDIR/package-templates
   cp -r "$BATS_TEST_DIRNAME/package-templates" "$PACKAGE_TEMPLATES"
-  local group template upkgjson
+  local group template upkgjson_path upkgjson
   for group in "$PACKAGE_TEMPLATES"/*; do
     for template in "$group"/*; do
-      if [[ -f $template/upkg.json ]]; then
-        upkgjson=$(cat "$template/upkg.json")
+      upkgjson_path=
+      [[ $template != *upkg.json ]] || upkgjson_path=$template
+      [[ ! -f $template/upkg.json ]] || upkgjson_path=$template/upkg.json
+      if [[ -n $upkgjson_path ]]; then
+        upkgjson=$(cat "$upkgjson_path")
         upkgjson=${upkgjson//\$BATS_RUN_TMPDIR/"$BATS_RUN_TMPDIR"}
         upkgjson=${upkgjson//\$PACKAGE_FIXTURES/"$PACKAGE_FIXTURES"}
-        printf "%s\n" "$upkgjson" >"$template/upkg.json"
+        printf "%s\n" "$upkgjson" >"$upkgjson_path"
       fi
     done
   done

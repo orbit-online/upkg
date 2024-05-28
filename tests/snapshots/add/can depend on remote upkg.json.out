@@ -1,0 +1,4 @@
+upkg: Downloading $HTTPD_PKG_FIXTURES_ADDR/default/metapackage.upkg.json
+upkg: Linking 'bin-exec.sh'
+upkg: Linking 'executable'
+upkg: Added '$HTTPD_PKG_FIXTURES_ADDR/default/metapackage.upkg.json'

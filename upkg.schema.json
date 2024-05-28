@@ -46,6 +46,7 @@
     "dependency": {
       "anyOf": [
         { "$ref": "#/definitions/tar" },
+        { "$ref": "#/definitions/upkg" },
         { "$ref": "#/definitions/file" },
         { "$ref": "#/definitions/file-no-exec" },
         { "$ref": "#/definitions/git" }
@@ -70,6 +71,26 @@
         "bin": { "$ref": "#/definitions/bin" }
       },
       "required": ["tar", "sha256"]
+    },
+    "upkg": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "upkg": {
+          "description": "The path or URL to a upkg.json file\nRequired",
+          "type": "string"
+        },
+        "sha256": {
+          "description": "The SHA-256 checksum of the JSON file\nRequired",
+          "$ref": "#/definitions/sha256"
+        },
+        "name": {
+          "description": "A name override for the package directory.\nThis will become the directory link name in .upkg/ of the parent package.\nA starting period (.), slashes (/), and newlines (\\n) will be silently replaced with underscore (_).\n\nDefault: The basename of the path or URL",
+          "$ref": "#/definitions/name"
+        },
+        "bin": { "$ref": "#/definitions/bin" }
+      },
+      "required": ["upkg", "sha256"]
     },
     "file": {
       "type": "object",

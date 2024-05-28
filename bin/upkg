@@ -42,7 +42,7 @@ Options:
   -B --no-bin          Do not link executables in package bin/ to .upkg/.bin
   -b --bin=PATH        Link specified executables or executables in specified
                        directory to .upkg/.bin (default: bin/)
-  -t --pkgtype=TYPE    Explicitly set the package type (tar, file, or git)
+  -t --pkgtype=TYPE    Explicitly set the package type (tar, upkg, file, or git)
   -p --pkgname=NAME    Override the package name link in .upkg/
                        (or name property in upkg.json when bundling)
   -d --dest=PATH       Package tarball destination (default: \$pkgname.tar.gz)
@@ -53,7 +53,7 @@ Options:
 # shellcheck disable=2016,2086,2317,1090,1091,2034,2154
 docopt() { source "$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh" '2.0.0' || {
 ret=$?;printf -- "exit %d\n" "$ret";exit "$ret";};set -e
-trimmed_doc=${DOC:0:1201};usage=${DOC:36:228};digest=3cee0;options=('-n --dry-'\
+trimmed_doc=${DOC:0:1207};usage=${DOC:36:228};digest=eebb3;options=('-n --dry-'\
 'run 0' '-q --quiet 0' '-v --verbose 0' '-g --global 0' '-f --force 0' '-X --n'\
 'o-exec 0' '-B --no-bin 0' '-b --bin 1' '-p --pkgname 1' '-t --pkgtype 1' '-d '\
 '--dest 1' '-V --pkgver 1');node_0(){ switch __dry_run 0;};node_1(){ switch \

@@ -236,17 +236,14 @@ upkg_install_dep() {
 
   local dedup_name dedup_glob is_dedup=false
   if [[ -e .upkg/.packages ]]; then
-    if [[ $pkgtype = file ]]; then
-      if dep_is_exec "$dep"; then
-        dedup_glob=".upkg/.packages/*+x@$checksum"
-      else
-        dedup_glob=".upkg/.packages/*-x@$checksum"
-      fi
-    elif [[ $pkgtype = tar ]]; then
-      dedup_glob=".upkg/.packages/*.tar@$checksum"
-    else
-      dedup_glob=".upkg/.packages/*.git@$checksum"
-    fi
+    case "$pkgtype" in
+    tar)  dedup_glob=".upkg/.packages/*.tar@$checksum" ;;
+    upkg) dedup_glob=".upkg/.packages/*.upkg.json@$checksum" ;;
+    file) if dep_is_exec "$dep"; then dedup_glob=".upkg/.packages/*+x@$checksum"
+          else                        dedup_glob=".upkg/.packages/*-x@$checksum"
+          fi ;;
+    git)  dedup_glob=".upkg/.packages/*.git@$checksum" ;;
+    esac
 
     if dedup_name=$(compgen -G "$dedup_glob"); then
       dedup_name=$(basename "$dedup_name")

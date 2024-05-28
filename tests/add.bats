@@ -111,3 +111,31 @@ teardown_file() { common_teardown_file; }
   run -0 upkg add -g "$(basename $name).tar" $TAR_SHASUM
   assert_snapshot_output
 }
+
+# bats test_tags=file,tar
+@test "can depend on upkg.json" {
+  create_tar_package default/scattered-executables
+  create_file_package default/executable
+  local name=default/metapackage.upkg.json
+  create_file_package $name
+  run -0 upkg add -g "$PACKAGE_FIXTURES/$name" $FILE_SHASUM
+  assert_file_executable "$HOME/.local/bin/bin-exec.sh"
+  assert_file_executable "$HOME/.local/bin/executable"
+  mv "$HOME/.local/lib/upkg/.upkg/.packages/metapackage.upkg.json@$FILE_SHASUM" "$HOME/.local/lib/upkg/.upkg/.packages/metapackage.upkg.json@STATIC"
+  ln -sf .packages/metapackage.upkg.json@STATIC "$HOME/.local/lib/upkg/.upkg/metapackage"
+  ln -sf ../.packages/metapackage.upkg.json@STATIC/.upkg/.bin/bin-exec.sh "$HOME/.local/lib/upkg/.upkg/.bin/bin-exec.sh"
+  ln -sf ../.packages/metapackage.upkg.json@STATIC/.upkg/.bin/executable "$HOME/.local/lib/upkg/.upkg/.bin/executable"
+  assert_snapshot_path "" "$HOME/.local"
+}
+
+# bats test_tags=file,tar,http
+@test "can depend on remote upkg.json" {
+  create_tar_package default/scattered-executables
+  create_file_package default/executable
+  local name=default/metapackage.upkg.json
+  create_file_package $name
+  run -0 upkg add -g "$HTTPD_PKG_FIXTURES_ADDR/$name" $FILE_SHASUM
+  assert_snapshot_output
+  assert_file_executable "$HOME/.local/bin/bin-exec.sh"
+  assert_file_executable "$HOME/.local/bin/executable"
+}

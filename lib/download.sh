@@ -23,6 +23,7 @@ upkg_download() {
   local dedup_pkgname_suffix # avoid clashes between tar and file pkgtypes by suffixing them (and just do it for git repos for good measure)
   case "$pkgtype" in
     tar) dedup_pkgname_suffix=.tar ;;
+    upkg) dedup_pkgname_suffix=.upkg.json ;;
     file)
       # Suffix the name with +x or -x so we don't end up clashing with a dedup'ed dependency where "exec" is different
       if dep_is_exec "$dep"; then dedup_pkgname_suffix=+x
@@ -65,19 +66,36 @@ upkg_download() {
     sha256 "$archivepath" "$checksum"
     tar -xf "$archivepath" -C "$pkgpath"
     ;;
+    upkg)
+    if [[ -e .upkg/.tmp/prefetched/$checksum ]]; then
+      # upkg.json was already downloaded by upkg_add
+      mv ".upkg/.tmp/prefetched/$checksum" "$pkgpath/upkg.json"
+    elif [[ -e $pkgurl ]]; then
+      # upkg.json exists on the filesystem, copy it so it can be moved later on
+      cp "$pkgurl" "$pkgpath/upkg.json"
+      chmod -x "$pkgpath/upkg.json" # make sure no executable bits are preserved
+    else
+      # upkg.json does not exist on the filesystem, download it
+      upkg_fetch "$pkgurl" "$pkgpath/upkg.json"
+    fi
+
+    sha256 "$pkgpath/upkg.json" "$checksum"
+    ;;
     file)
-    # change the original $pkgpath which is a directory and an implicit lock
-    pkgpath=$pkgpath.file
     if [[ -e .upkg/.tmp/prefetched/$checksum ]]; then
       # file was already downloaded by upkg_add
       pkgpath=.upkg/.tmp/prefetched/$checksum
-    elif [[ -e $pkgurl ]]; then
-      # file exists on the filesystem, copy it so it can be moved later on
-      cp "$pkgurl" "$pkgpath"
-      chmod -x "$pkgpath" # make sure no executable bits are preserved
     else
-      # file does not exist on the filesystem, download it
-      upkg_fetch "$pkgurl" "$pkgpath"
+      # change the original $pkgpath which is a directory and an implicit lock
+      pkgpath=$pkgpath.file
+      if [[ -e $pkgurl ]]; then
+        # file exists on the filesystem, copy it so it can be moved later on
+        cp "$pkgurl" "$pkgpath"
+        chmod -x "$pkgpath" # make sure no executable bits are preserved
+      else
+        # file does not exist on the filesystem, download it
+        upkg_fetch "$pkgurl" "$pkgpath"
+      fi
     fi
 
     sha256 "$pkgpath" "$checksum"

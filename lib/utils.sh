@@ -83,6 +83,9 @@ upkg_guess_pkgtype() {
     if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)([?#]|$) ]]; then
       pkgtype=tar
       verbose "Guessing pkgtype is tar, based on the checksum being 64 hexchars and the URL ending in .tar or .tar.*"
+    elif [[ $pkgurl =~ (\.upkg\.json)([?#]|$) ]]; then
+      pkgtype=upkg
+      verbose "Guessing pkgtype is upkg, based on the checksum being 64 hexchars and the URL ending in upkg.json"
     else
       verbose "Guessing pkgtype is file, based on the checksum being 64 hexchars and the URL not ending in .tar or .tar.*"
       pkgtype=file
@@ -92,6 +95,9 @@ upkg_guess_pkgtype() {
       if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)$ ]]; then
         pkgtype=tar
         verbose "Guessing pkgtype is tar, based on the URL being a file that exists on the machine and it ending in .tar or .tar.*"
+      elif [[ $pkgurl =~ (\.upkg\.json)([?#]|$) ]]; then
+        pkgtype=upkg
+        verbose "Guessing pkgtype is upkg, based on the URL being a file that exists on the machine and it ending in upkg.json"
       else
         pkgtype=file
         verbose "Guessing pkgtype is tar, based on the URL being a file that exists on the machine and it not ending in .tar or .tar.*"
@@ -105,6 +111,9 @@ upkg_guess_pkgtype() {
   elif [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)([?#]|$) ]]; then
     pkgtype=tar
     verbose "Guessing pkgtype is tar, based on the URL ending in .tar or .tar.*"
+  elif [[ $pkgurl =~ (\.upkg\.json)([?#]|$) ]]; then
+    pkgtype=upkg
+    verbose "Guessing pkgtype is upkg, based on the URL ending in upkg.json"
   elif git ls-remote -q "${pkgurl%%'#'*}" HEAD >/dev/null 2>&1; then
     pkgtype=git
     verbose "Guessing pkgtype is git, based on \`git ls-remote HEAD <URL>\` not returning an error"

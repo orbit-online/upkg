@@ -1,0 +1,32 @@
+[drwxr-xr-x]  .
+├── [drwxr-xr-x]  bin
+│   ├── [lrwxrwxrwx]  bin-exec.sh -> ../lib/upkg/.upkg/.bin/bin-exec.sh
+│   └── [lrwxrwxrwx]  executable -> ../lib/upkg/.upkg/.bin/executable
+└── [drwxr-xr-x]  lib
+    └── [drwxr-xr-x]  upkg
+        ├── [drwxr-xr-x]  .upkg
+        │   ├── [drwxr-xr-x]  .bin
+        │   │   ├── [lrwxrwxrwx]  bin-exec.sh -> ../.packages/metapackage.upkg.json@STATIC/.upkg/.bin/bin-exec.sh
+        │   │   └── [lrwxrwxrwx]  executable -> ../.packages/metapackage.upkg.json@STATIC/.upkg/.bin/executable
+        │   ├── [drwxr-xr-x]  .packages
+        │   │   ├── [-rwxr-xr-x]  executable+x@fb99eae951f1adc14d1a4a9a186c21930db2786b3208c94c7d9af382bd1048e5
+        │   │   ├── [drwxr-xr-x]  metapackage.upkg.json@STATIC
+        │   │   │   ├── [drwxr-xr-x]  .upkg
+        │   │   │   │   ├── [drwxr-xr-x]  .bin
+        │   │   │   │   │   ├── [lrwxrwxrwx]  bin-exec.sh -> ../../../scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888/bin/bin-exec.sh
+        │   │   │   │   │   └── [lrwxrwxrwx]  executable -> ../../../executable+x@fb99eae951f1adc14d1a4a9a186c21930db2786b3208c94c7d9af382bd1048e5
+        │   │   │   │   ├── [lrwxrwxrwx]  executable -> ../../executable+x@fb99eae951f1adc14d1a4a9a186c21930db2786b3208c94c7d9af382bd1048e5
+        │   │   │   │   └── [lrwxrwxrwx]  scattered-executables -> ../../scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888
+        │   │   │   └── [-rw-r--r--]  upkg.json
+        │   │   └── [drwxr-xr-x]  scattered-executables.tar@5f8b45aba9f6113f79092a5dd28a4a345fed96155b3860d4608b98eb83b39888
+        │   │       ├── [drwxr-xr-x]  bin
+        │   │       │   ├── [-rwxr-xr-x]  bin-exec.sh
+        │   │       │   └── [-rwxr-xr-x]  not-default-linked.sh
+        │   │       ├── [-rwxr-xr-x]  root-exec.sh
+        │   │       ├── [drwxr-xr-x]  tools
+        │   │       │   ├── [-rwxr-xr-x]  another-tool
+        │   │       │   ├── [-rw-r--r--]  not-an-exec
+        │   │       │   └── [-rwxr-xr-x]  tools-exec
+        │   │       └── [-rw-r--r--]  upkg.json
+        │   └── [lrwxrwxrwx]  metapackage -> .packages/metapackage.upkg.json@STATIC
+        └── [-rw-r--r--]  upkg.json
