@@ -1,0 +1,3 @@
+upkg: No pkgname given for '$BATS_RUN_TMPDIR/package-fixtures/default/acme.tar', determining now
+upkg: Linking 'acme.bin'
+upkg: Added '$BATS_RUN_TMPDIR/package-fixtures/default/acme.tar'

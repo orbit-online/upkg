@@ -124,3 +124,21 @@ teardown_file() { common_teardown_file; }
   run -1 upkg add -fp acme "$PACKAGE_FIXTURES/$name2.tar" $TAR_SHASUM
   assert_snapshot_output
 }
+
+# bats test_tags=tar
+@test "can force add to empty dir" {
+  local name=default/acme
+  create_tar_package $name
+  run -0 upkg add -f "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
+  assert_snapshot_output
+  assert_snapshot_path
+}
+
+# bats test_tags=tar
+@test "can force add to empty global dir" {
+  local name=default/acme
+  create_tar_package $name
+  run -0 upkg add -gf "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
+  assert_snapshot_output
+  assert_snapshot_path
+}
