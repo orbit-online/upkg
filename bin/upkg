@@ -51,50 +51,50 @@ Options:
 # shellcheck disable=SC2317
 # docopt parser below, refresh this parser with `docopt.sh upkg`
 # shellcheck disable=2016,2086,2317,1090,1091,2034,2154
-docopt() { source "$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh" '2.0.0' || {
-ret=$?;printf -- "exit %d\n" "$ret";exit "$ret";};set -e
-trimmed_doc=${DOC:0:1207};usage=${DOC:36:228};digest=eebb3;options=('-n --dry-'\
-'run 0' '-q --quiet 0' '-v --verbose 0' '-g --global 0' '-f --force 0' '-X --n'\
-'o-exec 0' '-B --no-bin 0' '-b --bin 1' '-p --pkgname 1' '-t --pkgtype 1' '-d '\
-'--dest 1' '-V --pkgver 1');node_0(){ switch __dry_run 0;};node_1(){ switch \
-__quiet 1;};node_2(){ switch __verbose 2;};node_3(){ switch __global 3;}
-node_4(){ switch __force 4;};node_5(){ switch __no_exec 5;};node_6(){ switch \
-__no_bin 6;};node_7(){ value __bin 7 true;};node_8(){ value __pkgname 8;}
-node_9(){ value __pkgtype 9;};node_10(){ value __dest 10;};node_11(){ value \
-__pkgver 11;};node_12(){ value URL a;};node_13(){ value PATH a;};node_14(){
-value SHA a;};node_15(){ value PKGNAME a;};node_16(){ value COLUMNOPTS a true;}
-node_17(){ value PATHS a true;};node_18(){ switch install a:install;};node_19(){
-switch add a:add;};node_20(){ switch remove a:remove;};node_21(){ switch list \
-a:list;};node_22(){ switch bundle a:bundle;};node_23(){ switch __ a:--;}
-node_24(){ sequence 18 25;};node_25(){ optional 0 1 2;};node_26(){ sequence 19 \
-27 29 30;};node_27(){ optional 1 2 3 4 5 6 28 8 9;};node_28(){ repeatable 7;}
-node_29(){ choice 12 13;};node_30(){ optional 14;};node_31(){ sequence 20 32 15
-};node_32(){ optional 1 0 2 3;};node_33(){ sequence 21 34 35;};node_34(){
-optional 1 2 3;};node_35(){ optional 23 36;};node_36(){ repeatable 16;}
-node_37(){ sequence 22 38 39;};node_38(){ optional 1 2 10 8 11;};node_39(){
-optional 40;};node_40(){ repeatable 17;};node_41(){ choice 24 26 31 33 37;}
-cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" "$1" >&2;printf "%s\n" \
-"${DOC:36:228}" >&2;exit 1;}';local varnames=(__dry_run __quiet __verbose \
-__global __force __no_exec __no_bin __bin __pkgname __pkgtype __dest __pkgver \
-URL PATH SHA PKGNAME COLUMNOPTS PATHS install add remove list bundle __) varname
-for varname in "${varnames[@]}"; do unset "var_$varname";done;parse 41 "$@"
-local p=${DOCOPT_PREFIX:-''};for varname in "${varnames[@]}"; do unset \
-"$p$varname";done;if declare -p var___bin >/dev/null 2>&1; then eval $p'__bin='\
-'("${var___bin[@]}")';else eval $p'__bin=()';fi;if declare -p var_COLUMNOPTS \
->/dev/null 2>&1; then eval $p'COLUMNOPTS=("${var_COLUMNOPTS[@]}")';else eval \
-$p'COLUMNOPTS=()';fi;if declare -p var_PATHS >/dev/null 2>&1; then eval $p'PAT'\
-'HS=("${var_PATHS[@]}")';else eval $p'PATHS=()';fi;eval $p'__dry_run=${var___d'\
-'ry_run:-false};'$p'__quiet=${var___quiet:-false};'$p'__verbose=${var___verbos'\
-'e:-false};'$p'__global=${var___global:-false};'$p'__force=${var___force:-fals'\
-'e};'$p'__no_exec=${var___no_exec:-false};'$p'__no_bin=${var___no_bin:-false};'\
-$p'__pkgname=${var___pkgname:-};'$p'__pkgtype=${var___pkgtype:-};'$p'__dest=${'\
-'var___dest:-};'$p'__pkgver=${var___pkgver:-};'$p'URL=${var_URL:-};'$p'PATH=${'\
-'var_PATH:-};'$p'SHA=${var_SHA:-};'$p'PKGNAME=${var_PKGNAME:-};'$p'install=${v'\
-'ar_install:-false};'$p'add=${var_add:-false};'$p'remove=${var_remove:-false};'\
-$p'list=${var_list:-false};'$p'bundle=${var_bundle:-false};'$p'__=${var___:-fa'\
-'lse};';local docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
-((;docopt_i>0;docopt_i--)); do for varname in "${varnames[@]}"; do declare -p \
-"$p$varname";done;done;}
+docopt() { local v='2.0.1'; source \
+"$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh" "$v" || { ret=$?;printf -- "exit \
+%d\n" "$ret";exit "$ret";};set -e;trimmed_doc=${DOC:0:1207};usage=${DOC:36:228}
+digest=eebb3;options=('-n --dry-run 0' '-q --quiet 0' '-v --verbose 0' '-g --g'\
+'lobal 0' '-f --force 0' '-X --no-exec 0' '-B --no-bin 0' '-b --bin 1' '-p --p'\
+'kgname 1' '-t --pkgtype 1' '-d --dest 1' '-V --pkgver 1');node_0(){ switch \
+__dry_run 0;};node_1(){ switch __quiet 1;};node_2(){ switch __verbose 2;}
+node_3(){ switch __global 3;};node_4(){ switch __force 4;};node_5(){ switch \
+__no_exec 5;};node_6(){ switch __no_bin 6;};node_7(){ value __bin 7 true;}
+node_8(){ value __pkgname 8;};node_9(){ value __pkgtype 9;};node_10(){ value \
+__dest 10;};node_11(){ value __pkgver 11;};node_12(){ value URL a;};node_13(){
+value PATH a;};node_14(){ value SHA a;};node_15(){ value PKGNAME a;};node_16(){
+value COLUMNOPTS a true;};node_17(){ value PATHS a true;};node_18(){ switch \
+install a:install;};node_19(){ switch add a:add;};node_20(){ switch remove \
+a:remove;};node_21(){ switch list a:list;};node_22(){ switch bundle a:bundle;}
+node_23(){ switch __ a:--;};node_24(){ sequence 18 25;};node_25(){ optional 0 \
+1 2;};node_26(){ sequence 19 27 29 30;};node_27(){ optional 1 2 3 4 5 6 28 8 9;}
+node_28(){ repeatable 7;};node_29(){ choice 12 13;};node_30(){ optional 14;}
+node_31(){ sequence 20 32 15;};node_32(){ optional 1 0 2 3;};node_33(){
+sequence 21 34 35;};node_34(){ optional 1 2 3;};node_35(){ optional 23 36;}
+node_36(){ repeatable 16;};node_37(){ sequence 22 38 39;};node_38(){ optional \
+1 2 10 8 11;};node_39(){ optional 40;};node_40(){ repeatable 17;};node_41(){
+choice 24 26 31 33 37;};cat <<<' docopt_exit() { [[ -n $1 ]] && printf "%s\n" \
+"$1" >&2;printf "%s\n" "${DOC:36:228}" >&2;exit 1;}';local varnames=(__dry_run \
+__quiet __verbose __global __force __no_exec __no_bin __bin __pkgname \
+__pkgtype __dest __pkgver URL PATH SHA PKGNAME COLUMNOPTS PATHS install add \
+remove list bundle __) varname;for varname in "${varnames[@]}"; do unset \
+"var_$varname";done;parse 41 "$@";local p=${DOCOPT_PREFIX:-''};for varname in \
+"${varnames[@]}"; do unset "$p$varname";done;if declare -p var___bin \
+>/dev/null 2>&1; then eval $p'__bin=("${var___bin[@]}")';else eval $p'__bin=()'
+fi;if declare -p var_COLUMNOPTS >/dev/null 2>&1; then eval $p'COLUMNOPTS=("${v'\
+'ar_COLUMNOPTS[@]}")';else eval $p'COLUMNOPTS=()';fi;if declare -p var_PATHS \
+>/dev/null 2>&1; then eval $p'PATHS=("${var_PATHS[@]}")';else eval $p'PATHS=()'
+fi;eval $p'__dry_run=${var___dry_run:-false};'$p'__quiet=${var___quiet:-false}'\
+';'$p'__verbose=${var___verbose:-false};'$p'__global=${var___global:-false};'\
+$p'__force=${var___force:-false};'$p'__no_exec=${var___no_exec:-false};'$p'__n'\
+'o_bin=${var___no_bin:-false};'$p'__pkgname=${var___pkgname:-};'$p'__pkgtype=$'\
+'{var___pkgtype:-};'$p'__dest=${var___dest:-};'$p'__pkgver=${var___pkgver:-};'\
+$p'URL=${var_URL:-};'$p'PATH=${var_PATH:-};'$p'SHA=${var_SHA:-};'$p'PKGNAME=${'\
+'var_PKGNAME:-};'$p'install=${var_install:-false};'$p'add=${var_add:-false};'\
+$p'remove=${var_remove:-false};'$p'list=${var_list:-false};'$p'bundle=${var_bu'\
+'ndle:-false};'$p'__=${var___:-false};';local docopt_i=1;[[ $BASH_VERSION =~ \
+^4.3 ]] && docopt_i=2;for ((;docopt_i>0;docopt_i--)); do for varname in \
+"${varnames[@]}"; do declare -p "$p$varname";done;done;}
 # docopt parser above, complete command for generating this parser is `docopt.sh --library='"$PKGROOT/.upkg/docopt-lib.sh/docopt-lib.sh"' upkg`
   DOCOPT_PREFIX=_
   eval "$(docopt "$@")"
