@@ -37,7 +37,9 @@ main() {
     # shellcheck disable=SC2030
     upkgjson=$(cat "$tmp_pkg/upkg.json")
     jq --arg version "$version" '
-      .dependencies[1].tar="https://github.com/orbit-online/upkg/releases/download/\($version)/upkg.tar.gz"
+      . as $root |
+      .dependencies | to_entries[] | select(.value.name=="upkg-new") | .key as $idx |
+      $root | .dependencies[$idx].tar="https://github.com/orbit-online/upkg/releases/download/\($version)/upkg.tar.gz"
     ' <<<"$upkgjson" >"$tmp_pkg/upkg.json"
     # Create upkg-compat bundle
     "$PKGROOT/bin/upkg" bundle -d "$tarball_dest" -V "$version" bin README.md LICENSE
