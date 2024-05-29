@@ -34,6 +34,7 @@ upkg_download() {
 
   local dedup_pkgname
   if [[ -e .upkg/.tmp/root/.upkg/.packages ]] && dedup_pkgname=$(compgen -G ".upkg/.tmp/root/.upkg/.packages/*$dedup_pkgname_suffix@$checksum"); then
+    dedup_pkgname=${dedup_pkgname%%$'\n'*} # Get the first result if compgen returns multiple, should never happen
     # The package has already been deduped
     processing "Already downloaded '%s'" "$pkgurl"
     # Get the dedup_pkgname from the dedup dir, output it, and exit early

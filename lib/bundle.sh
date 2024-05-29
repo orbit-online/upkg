@@ -17,8 +17,8 @@ upkg_bundle() {
       fatal "No paths specified, \"bin\" is not set in upkg.json, and default \"bin/\" path does not exist. There are no files to create a package from."
     fi
     local opt_path
-    ! opt_path=$(compgen -G "LICENSE*") || paths+=("$opt_path")
-    ! opt_path=$(compgen -G "README*") || paths+=("$opt_path")
+    ! opt_path=$(compgen -G "LICENSE*") || paths+=("${opt_path%%$'\n'*}")
+    ! opt_path=$(compgen -G "README*") || paths+=("${opt_path%%$'\n'*}")
   fi
 
   [[ -z $version ]] || upkgjson=$(jq --arg version "$version" '.version=$version' <<<"$upkgjson")

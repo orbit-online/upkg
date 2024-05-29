@@ -246,6 +246,7 @@ upkg_install_dep() {
     esac
 
     if dedup_name=$(compgen -G "$dedup_glob"); then
+      dedup_name=${dedup_name%%$'\n'*} # Get the first result if compgen returns multiple, should never happen
       dedup_name=$(basename "$dedup_name")
       # Package already exists in the destination, symlink it
       $DRY_RUN || verbose "Skipping download of '%s'" "$pkgurl"
