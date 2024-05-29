@@ -11,6 +11,10 @@
     {
       "tar": "https://github.com/orbit-online/records.sh/releases/download/v1.0.0/records.sh.tar.gz",
       "sha256": "0469f15f5b689cb29b30f2a3b233c61856eb209fc50c74ef141120bbf70697f1"
+    },
+    {
+      "tar": "https://github.com/orbit-online/collections.sh/releases/download/v1.0.0/collections.sh.tar.gz",
+      "sha256": "ca741323c2bd77f547fa9aea41050d85dfc5f1ce3ff42f73b7a12f7c90b9be2e"
     }
   ]
 }

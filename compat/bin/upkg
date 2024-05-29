@@ -6,12 +6,53 @@ upkg() {
   local pkgroot; pkgroot=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
   # shellcheck disable=SC1091
   source "$pkgroot/.upkg/records.sh/records.sh"
+  # shellcheck disable=SC1091
+  source "$pkgroot/.upkg/collections.sh/collections.sh"
   type "jq" >/dev/null 2>&1 || fatal "command not found: 'jq'"
   local upkg_new=$pkgroot/.upkg/upkg-new/bin/upkg
   local upkg_old=$pkgroot/.upkg/upkg-old
+  local is_legacy_json is_legacy_pkgdir has_legacy global=true
+  if ! contains_element -g "$@"; then
+    global=false
+    if [[ -e upkg.json ]]; then
+      if jq -re '. | (has("commands") or has("assets")) // false' upkg.json >/dev/null; then
+        is_legacy_json=true
+      elif jq -re '. | (has("dependencies")) // false' upkg.json >/dev/null; then
+        if jq -re '.dependencies | type=="object"' upkg.json >/dev/null; then
+          is_legacy_json=true
+        elif jq -re '.dependencies | type=="array"' upkg.json >/dev/null; then
+          is_legacy_json=false
+        fi
+      elif jq -re '. | has("bin") // false' upkg.json >/dev/null; then
+        is_legacy_json=false
+      fi
+    fi
+    if [[ -e .upkg ]]; then
+      local pkgdir
+      if [[ -e .upkg/.packages ]]; then
+        is_legacy_pkgdir=false
+      elif pkgdir=$(compgen -G ".upkg/*"); then
+        pkgdir=${pkgdir%%$'\n'*}
+        if [[ -L "$pkgdir" ]]; then
+          is_legacy_pkgdir=false
+        elif [[ -d "$pkgdir" ]]; then
+          is_legacy_pkgdir=true
+        fi
+      fi
+    fi
+    if [[ $is_legacy_json = true && $is_legacy_pkgdir = false ]]; then
+      fatal "upkg.json looks to be managed by μpkg v0.13.0 still, but .upkg/ is a v0.20.0+ pkgdir. Migrate the former or delete the latter to continue."
+    fi
+    if [[ $is_legacy_json = false && $is_legacy_pkgdir = true ]]; then
+      fatal "upkg.json looks to be managed by μpkg v0.20.0+, but .upkg/ is a v0.13.0 pkgdir. Revert the former or delete the latter to continue."
+    fi
+  fi
+  if $is_legacy_json || $is_legacy_pkgdir; then
+    has_legacy=true
+  fi
   case "$1" in
     add|remove)
-      ! is_legacy_pkgroot || fatal "upkg.json or .upkg/ looks to be managed by v0.13.0 still, please adjust/remove it before running μpkg v0.20.0+"
+      [[ $has_legacy != true ]] || fatal "upkg.json or .upkg/ looks to be managed by μpkg v0.13.0 still, adjust/remove it before running μpkg v0.20.0+"
       exec "$upkg_new" "$@"
       ;;
     bundle) exec "$upkg_new" "$@" ;;
@@ -19,12 +60,12 @@ upkg() {
     list)
       if [[ $# -gt 2 ]]; then
         exec "$upkg_new" "$@"
-      elif [[ $# -eq 2 && $2 = -g ]]; then
+      elif $global; then
         printf "μpkg legacy packages:\n"
-        "$upkg_old" "$@"
+        "$upkg_old" list -g
         printf "μpkg packages:\n"
         exec "$upkg_new" "$@"
-      elif is_legacy_pkgroot; then
+      elif [[ $has_legacy = true ]]; then
         exec "$upkg_old" "$@"
       else
         exec "$upkg_new" "$@"
@@ -35,7 +76,7 @@ upkg() {
       for arg in "$@"; do
         [[ $arg != */* ]] || exec "$upkg_old" "$@"
       done
-      if is_legacy_pkgroot; then
+      if [[ $has_legacy = true ]]; then
         exec "$upkg_old" "$@"
       else
         exec "$upkg_new" "$@"
@@ -43,16 +84,6 @@ upkg() {
       ;;
     *) exec "$upkg_new" "$@" ;;
   esac
-}
-
-is_legacy_pkgroot() {
-  if [[ -e .upkg/.packages ]]; then
-    return 1
-  elif [[ -e upkg.json ]]; then
-    ! jq -re '.commands // .assets // (.dependencies // [] | type!="array") // false' upkg.json >/dev/null || return 0
-  fi
-  # Assume new
-  return 1
 }
 
 upkg "$@"
