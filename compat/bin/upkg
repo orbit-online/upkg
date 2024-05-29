@@ -6,13 +6,11 @@ upkg() {
   local pkgroot; pkgroot=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
   # shellcheck disable=SC1091
   source "$pkgroot/.upkg/records.sh/records.sh"
-  # shellcheck disable=SC1091
-  source "$pkgroot/.upkg/collections.sh/collections.sh"
   type "jq" >/dev/null 2>&1 || fatal "command not found: 'jq'"
   local upkg_new=$pkgroot/.upkg/upkg-new/bin/upkg
   local upkg_old=$pkgroot/.upkg/upkg-old
   local is_legacy_json is_legacy_pkgdir has_legacy global=true
-  if ! contains_element -g "$@"; then
+  if [[ ! "$*" =~ (^|\ )(-[^-]*g[^-]*|--global)(\ |$) ]]; then
     global=false
     if [[ -e upkg.json ]]; then
       if jq -re '. | (has("commands") or has("assets")) // false' upkg.json >/dev/null; then
@@ -47,7 +45,7 @@ upkg() {
       fatal "upkg.json looks to be managed by μpkg v0.20.0+, but .upkg/ is a v0.13.0 pkgdir. Revert the former or delete the latter to continue."
     fi
   fi
-  if $is_legacy_json || $is_legacy_pkgdir; then
+  if [[ $is_legacy_json = true || $is_legacy_pkgdir = true ]]; then
     has_legacy=true
   fi
   case "$1" in
@@ -72,6 +70,7 @@ upkg() {
       fi
       ;;
     install)
+      ! $global || exec "$upkg_old" "$@"
       local arg
       for arg in "$@"; do
         [[ $arg != */* ]] || exec "$upkg_old" "$@"
