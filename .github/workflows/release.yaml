@@ -29,8 +29,7 @@ jobs:
       run: |
         mkdir -p "$HOME/.local/bin"
         ln -s "$(realpath bin/upkg)" "$HOME/.local/bin/upkg"
-    - id: bundle
-      uses: orbit-online/upkg-bundle@v1
+    - uses: orbit-online/upkg-bundle@v1
       with:
         paths: bin lib README.md LICENSE upkg.schema.json
     - name: Create upkg-install snapshot
