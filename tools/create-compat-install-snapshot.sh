@@ -47,7 +47,7 @@ main() {
   # Create a global installation in tmp
   INSTALL_PREFIX=$tmp_snapshot "$PKGROOT/bin/upkg" add -qg "$tmp/upkg-compat-global.tar"
   # Extract upkg.json from the bundle where both the URL is adjusted and the version is set
-  tar -xOf "$tarball_dest" upkg.json >"$tmp_pkg/upkg.json"
+  tar -xOf "$tarball_dest" upkg.json >"$tmp_snapshot/lib/upkg/.upkg/upkg-compat/upkg.json"
   # Adjust the URL and also the checksum for the upkg-compat tarball
   new_checksum=$(shasum -a 256 "$tarball_dest" | cut -d ' ' -f1)
   upkgjson=$(cat "$tmp_snapshot/lib/upkg/upkg.json")
