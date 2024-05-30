@@ -265,6 +265,7 @@ TODO
 - Make install script immune to indentation
 - Document command promotion by specifying binpaths in .upkg/bin
 - Reduce the number of dry-run errors that result in `add -f` or `remove` failures
+- Add container package type to run containerized utilities
 
 ## Alternatives
 
