@@ -19,21 +19,24 @@ upkg_add() {
     # or because --force has been specified, and we need to remove a conflicting
     # package before installing (to that end we need to know the pkgname beforehand)
     # ... or because of both
+    local prefetchpath
     if [[ $pkgtype != git ]]; then
       if [[ -e $pkgurl ]]; then
         # file exists locally on the filesystem
+        prefetchpath=$pkgurl
         [[ -n $checksum ]] || checksum=$(sha256 "$pkgurl") # Don't override checksum if it was already given
       else
         mkdir .upkg/.tmp/prefetched
-        local prefetchpath=.upkg/.tmp/prefetched/tmpfile
+        prefetchpath=.upkg/.tmp/prefetched/tmpfile
         upkg_fetch "$pkgurl" "$prefetchpath"
         [[ -n $checksum ]] || checksum=$(sha256 "$prefetchpath")
         mv "$prefetchpath" ".upkg/.tmp/prefetched/$checksum"
+        prefetchpath=.upkg/.tmp/prefetched/$checksum
       fi
     else
       # pkgurl is a git archive
       mkdir .upkg/.tmp/prefetched
-      local prefetchpath=.upkg/.tmp/prefetched/tmprepo
+      prefetchpath=.upkg/.tmp/prefetched/tmprepo
       if [[ -n $checksum ]]; then
         upkg_clone "$pkgurl" "$prefetchpath" "$checksum"
       else
@@ -41,6 +44,7 @@ upkg_add() {
         checksum=$(git -C "$prefetchpath" rev-parse HEAD)
       fi
       mv "$prefetchpath" ".upkg/.tmp/prefetched/$checksum"
+      prefetchpath=.upkg/.tmp/prefetched/$checksum
     fi
   fi
 
@@ -63,7 +67,17 @@ upkg_add() {
   [[ ! -e upkg.json ]] || upkgjson=$(cat upkg.json)
 
   if $force; then
-    [[ -n $pkgname ]] || pkgname=$(get_pkgname "$dep" "$prefetchpath" true)
+    if [[ -z $pkgname ]]; then
+      # Get the upkg.json contents to determine the pkgname, if the package is an archive, we need to extract it first
+      local dep_upkgjson
+      case "$pkgtype" in
+        tar) dep_upkgjson=$(tar -xOf "$prefetchpath" upkg.json ./upkg.json 2>/dev/null || dep_upkgjson='{}') ;;
+        upkg) dep_upkgjson=$(cat "$prefetchpath") ;;
+        file) dep_upkgjson='{}' ;;
+        git) dep_upkgjson=$(cat "$prefetchpath/upkg.json" 2>/dev/null) || dep_upkgjson='{}' ;;
+      esac
+      pkgname=$(get_pkgname "$dep" "$dep_upkgjson" true)
+    fi
     # Check if there is an existing package with the pkgname we are about to install, if so remove it from upkg.json first
     dep_idx=$(get_dep_idx "$pkgname")
     [[ -z $dep_idx ]] || upkgjson=$(jq -r --argjson dep_idx "$dep_idx" 'del(.dependencies[$dep_idx])' <<<"$upkgjson")

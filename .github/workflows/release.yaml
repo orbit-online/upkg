@@ -52,7 +52,7 @@ jobs:
         body: |
           Upgrade to this version with (remember `sudo` if you have it installed system-wide):
           ```
-          upkg add -gfp upkg 'https://github.com/orbit-online/upkg/releases/download/${{ steps.release.outputs.tag }}/upkg.tar.gz' ${{ steps.checksums.outputs.upkg }}
+          upkg add -gf 'https://github.com/orbit-online/upkg/releases/download/${{ steps.release.outputs.tag }}/upkg.tar.gz' ${{ steps.checksums.outputs.upkg }}
           ```
 
           Install using this snippet. See the [README](https://github.com/orbit-online/upkg/blob/${{ steps.release.outputs.tag }}/README.md#installation) for details

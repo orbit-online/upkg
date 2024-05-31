@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
 get_pkgname() {
-  local dep=$1 pkgpath=$2 include_dep_override=$3 pkgurl pkgtype pkgname
+  local dep=$1 upkgjson=$2 include_dep_override=$3 pkgurl pkgtype pkgname
   pkgurl=$(dep_pkgurl "$dep")
   pkgtype=$(dep_pkgtype "$dep")
   ! $include_dep_override || pkgname=$(jq -r '.name // empty' <<<"$dep")
-  # try getting the pkgname from the package itself if the is no override. Ignore missing upkg.json (or bad path, if $pkgpath is a file)
-  if [[ -z $pkgname ]] && ! pkgname=$(jq -re '.name // empty' "$pkgpath/upkg.json" 2>/dev/null); then
+  # Try getting the pkgname from the package itself if there is no override
+  if [[ -z $pkgname ]] && ! pkgname=$(jq -re '.name // empty' <<<"$upkgjson"); then
     # pkgname has not been overridden (or override has been ignored)
     # and the package has no name included, derive one from the URL basename
     pkgname=${pkgurl%%'#'*} # Remove trailing anchor

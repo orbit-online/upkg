@@ -113,7 +113,9 @@ upkg_download() {
   esac
 
   [[ ! -e $pkgpath/.upkg ]] || fatal "The package '%s' contains a .upkg/ directory. Unable to install." "$pkgurl"
-  dedup_pkgname=$(get_pkgname "$dep" "$pkgpath" false)$dedup_pkgname_suffix@$checksum
+  local upkgjson
+  upkgjson=$(cat "$pkgpath/upkg.json" 2>/dev/null) || upkgjson='{}'
+  dedup_pkgname=$(get_pkgname "$dep" "$upkgjson" false)$dedup_pkgname_suffix@$checksum
 
   # Move to dedup path
   mkdir -p .upkg/.tmp/root/.upkg/.packages

@@ -270,13 +270,15 @@ upkg_install_dep() {
     dedup_name=$(upkg_download "$dep")
   fi
 
-  local dedup_path=.upkg/.tmp/root/.upkg/.packages/$dedup_name dedup_pkgname pkgname
+  local dedup_path=.upkg/.tmp/root/.upkg/.packages/$dedup_name dedup_pkgname dep_upkgjson pkgname
   dedup_pkgname=${dedup_name%@*}
+  local dep_upkgjson
+  dep_upkgjson=$(cat "$dedup_path/upkg.json" 2>/dev/null || printf '{}')
   # Calculate the pkgname independently from what the dedup package is named.
   # Two or more pkgurls may have the same shasum, in which case upkg_download will only download one and return that
   # dedup_name for the others and we want the basename for each URL as the pkgname. This only applies to packages
   # whose pkgnames are derived from the URL (i.e. not applicable when overriding names or upkg.json has a name specified)
-  pkgname=$(get_pkgname "$dep" "$dedup_path" true)
+  pkgname=$(get_pkgname "$dep" "$dep_upkgjson" true)
 
   local packages_path
   if [[ $pkgpath = .upkg/.tmp/root ]]; then
