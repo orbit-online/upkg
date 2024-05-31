@@ -34,11 +34,15 @@ jobs:
         paths: bin lib README.md LICENSE upkg.schema.json
     - name: Create upkg-install snapshot
       run: tools/create-install-snapshot.sh upkg.tar.gz upkg-install.tar.gz
-    - name: Create sha256 checksum of upkg-install.tar.gz
-      id: upkg-install-sha256
-      run: printf "sha256=%s\n" "$(shasum -a 256 "upkg-install.tar.gz" | cut -d ' ' -f1)" >> $GITHUB_OUTPUT
     - name: Create upkg-compat bundle & upkg-compat-install snapshot
       run: tools/create-compat-install-snapshot.sh upkg.tar.gz upkg-compat.tar.gz upkg-compat-install.tar.gz
+    - name: Create sha256 checksums
+      id: checksums
+      run: |
+        printf "upkg=%s\n" "$(shasum -a 256 "upkg.tar.gz" | cut -d ' ' -f1)" >> $GITHUB_OUTPUT
+        printf "upkg-compat=%s\n" "$(shasum -a 256 "upkg-compat.tar.gz" | cut -d ' ' -f1)" >> $GITHUB_OUTPUT
+        printf "upkg-install=%s\n" "$(shasum -a 256 "upkg-install.tar.gz" | cut -d ' ' -f1)" >> $GITHUB_OUTPUT
+        printf "upkg-compat-install=%s\n" "$(shasum -a 256 "upkg-compat-install.tar.gz" | cut -d ' ' -f1)" >> $GITHUB_OUTPUT
     - uses: orbit-online/git-release@v1
       id: release
     - name: Create Release
@@ -46,6 +50,11 @@ jobs:
       with:
         name: ${{ steps.release.outputs.tag }}
         body: |
+          Upgrade to this version with (remember `sudo` if you have it installed system-wide):
+          ```
+          upkg add -gfp upkg 'https://github.com/orbit-online/upkg/releases/download/${{ steps.release.outputs.tag }}/upkg.tar.gz' ${{ steps.checksums.outputs.upkg }}
+          ```
+
           Install using this snippet. See the [README](https://github.com/orbit-online/upkg/blob/${{ steps.release.outputs.tag }}/README.md#installation) for details
           and [install.sh](https://github.com/orbit-online/upkg/blob/${{ steps.release.outputs.tag }}/install.sh) for a fully commented version.
 
@@ -53,7 +62,7 @@ jobs:
           # Read the fully documented version on github.com/orbit-online/upkg
           bash -ec 'P=${INSTALL_PREFIX:-$([[ $EUID = 0 ]]&&echo /usr/local||echo "$HOME/.local")};\
           u=https://github.com/orbit-online/upkg/releases/download/${{ steps.release.outputs.tag }}/upkg-install.tar.gz;\
-          c=${{ steps.upkg-install-sha256.outputs.sha256 }}; echo>&2;\
+          c=${{ steps.checksums.outputs.upkg-install }}; echo>&2;\
           t=$(mktemp); trap "rm \"$t\"" EXIT; wget -qO"$t" "$u" || curl -fsLo"$t" "$u";\
           shasum -a 256 -c <(echo "$c  $t") >/dev/null;mkdir -p "$P";cd "$P"; for f in $(\
           tar tzf "$t"); do [[ $f != */ && -e $f ]] && { echo "$f already exists">&2;\
@@ -64,7 +73,7 @@ jobs:
           # Short version without overwrite checks for e.g. docker, installs to /usr/local
           RUN bash -ec 'u=https://github.com/orbit-online/upkg/releases/download/${{ steps.release.outputs.tag }}/upkg-install.tar.gz;\
           t=$(mktemp); trap "rm \"$t\"" EXIT;wget -qO"$t" "$u" || curl -fsLo"$t" "$u";\
-          shasum -a 256 -c <(echo "${{ steps.upkg-install-sha256.outputs.sha256 }}  $t");\
+          shasum -a 256 -c <(echo "${{ steps.checksums.outputs.upkg-install }}  $t");\
           tar xzC /usr/local -f "$t"'
           ```
 
