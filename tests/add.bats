@@ -139,3 +139,13 @@ teardown_file() { common_teardown_file; }
   assert_file_executable "$HOME/.local/bin/bin-exec.sh"
   assert_file_executable "$HOME/.local/bin/executable"
 }
+
+# bats test_tags=file,tar
+@test ".upkg.json is removed from pkgname" {
+  create_tar_package default/scattered-executables
+  create_file_package default/executable
+  local name=default/metapackage-noname.upkg.json
+  create_file_package $name
+  run -0 upkg add "$PACKAGE_FIXTURES/$name" $FILE_SHASUM
+  assert_link_exists .upkg/metapackage-noname
+}

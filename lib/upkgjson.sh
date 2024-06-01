@@ -14,6 +14,8 @@ get_pkgname() {
     pkgname=$(basename "$pkgname") # Remove path prefix
     if [[ $pkgtype = tar ]]; then
       [[ ! $pkgname =~ (\.tar(\.[^.?#/]+)?)$ ]] || pkgname=${pkgname%"${BASH_REMATCH[1]}"} # Remove .tar or .tar.* suffix
+    elif [[ $pkgtype = upkg ]]; then
+      [[ ! $pkgname =~ (\.upkg.json)$ ]] || pkgname=${pkgname%"${BASH_REMATCH[1]}"} # Remove .upkg.json suffix
     elif [[ $pkgtype = git ]]; then
       pkgname=${pkgname%.git} # Remove .git suffix
     fi # Don't do any suffix cleaning for plain files
