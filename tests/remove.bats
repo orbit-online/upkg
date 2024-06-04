@@ -118,3 +118,17 @@ teardown_file() { common_teardown_file; }
   assert_dir_not_exists .upkg/acme
   assert_dir_exists .upkg/emca
 }
+
+# bats test_tags=tar
+@test "removes all unreferenced packages" {
+  local
+    name1=default/acme \
+    name2=default/crafty-binpaths
+  create_tar_package $name1
+  run -0 upkg add "$PACKAGE_FIXTURES/$name1.tar" $TAR_SHASUM
+  create_tar_package default/scattered-executables
+  create_tar_package $name2
+  run -0 upkg add "$PACKAGE_FIXTURES/$name2.tar" $TAR_SHASUM
+  run -0 upkg remove crafty-binpaths
+  assert_snapshot_path
+}
