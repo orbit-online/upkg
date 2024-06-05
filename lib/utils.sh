@@ -31,16 +31,16 @@ upkg_list_available_cmds() {
 upkg_list_global_referenced_cmds() {
   local install_prefix=$1 cmdpath
   [[ -e $install_prefix/bin ]] || return 0
-  while read -r -d $'\0' cmdpath; do
+  while read -r -d $'\n' cmdpath; do
     [[ $cmdpath != ../lib/upkg/.upkg/.bin/* ]] || printf "%s\n" "$(basename "$cmdpath")"
   done < <(upkg_resolve_links "$install_prefix/bin")
 }
 
 upkg_list_referenced_pkgs() {
   local pkgpath=$1 pkglink dedup_pkgname
-  while read -r -d $'\0' pkglink; do
+  while read -r -d $'\n' pkglink; do
     dedup_pkgname=$(basename "$pkglink")
-    printf ".upkg/.packages/%s\0" "$dedup_pkgname"
+    printf ".upkg/.packages/%s\n" "$dedup_pkgname"
     upkg_list_referenced_pkgs ".upkg/.packages/$dedup_pkgname"
   done < <(upkg_resolve_links "$pkgpath/.upkg")
 }
@@ -48,7 +48,7 @@ upkg_list_referenced_pkgs() {
 upkg_resolve_links() {
   local path=$1 link
   for link in "$path"/*; do
-    [[ ! -L "$link" ]] || printf "%s\0" "$(readlink "$link")"
+    [[ ! -L "$link" ]] || printf "%s\n" "$(readlink "$link")"
   done
 }
 

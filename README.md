@@ -266,6 +266,7 @@ TODO
 - Document command promotion by specifying binpaths in .upkg/bin
 - Reduce the number of dry-run errors that result in `add -f` or `remove` failures
 - Add container package type to run containerized utilities
+- Don't allow newlines in commands
 
 ## Alternatives
 

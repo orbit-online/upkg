@@ -73,9 +73,9 @@ upkg_install() {
       # Remove all unreferenced packages
       # all pkgs - referenced pkgs = unreferenced pkgs
       local unreferenced_pkgs
-      readarray -t -d $'\0' unreferenced_pkgs < <(comm -z23 \
-        <(for pkg in .upkg/.packages/*; do printf "%s\0" "$pkg"; done | sort -z) \
-        <(upkg_list_referenced_pkgs . | sort -z )
+      readarray -t -d $'\n' unreferenced_pkgs < <(comm -23 \
+        <(for pkg in .upkg/.packages/*; do printf "%s\n" "$pkg"; done | sort) \
+        <(upkg_list_referenced_pkgs . | sort )
       )
 
       for dedup_dir in "${unreferenced_pkgs[@]}"; do
@@ -116,12 +116,12 @@ upkg_install() {
     local bin_dest new_bins=() unreferenced_bins=()
     # installed bins - current bins = new bins
     # current bins - installed bins = unreferenced bins
-    readarray -t -d $'\0' unreferenced_bins < <(comm -z23 <(upkg_resolve_links .upkg/.bin | sort -z) <(upkg_resolve_links .upkg/.tmp/root/.upkg/.bin | sort -z))
+    readarray -t -d $'\n' unreferenced_bins < <(comm -23 <(upkg_resolve_links .upkg/.bin) <(upkg_resolve_links .upkg/.tmp/root/.upkg/.bin))
     for bin_dest in "${unreferenced_bins[@]}"; do
       [[ -n $bin_dest ]] || continue # See above
       dry_run_error "'%s' is not linked to right package from .upkg/.bin" "$(basename "$bin_dest")"
     done
-    readarray -t -d $'\0' new_bins < <(comm -z13 <(upkg_resolve_links .upkg/.bin | sort -z) <(upkg_resolve_links .upkg/.tmp/root/.upkg/.bin | sort -z))
+    readarray -t -d $'\n' new_bins < <(comm -13 <(upkg_resolve_links .upkg/.bin) <(upkg_resolve_links .upkg/.tmp/root/.upkg/.bin))
     for bin_dest in "${new_bins[@]}"; do
       [[ -n $bin_dest ]] || continue # See above
       dry_run_error "'%s' is not linked from .upkg/.bin" "$(basename "$bin_dest")"
