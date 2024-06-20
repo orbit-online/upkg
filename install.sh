@@ -62,12 +62,11 @@ trap 'rm "$t"' EXIT
 wget -qO"$t" "$u" || curl -fsLo"$t" "$u"
 
 # Using `echo` output the shasum format of "CHECKSUM  FILE" and redirect
-# it as a file to the `-c` option of `shasum`. Use `-a 256` to tell it that the
-# checksum is sha256.
+# it as a file to the `-c` option of `sha256sum`.
 # Redirect the output to /dev/null, which is just an "OK" on success. Errors
 # are output to stderr and will be visible. We rely on the exit code to stop
 # the script (see `bash -e` above) if the check fails.
-shasum -a 256 -c <(echo "$c  $t")>/dev/null
+sha256sum -c <(echo "$c  $t")>/dev/null
 
 # In the short version we skip the rest and simply run `tar xzC /usr/local -f "$t"``
 # (i.e. extract to /usr/local and overwrite existing files)

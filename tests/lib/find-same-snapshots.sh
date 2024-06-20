@@ -22,7 +22,7 @@ Usage:
           # Don't compare files we already compared the other way around
           [[ $snapshot < "$snapshot_cmp" ]] || continue
           if diff -q "$snapshot" "$snapshot_cmp" >/dev/null; then
-            sha=$(shasum -a 256 "$snapshot" | cut -d ' ' -f1)
+            sha=$(sha256sum "$snapshot" | cut -d ' ' -f1)
             same[$sha]="${same[$sha]}\n  $snapshot\n  $snapshot_cmp"
           fi
         done

@@ -39,10 +39,10 @@ jobs:
     - name: Create sha256 checksums
       id: checksums
       run: |
-        printf "upkg=%s\n" "$(shasum -a 256 "upkg.tar.gz" | cut -d ' ' -f1)" >> $GITHUB_OUTPUT
-        printf "upkg-compat=%s\n" "$(shasum -a 256 "upkg-compat.tar.gz" | cut -d ' ' -f1)" >> $GITHUB_OUTPUT
-        printf "upkg-install=%s\n" "$(shasum -a 256 "upkg-install.tar.gz" | cut -d ' ' -f1)" >> $GITHUB_OUTPUT
-        printf "upkg-compat-install=%s\n" "$(shasum -a 256 "upkg-compat-install.tar.gz" | cut -d ' ' -f1)" >> $GITHUB_OUTPUT
+        printf "upkg=%s\n" "$(sha256sum "upkg.tar.gz" | cut -d ' ' -f1)" >> $GITHUB_OUTPUT
+        printf "upkg-compat=%s\n" "$(sha256sum "upkg-compat.tar.gz" | cut -d ' ' -f1)" >> $GITHUB_OUTPUT
+        printf "upkg-install=%s\n" "$(sha256sum "upkg-install.tar.gz" | cut -d ' ' -f1)" >> $GITHUB_OUTPUT
+        printf "upkg-compat-install=%s\n" "$(sha256sum "upkg-compat-install.tar.gz" | cut -d ' ' -f1)" >> $GITHUB_OUTPUT
     - uses: orbit-online/git-release@v1
       id: release
     - name: Create Release
@@ -64,7 +64,7 @@ jobs:
           u=https://github.com/orbit-online/upkg/releases/download/${{ steps.release.outputs.tag }}/upkg-install.tar.gz;\
           c=${{ steps.checksums.outputs.upkg-install }}; echo>&2;\
           t=$(mktemp); trap "rm \"$t\"" EXIT; wget -qO"$t" "$u" || curl -fsLo"$t" "$u";\
-          shasum -a 256 -c <(echo "$c  $t") >/dev/null;mkdir -p "$P";cd "$P"; for f in $(\
+          sha256sum -c <(echo "$c  $t") >/dev/null;mkdir -p "$P";cd "$P"; for f in $(\
           tar tzf "$t"); do [[ $f != */ && -e $f ]] && { echo "$f already exists">&2;\
           exit 1; }; done; tar xzf "$t";echo "μpkg has been installed and can now be \
           invoked with \"upkg\"" >&2;type jq &>/dev/null||echo "WARNING: \"jq\" was not \
@@ -73,7 +73,7 @@ jobs:
           # Short version without overwrite checks for e.g. docker, installs to /usr/local
           RUN bash -ec 'u=https://github.com/orbit-online/upkg/releases/download/${{ steps.release.outputs.tag }}/upkg-install.tar.gz;\
           t=$(mktemp); trap "rm \"$t\"" EXIT;wget -qO"$t" "$u" || curl -fsLo"$t" "$u";\
-          shasum -a 256 -c <(echo "${{ steps.checksums.outputs.upkg-install }}  $t");\
+          sha256sum -c <(echo "${{ steps.checksums.outputs.upkg-install }}  $t");\
           tar xzC /usr/local -f "$t"'
           ```
 

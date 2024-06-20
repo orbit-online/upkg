@@ -38,9 +38,9 @@ PATH="${RESTRICTED_BIN:-"%s"}" "%s" "$@"
     basename dirname sort comm cut grep # string commands
     mv cp mkdir touch rm ln chmod cat readlink realpath # fs commands
     sleep flock # concurrency commands
-    shasum git tar # archive commands
+    sha256sum git tar # archive commands
   ) optional_commands=(
-    wget curl ssh column
+    wget curl ssh column shasum
     bzip2 xz lzip lzma lzop gzip compress zstd # tar compressions
   )
   if [[ -n $bash_path ]]; then

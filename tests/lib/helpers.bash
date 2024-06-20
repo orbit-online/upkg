@@ -116,7 +116,7 @@ create_tar_package() {
     fi
   )
   # shellcheck disable=SC2034
-  TAR_SHASUM=$(shasum -a 256 "$dest" | cut -d' ' -f1)
+  TAR_SHASUM=$(sha256sum "$dest" | cut -d' ' -f1)
 }
 
 create_file_package() {
@@ -126,7 +126,7 @@ create_file_package() {
   mkdir -p "$(dirname "$dest")"
   cp -n "$tpl" "$dest"
   # shellcheck disable=SC2034
-  FILE_SHASUM=$(shasum -a 256 "$dest" | cut -d' ' -f1)
+  FILE_SHASUM=$(sha256sum "$dest" | cut -d' ' -f1)
 }
 
 create_git_package() {

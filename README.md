@@ -36,7 +36,7 @@ machine or as dependencies to your own scripts.
 ## Dependencies
 
 - bash>=v4.4
-- shasum
+- sha256sum (or shasum)
 - jq
 
 To install git repos you will need `git` and possibly `ssh`, depending on the
@@ -68,9 +68,9 @@ to view a fully commented, non-minified version of this script.
 Installation dependencies are `ca-certificates`, `wget`, and `shasum` (`jq` is
 included here so μpkg also works).
 
-For Debian based systems these dependencies are installable with `apt-get install -y ca-certificates wget libdigest-sha-perl jq`.  
-For alpine docker images use `apk add --update ca-certificates wget bash perl-utils jq`.  
-For Red Hat based systems use `dnf install -y ca-certificates bash perl-utils wget` (`shasum` is already installed).
+For Debian based systems these dependencies are installable with `apt-get install -y ca-certificates wget corutils jq`.  
+For alpine docker images use `apk add --update ca-certificates wget bash corutils jq`.  
+For Red Hat based systems use `dnf install -y ca-certificates bash corutils wget` (`shasum` is already installed).
 
 ### Install guarantees
 

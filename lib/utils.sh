@@ -9,12 +9,14 @@ clean_pkgname() {
   printf "%s\n" "$pkgname"
 }
 
+SHASUM="shasum -a 256"
+type shasum &>/dev/null || SHASUM=sha256sum
 sha256() {
   local filepath=$1 sha256=$2
   if [[ -n $sha256 ]]; then
-    shasum -a 256 -c <(printf "%s  %s" "$sha256" "$filepath") >/dev/null
+    $SHASUM -c <(printf "%s  %s" "$sha256" "$filepath") >/dev/null
   else
-    shasum -a 256 "$filepath" | cut -d ' ' -f1
+    $SHASUM "$filepath" | cut -d ' ' -f1
   fi
 }
 

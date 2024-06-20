@@ -49,14 +49,14 @@ main() {
   # Extract upkg.json from the bundle where both the URL is adjusted and the version is set
   tar -xOf "$tarball_dest" upkg.json >"$tmp_snapshot/lib/upkg/.upkg/upkg-compat/upkg.json"
   # Adjust the URL and also the checksum for the upkg-compat tarball
-  new_checksum=$(shasum -a 256 "$tarball_dest" | cut -d ' ' -f1)
+  new_checksum=$(sha256sum "$tarball_dest" | cut -d ' ' -f1)
   upkgjson=$(cat "$tmp_snapshot/lib/upkg/upkg.json")
   jq --arg version "$version" --arg checksum "$new_checksum" '
     .dependencies[0].tar="https://github.com/orbit-online/upkg/releases/download/\($version)/upkg-compat.tar.gz" |
     .dependencies[0].sha256=$checksum
   ' <<<"$upkgjson" >"$tmp_snapshot/lib/upkg/upkg.json"
   # Fix the checksum paths for upkg-compat so they match the checksum
-  old_checksum=$(shasum -a 256 "$tmp/upkg-compat-global.tar" | cut -d ' ' -f1)
+  old_checksum=$(sha256sum "$tmp/upkg-compat-global.tar" | cut -d ' ' -f1)
   mv "$tmp_snapshot/lib/upkg/.upkg/.packages/upkg-compat.tar@$old_checksum" "$tmp_snapshot/lib/upkg/.upkg/.packages/upkg-compat.tar@$new_checksum"
   ln -sfT "../.packages/upkg-compat.tar@$new_checksum/bin/upkg" "$tmp_snapshot/lib/upkg/.upkg/.bin/upkg"
   ln -sfT ".packages/upkg-compat.tar@$new_checksum" "$tmp_snapshot/lib/upkg/.upkg/upkg-compat"

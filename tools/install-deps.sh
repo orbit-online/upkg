@@ -19,7 +19,7 @@ main() {
     checksum=$(jq -re '.sha256' <<<"$dep")
     archive_path=$tmp/$checksum
     wget -qO"$archive_path" "$(jq -r '.tar' <<<"$dep")"
-    shasum -a 256 -c <(printf "%s  %s" "$checksum" "$archive_path") >/dev/null || \
+    sha256sum -c <(printf "%s  %s" "$checksum" "$archive_path") >/dev/null || \
       fatal "Failed to verify checksum of dependency:\n%s" "$(jq . <<<"$dep")"
 
     # Peek at the archive to get the pkgname
