@@ -102,7 +102,7 @@ upkg_guess_pkgtype() {
         verbose "Guessing pkgtype is upkg, based on the URL being a file that exists on the machine and it ending in upkg.json"
       else
         pkgtype=file
-        verbose "Guessing pkgtype is tar, based on the URL being a file that exists on the machine and it not ending in .tar or .tar.*"
+        verbose "Guessing pkgtype is file, based on the URL being a file that exists on the machine and it not ending in .tar or .tar.*"
       fi
     elif [[ -d $pkgurl ]] && [[ -e $pkgurl/HEAD || -e $pkgurl/.git/HEAD ]]; then
       pkgtype=git
