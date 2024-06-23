@@ -72,3 +72,11 @@ teardown_file() { common_teardown_file; }
   assert_snapshot_output
   assert_snapshot_path shared/acme
 }
+
+# bats test_tags=zip
+@test "autodetects zip from extension" {
+  local name=default/acme
+  create_zip_package $name
+  run -0 upkg add -v "$PACKAGE_FIXTURES/$name.zip"
+  assert_snapshot_output
+}

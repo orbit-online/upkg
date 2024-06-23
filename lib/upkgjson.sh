@@ -29,16 +29,20 @@ dep_pkgtype() {
     if has("tar") then
       "tar"
     else
-      if has("upkg") then
-        "upkg"
+      if has("zip") then
+        "zip"
       else
-        if has("file") then
-          "file"
+        if has("upkg") then
+          "upkg"
         else
-          if has ("git") then
-            "git"
+          if has("file") then
+            "file"
           else
-            empty
+            if has ("git") then
+              "git"
+            else
+              empty
+            end
           end
         end
       end
@@ -47,7 +51,7 @@ dep_pkgtype() {
 
 dep_pkgurl() {
   local dep=$1
-  jq -re '.tar // .upkg // .file // .git // empty' <<<"$dep"
+  jq -re '.tar // .zip // .upkg // .file // .git // empty' <<<"$dep"
 }
 
 dep_checksum() {

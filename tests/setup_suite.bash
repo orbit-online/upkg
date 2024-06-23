@@ -87,6 +87,7 @@ check_commands() {
   else
     export SKIP_SSHD='sshd is not available. Use tests/run.sh to run the tests in a container.'
   fi
+  { type zip &>/dev/null && type unzip &>/dev/null; } || export SKIP_GIT='zip/unzip is not available. Use tests/run.sh to run the tests in a container.'
   type git &>/dev/null || export SKIP_GIT='git is not available. Use tests/run.sh to run the tests in a container.'
   type wget &>/dev/null || export SKIP_WGET='wget is not available. Use tests/run.sh to run the tests in a container.'
   type curl &>/dev/null || export SKIP_CURL='curl is not available. Use tests/run.sh to run the tests in a container.'

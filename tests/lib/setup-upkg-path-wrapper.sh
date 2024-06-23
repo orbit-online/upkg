@@ -40,7 +40,7 @@ PATH="${RESTRICTED_BIN:-"%s"}" "%s" "$@"
     sleep flock # concurrency commands
     sha256sum git tar # archive commands
   ) optional_commands=(
-    wget curl ssh column shasum
+    wget curl ssh column shasum zip unzip
     bzip2 xz lzip lzma lzop gzip compress zstd # tar compressions
   )
   if [[ -n $bash_path ]]; then

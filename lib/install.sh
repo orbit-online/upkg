@@ -238,6 +238,7 @@ upkg_install_dep() {
   if [[ -e .upkg/.packages ]]; then
     case "$pkgtype" in
     tar)  dedup_glob=".upkg/.packages/*.tar@$checksum" ;;
+    zip)  dedup_glob=".upkg/.packages/*.zip@$checksum" ;;
     upkg) dedup_glob=".upkg/.packages/*.upkg.json@$checksum" ;;
     file) if dep_is_exec "$dep"; then dedup_glob=".upkg/.packages/*+x@$checksum"
           else                        dedup_glob=".upkg/.packages/*-x@$checksum"

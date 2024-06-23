@@ -146,30 +146,45 @@ teardown_file() { common_teardown_file; }
 # bats test_tags=tar
 @test "can force replace with local archive" {
   local \
-    name1=default/acme \
+    name1=default/acme old_shasum \
     name2=default/acme-v2
   create_tar_package $name1
   run -0 upkg add "$PACKAGE_FIXTURES/$name1.tar" $TAR_SHASUM
-  assert_dir_exists .upkg/.packages/acme.tar@2fc13e1819bc3ed22ee1526d4f44ec20cd8748575e52a28e137f74fec2dd1160
+  assert_dir_exists .upkg/.packages/acme.tar@$TAR_SHASUM
+  old_shasum=$TAR_SHASUM
   create_tar_package $name2
   cp "$PACKAGE_FIXTURES/$name2.tar" acme.tar
   run -0 upkg add -f acme.tar $TAR_SHASUM
-  assert_dir_not_exists .upkg/.packages/acme.tar@2fc13e1819bc3ed22ee1526d4f44ec20cd8748575e52a28e137f74fec2dd1160
-  assert_dir_exists .upkg/.packages/acme.tar@e7af903b9e42425432fd09c68030770077f71ba0e28aa9dc29ad4423d0b8cd07
+  assert_dir_not_exists .upkg/.packages/acme.tar@$old_shasum
+  assert_dir_exists .upkg/.packages/acme.tar@$TAR_SHASUM
   assert_snapshot_output
 }
 
 # bats test_tags=tar,http
 @test "can force replace with remote archive" {
   local \
-    name1=default/acme \
+    name1=default/acme old_shasum \
     name2=default/acme-v2
   create_tar_package $name1
   run -0 upkg add "$PACKAGE_FIXTURES/$name1.tar" $TAR_SHASUM
-  assert_dir_exists .upkg/.packages/acme.tar@2fc13e1819bc3ed22ee1526d4f44ec20cd8748575e52a28e137f74fec2dd1160
+  assert_dir_exists .upkg/.packages/acme.tar@$TAR_SHASUM
+  old_shasum=$TAR_SHASUM
   create_tar_package $name2
   run -0 upkg add -f "$HTTPD_PKG_FIXTURES_ADDR/$name2.tar" $TAR_SHASUM
-  assert_dir_not_exists .upkg/.packages/acme.tar@2fc13e1819bc3ed22ee1526d4f44ec20cd8748575e52a28e137f74fec2dd1160
-  assert_dir_exists .upkg/.packages/acme.tar@e7af903b9e42425432fd09c68030770077f71ba0e28aa9dc29ad4423d0b8cd07
+  assert_dir_not_exists .upkg/.packages/acme.tar@$old_shasum
+  assert_dir_exists .upkg/.packages/acme.tar@$TAR_SHASUM
+  assert_snapshot_output
+}
+
+# bats test_tags=tar,zip
+@test "can force replace tar with zip" {
+  local name=default/acme
+  create_tar_package $name
+  run -0 upkg add "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
+  assert_dir_exists .upkg/.packages/acme.tar@$TAR_SHASUM
+  create_zip_package $name
+  run -0 upkg add -f "$PACKAGE_FIXTURES/$name.zip" $ZIP_SHASUM
+  assert_dir_not_exists .upkg/.packages/acme.tar@$TAR_SHASUM
+  assert_dir_exists .upkg/.packages/acme.zip@$ZIP_SHASUM
   assert_snapshot_output
 }

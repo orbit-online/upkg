@@ -1,0 +1,3 @@
+upkg: Guessing pkgtype is zip, based on the URL being a file that exists on the machine and it ending in .zip
+upkg: No checksum given for '$BATS_RUN_TMPDIR/package-fixtures/default/acme.zip', determining now
+upkg: Added '$BATS_RUN_TMPDIR/package-fixtures/default/acme.zip'

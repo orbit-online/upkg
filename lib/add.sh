@@ -72,6 +72,7 @@ upkg_add() {
       local dep_upkgjson
       case "$pkgtype" in
         tar) dep_upkgjson=$(tar -xOf "$prefetchpath" upkg.json ./upkg.json 2>/dev/null || dep_upkgjson='{}') ;;
+        zip) dep_upkgjson=$(unzip -qqp "$prefetchpath" upkg.json 2>/dev/null || dep_upkgjson='{}') ;;
         upkg) dep_upkgjson=$(cat "$prefetchpath") ;;
         file) dep_upkgjson='{}' ;;
         git) dep_upkgjson=$(cat "$prefetchpath/upkg.json" 2>/dev/null) || dep_upkgjson='{}' ;;

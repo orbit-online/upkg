@@ -20,9 +20,10 @@ upkg_download() {
     flock -s 9 # Block by trying to get a shared lock
   fi
 
-  local dedup_pkgname_suffix # avoid clashes between tar and file pkgtypes by suffixing them (and just do it for git repos for good measure)
+  local dedup_pkgname_suffix # avoid clashes between pkgtypes by suffixing them
   case "$pkgtype" in
     tar) dedup_pkgname_suffix=.tar ;;
+    zip) dedup_pkgname_suffix=.zip ;;
     upkg) dedup_pkgname_suffix=.upkg.json ;;
     file)
       # Suffix the name with +x or -x so we don't end up clashing with a dedup'ed dependency where "exec" is different
@@ -50,7 +51,7 @@ upkg_download() {
   fi
 
   case "$pkgtype" in
-    tar)
+    tar|zip)
     local archivepath
     if [[ -e .upkg/.tmp/prefetched/$checksum ]]; then
       # archive was already downloaded by upkg_add
@@ -65,7 +66,11 @@ upkg_download() {
     fi
 
     sha256 "$archivepath" "$checksum"
-    tar -xf "$archivepath" -C "$pkgpath"
+    if [[ $pkgtype = tar ]]; then
+      tar -xf "$archivepath" -C "$pkgpath"
+    else
+      unzip -qq "$archivepath" -d "$pkgpath"
+    fi
     ;;
     upkg)
     if [[ -e .upkg/.tmp/prefetched/$checksum ]]; then

@@ -16,6 +16,7 @@ common_setup_file() {
 
 common_setup() {
   ! has_tag tar || [[ -z $SKIP_TAR ]] || skip "$SKIP_TAR"
+  ! has_tag zip || [[ -z $SKIP_ZIP ]] || skip "$SKIP_ZIP"
   ! has_tag git || [[ -z $SKIP_GIT ]] || skip "$SKIP_GIT"
   ! has_tag wget || [[ -z $SKIP_WGET ]] || skip "$SKIP_WGET"
   ! has_tag curl || [[ -z $SKIP_CURL ]] || skip "$SKIP_CURL"
@@ -102,9 +103,9 @@ create_tar_package() {
   (
     close_non_std_fds
     exec 9<>"$dest.lock"
-    trap "exec 9>&-" EXIT # Release as soon as are done
+    trap "exec 9>&-" EXIT # Release as soon as we are done
     if ! flock -nx 9; then
-      flock -s 9 # Wait for exclusive lock to be release (and tar to be finished)
+      flock -s 9 # Wait for exclusive lock to be released (and tar to be finished)
     else
       # https://reproducible-builds.org/docs/archives/
       [[ -e "$dest" ]] || tar \
@@ -119,12 +120,32 @@ create_tar_package() {
   TAR_SHASUM=$(sha256sum "$dest" | cut -d' ' -f1)
 }
 
+create_zip_package() {
+  local tpl=$PACKAGE_TEMPLATES/$1
+  has_tag zip || fail "create_zip_package is used, but the test is not tagged with 'zip'"
+  local dest=$PACKAGE_FIXTURES/$1.zip
+  [[ -z $2 ]] || dest=$TEST_PACKAGE_FIXTURES/$2
+  mkdir -p "$(dirname "$dest")"
+  (
+    close_non_std_fds
+    exec 9<>"$dest.lock"
+    trap "exec 9>&-" EXIT # Release as soon as we are done
+    if ! flock -nx 9; then
+      flock -s 9 # Wait for exclusive lock to be released (and zip to be finished)
+    else
+      [[ -e "$dest" ]] || (cd "$tpl"; zip -qr "$dest" .)
+    fi
+  )
+  # shellcheck disable=SC2034
+  ZIP_SHASUM=$(shasum -a 256 "$dest" | cut -d' ' -f1)
+}
+
 create_file_package() {
   has_tag file || fail "create_file_package is used, but the test is not tagged with 'file'"
   local tpl=$PACKAGE_TEMPLATES/$1 dest=$PACKAGE_FIXTURES/$1
   [[ -z $2 ]] || dest=$TEST_PACKAGE_FIXTURES/$2
   mkdir -p "$(dirname "$dest")"
-  cp -n "$tpl" "$dest"
+  cp -n "$tpl" "$dest" # The -n ("no clobber") is our mutex here. That's it, no locks needed
   # shellcheck disable=SC2034
   FILE_SHASUM=$(sha256sum "$dest" | cut -d' ' -f1)
 }

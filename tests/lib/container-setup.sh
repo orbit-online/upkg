@@ -16,7 +16,7 @@ install_deps() {
     ubuntu:*|debian:*)
       apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates jq wget curl git \
-        bzip2 xz-utils lunzip lzma lzop gzip ncompress zstd \
+        bzip2 xz-utils lunzip lzma lzop gzip ncompress zstd zip unzip \
         ssh tree bsdextrautils psmisc shellcheck python3 gettext openssh-server sudo parallel
       wget -qO /tmp/delta.deb https://github.com/dandavison/delta/releases/download/0.17.0/git-delta_0.17.0_amd64.deb
       dpkg -i /tmp/delta.deb
@@ -25,7 +25,7 @@ install_deps() {
     alpine:*)
       apk add \
         bash ca-certificates jq wget curl git perl-utils tar \
-        bzip2 xz lzop gzip zstd \
+        bzip2 xz lzop gzip zstd zip unzip \
         openssh-client-default tree util-linux-misc psmisc shellcheck python3 gettext openssh-server sudo parallel
       wget -qO- https://github.com/dandavison/delta/releases/download/0.17.0/delta-0.17.0-x86_64-unknown-linux-musl.tar.gz | \
         tar -xz --strip-components=1 -C /usr/local/bin delta-0.17.0-x86_64-unknown-linux-musl/delta

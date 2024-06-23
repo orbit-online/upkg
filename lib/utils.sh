@@ -85,6 +85,9 @@ upkg_guess_pkgtype() {
     if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)([?#]|$) ]]; then
       pkgtype=tar
       verbose "Guessing pkgtype is tar, based on the checksum being 64 hexchars and the URL ending in .tar or .tar.*"
+    elif [[ $pkgurl =~ (\.zip)([?#]|$) ]]; then
+      pkgtype=zip
+      verbose "Guessing pkgtype is zip, based on the checksum being 64 hexchars and the URL ending in .zip"
     elif [[ $pkgurl =~ (\.upkg\.json)([?#]|$) ]]; then
       pkgtype=upkg
       verbose "Guessing pkgtype is upkg, based on the checksum being 64 hexchars and the URL ending in upkg.json"
@@ -97,6 +100,9 @@ upkg_guess_pkgtype() {
       if [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)$ ]]; then
         pkgtype=tar
         verbose "Guessing pkgtype is tar, based on the URL being a file that exists on the machine and it ending in .tar or .tar.*"
+      elif [[ $pkgurl =~ (\.zip)$ ]]; then
+        pkgtype=zip
+        verbose "Guessing pkgtype is zip, based on the URL being a file that exists on the machine and it ending in .zip"
       elif [[ $pkgurl =~ (\.upkg\.json)([?#]|$) ]]; then
         pkgtype=upkg
         verbose "Guessing pkgtype is upkg, based on the URL being a file that exists on the machine and it ending in upkg.json"
@@ -113,6 +119,9 @@ upkg_guess_pkgtype() {
   elif [[ $pkgurl =~ (\.tar(\.[^.?#/]+)?)([?#]|$) ]]; then
     pkgtype=tar
     verbose "Guessing pkgtype is tar, based on the URL ending in .tar or .tar.*"
+  elif [[ $pkgurl =~ (\.zip)([?#]|$) ]]; then
+    pkgtype=zip
+    verbose "Guessing pkgtype is zip, based on the URL ending in .zip"
   elif [[ $pkgurl =~ (\.upkg\.json)([?#]|$) ]]; then
     pkgtype=upkg
     verbose "Guessing pkgtype is upkg, based on the URL ending in upkg.json"

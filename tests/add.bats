@@ -149,3 +149,12 @@ teardown_file() { common_teardown_file; }
   run -0 upkg add "$PACKAGE_FIXTURES/$name" $FILE_SHASUM
   assert_link_exists .upkg/metapackage-noname
 }
+
+# bats test_tags=zip
+@test "can install zip packages" {
+  local name=default/acme
+  create_zip_package $name
+  run -0 upkg add --pkgtype zip "$PACKAGE_FIXTURES/$name.zip" $ZIP_SHASUM
+  assert_snapshot_output
+  assert_file_executable .upkg/.bin/acme.bin
+}

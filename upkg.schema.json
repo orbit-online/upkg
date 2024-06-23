@@ -46,6 +46,7 @@
     "dependency": {
       "anyOf": [
         { "$ref": "#/definitions/tar" },
+        { "$ref": "#/definitions/zip" },
         { "$ref": "#/definitions/upkg" },
         { "$ref": "#/definitions/file" },
         { "$ref": "#/definitions/file-no-exec" },
@@ -71,6 +72,26 @@
         "bin": { "$ref": "#/definitions/bin" }
       },
       "required": ["tar", "sha256"]
+    },
+    "zip": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "zip": {
+          "description": "The path or URL to a zip archive\nRequired",
+          "type": "string"
+        },
+        "sha256": {
+          "description": "The SHA-256 checksum of the archive\nRequired",
+          "$ref": "#/definitions/sha256"
+        },
+        "name": {
+          "description": "A name override for the extracted archive directory.\nThis will become the directory link name in .upkg/ of the parent package.\nA starting period (.), slashes (/), and newlines (\\n) will be silently replaced with underscore (_).\n\nDefault: The basename of the path or URL",
+          "$ref": "#/definitions/name"
+        },
+        "bin": { "$ref": "#/definitions/bin" }
+      },
+      "required": ["zip", "sha256"]
     },
     "upkg": {
       "type": "object",
