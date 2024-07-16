@@ -164,11 +164,18 @@ upkg_install() {
 
 # Install all dependencies of a package
 upkg_install_deps() {
-  local pkgpath=$1 deps=()
+  local pkgpath=$1 all_deps=() deps=()
 
   # Loads of early returns here
   [[ -e $pkgpath/upkg.json ]] || return 0 # No upkg.json -> no deps -> nothing to do
-  readarray -t -d $'\n' deps < <(jq -rc '(.dependencies // [])[]' "$pkgpath/upkg.json")
+  readarray -t -d $'\n' all_deps < <(jq -rc '(.dependencies // [])[]' "$pkgpath/upkg.json")
+  # Run through deps and filter out the ones where the os/arch does not match
+  local dep os_arch
+  for dep in "${all_deps[@]}"; do
+    os_arch=$(jq -r '.["os/arch"] // empty' <<<"$dep")
+    # shellcheck disable=SC2053
+    [[ -n $os_arch && $UPKG_OS_ARCH != $os_arch ]] || deps+=("$dep")
+  done
   [[ ${#deps[@]} -gt 0 ]] || return 0 # No deps -> nothing to do
   mkdir "$pkgpath/.upkg" 2>/dev/null || return 0 # .upkg exists -> another process is already installing the deps
 
@@ -177,7 +184,7 @@ upkg_install_deps() {
   # If the install fails they will create a file indicating the failure
   mkdir "$pkgpath/.upkg/.sentinels"
 
-  local dep dep_idx=0
+  local dep_idx=0
   # Run through deps and install them concurrently
   for dep in "${deps[@]}"; do
     upkg_install_dep "$pkgpath" "$dep" "$dep_idx" &

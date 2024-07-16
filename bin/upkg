@@ -117,6 +117,9 @@ $p'remove=${var_remove:-false};'$p'list=${var_list:-false};'$p'bundle=${var_bu'\
     INSTALL_PREFIX=$HOME/.local
     [[ $EUID != 0 ]] || INSTALL_PREFIX=/usr/local
   fi
+  if [[ -z $UPKG_OS_ARCH ]]; then
+    UPKG_OS_ARCH=$(uname -s)/$(uname -m)
+  fi
 
   if $___quiet && $___verbose; then
     fatal "--quiet and --verbose are mutually exclusive"
