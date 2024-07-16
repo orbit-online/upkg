@@ -158,3 +158,40 @@ teardown_file() { common_teardown_file; }
   assert_snapshot_output
   assert_file_executable .upkg/.bin/acme.bin
 }
+
+# bats test_tags=file
+@test "adding with --os-arch filter works" {
+  local name=default/executable
+  create_file_package $name
+  # shellcheck disable=SC2030
+  export UPKG_OS_ARCH=Linux/x86_64
+  run -0 upkg add -u "$PACKAGE_FIXTURES/$name" $FILE_SHASUM
+  assert_file_executable .upkg/.bin/executable
+  assert_snapshot_output "os-arch.upkg.json" "$(cat upkg.json)"
+}
+
+# bats test_tags=file
+@test "os-arch wildcards are respected" {
+  local name=default/executable
+  create_file_package $name
+  # shellcheck disable=SC2030,SC2031
+  export UPKG_OS_ARCH=Linux/REPLACEME
+  run -0 upkg add -u "$PACKAGE_FIXTURES/$name" $FILE_SHASUM
+  sed -i 's/REPLACEME/\*/g' upkg.json
+  rm -rf .upkg
+  run -0 upkg install
+  assert_file_executable .upkg/.bin/executable
+}
+
+# bats test_tags=file
+@test "non-matching os-arch packages are not installed" {
+  local name=default/executable
+  create_file_package $name
+  # shellcheck disable=SC2031
+  export UPKG_OS_ARCH=Linux/x86_64
+  run -0 upkg add -u "$PACKAGE_FIXTURES/$name" $FILE_SHASUM
+  rm -rf .upkg
+  export UPKG_OS_ARCH=Linux/arm64
+  run -0 upkg install
+  assert_file_not_executable .upkg/.bin/executable
+}

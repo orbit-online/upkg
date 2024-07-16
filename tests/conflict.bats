@@ -188,3 +188,33 @@ teardown_file() { common_teardown_file; }
   assert_dir_exists .upkg/.packages/acme.zip@$ZIP_SHASUM
   assert_snapshot_output
 }
+
+# bats test_tags=file
+@test "same package with different archs do not conflict" {
+  local name=default/executable
+  create_file_package $name
+  # shellcheck disable=SC2030
+  export UPKG_OS_ARCH=Linux/x86_64
+  run -0 upkg add -u "$PACKAGE_FIXTURES/$name" $FILE_SHASUM
+  export UPKG_OS_ARCH=Linux/arm64
+  run -0 upkg add -u "$PACKAGE_FIXTURES/$name" $FILE_SHASUM
+  assert_file_executable .upkg/.bin/executable
+  assert_snapshot_output "os-arch-no-conflict.upkg.json" "$(cat upkg.json)"
+}
+
+# bats test_tags=file
+@test "conflicting archs are detected" {
+  local name=default/executable
+  create_file_package $name
+  # shellcheck disable=SC2031
+  export UPKG_OS_ARCH=Linux/x86_64
+  run -0 upkg add -u "$PACKAGE_FIXTURES/$name" $FILE_SHASUM
+  export UPKG_OS_ARCH=Linux/REPLACEME
+  run -0 upkg add -u "$PACKAGE_FIXTURES/$name" $FILE_SHASUM
+  sed -i 's/REPLACEME/\*/g' upkg.json
+  assert_snapshot_output "os-arch-conflict.upkg.json" "$(cat upkg.json)"
+  rm -rf .upkg
+  export UPKG_OS_ARCH=Linux/x86_64
+  run -1 upkg install
+  assert_snapshot_output
+}
