@@ -2,7 +2,7 @@
 
 # Add a package from upkg.json (optionally determine its checksum) and run upkg_install
 upkg_add() {
-  local pkgtype=$1 pkgurl=$2 checksum=$3 pkgname=$4 no_exec=$5 no_bin=$6 force=$7; shift 7
+  local pkgtype=$1 pkgurl=$2 checksum=$3 pkgname=$4 no_exec=$5 no_bin=$6 force=$7 os_arch=$8; shift 8
   local binpaths=("$@")
   local prefetch prefetchpath
 
@@ -60,6 +60,9 @@ upkg_add() {
     for binpath in "${binpaths[@]}"; do
       dep=$(jq --arg binpath "$binpath" '.bin+=[$binpath]' <<<"$dep")
     done
+  fi
+  if $os_arch; then
+    dep=$(jq --arg upkg_os_arch "$UPKG_OS_ARCH" '.["os/arch"]=$upkg_os_arch' <<<"$dep")
   fi
 
   # Modify upkg.json, but only in the temp dir, so a failure doesn't change anything

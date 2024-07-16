@@ -1,7 +1,7 @@
 μpkg - A minimalist package manager
 Usage:
   upkg install [-nqv]
-  upkg add [-qvgfXB -b PATH... -p PKGNAME -t PKGTYPE] (URL|PATH) [SHA]
+  upkg add [-qvgufXB -b PATH... -p PKGNAME -t PKGTYPE] (URL|PATH) [SHA]
   upkg remove [-qnvg] PKGNAME
   upkg list [-qvg] [-- COLUMNOPTS...]
   upkg bundle [-qv -d PATH -p PKGNAME -V VERSION] [PATHS...]
@@ -11,6 +11,7 @@ Options:
   -q --quiet           Log only fatal errors
   -v --verbose         Output verbose logs and disable writing to the same line
   -g --global          Act globally
+  -u --os-arch         Add os/arch filter of current platform to dependency spec
   -f --force           Replace existing package with the same name
   -X --no-exec         Do not chmod +x the file (implies --no-bin)
   -B --no-bin          Do not link executables in package bin/ to .upkg/.bin

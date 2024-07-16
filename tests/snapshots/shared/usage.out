@@ -1,7 +1,7 @@
 
 Usage:
   upkg install [-nqv]
-  upkg add [-qvgfXB -b PATH... -p PKGNAME -t PKGTYPE] (URL|PATH) [SHA]
+  upkg add [-qvgufXB -b PATH... -p PKGNAME -t PKGTYPE] (URL|PATH) [SHA]
   upkg remove [-qnvg] PKGNAME
   upkg list [-qvg] [-- COLUMNOPTS...]
   upkg bundle [-qv -d PATH -p PKGNAME -V VERSION] [PATHS...
