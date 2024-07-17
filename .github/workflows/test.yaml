@@ -20,7 +20,7 @@ jobs:
         ignore_paths: >-
           .upkg
           compat/.upkg
-  test:
+  test-bash-versions:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -64,6 +64,43 @@ jobs:
         BATS_LIB_PATH: ${{ github.workspace }}/lib
         TEST_BASH_VERSION: ${{ matrix.bash-version }}
         TMPDIR: ${{ github.workspace }}/upkg/tests/bats-tmp
+    - name: Fail when tests are skipped
+      run: '! grep -q "not ok" tests/results.tap'
+      working-directory: upkg
+    - name: Generate test summary
+      uses: test-summary/action@v2
+      with:
+        paths: upkg/tests/results.tap
+        show: "fail, skip"
+      if: always()
+  test-distributions:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        distribution:
+        - ubuntu:22.04
+        - ubuntu:23.04
+        - ubuntu:24.04
+        - debian:bullseye
+        - debian:bookworm
+        - debian:trixie
+        - fedora:41
+        - rockylinux:9
+        - alpine:3.19
+        - alpine:3.20
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@v4
+      with:
+        path: upkg
+    - name: Install dependencies
+      run: tools/install-deps.sh
+      working-directory: upkg
+    - name: Run tests
+      run: tests/run.sh --formatter tap13 --filter-tags '!shellcheck' --jobs 4 tests | tee tests/results.tap
+      working-directory: upkg
+      env:
+        BASEIMG: ${{ matrix.distribution }}
     - name: Fail when tests are skipped
       run: '! grep -q "not ok" tests/results.tap'
       working-directory: upkg
