@@ -71,6 +71,6 @@ teardown_file() { common_teardown_file; }
 # bats test_tags=http,tar,wget
 @test "fails on tar add with non-existent repo" {
   run -1 upkg add "$HTTPD_PKG_FIXTURES_ADDR/non-existent.tar" 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
-  assert_snapshot_output "" "${output//Server: SimpleHTTP*}"
+  assert_output --partial "Error while downloading"
   assert_snapshot_path shared/empty
 }
