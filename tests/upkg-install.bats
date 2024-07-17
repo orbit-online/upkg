@@ -21,7 +21,7 @@ teardown_file() { common_teardown_file; }
     .
   run -0 upkg bundle -d "$HOME/upkg.tar.gz" -V testing bin lib upkg.schema.json README.md LICENSE
   run -0 "$BATS_TEST_DIRNAME/../tools/create-install-snapshot.sh" "$HOME/upkg.tar.gz" upkg-install.tar.gz
-  mkdir "$HOME/.local"
+  mkdir -p "$HOME/.local"
   tar -xf upkg-install.tar.gz -C "$HOME/.local"
   assert_all_links_valid "$HOME/.local"
   run -0 "$HOME/.local/bin/upkg" --help
@@ -37,6 +37,7 @@ teardown_file() { common_teardown_file; }
     ln -sTf ../../$dep_pkgname.tar@STATIC "$HOME/.local/lib/upkg/.upkg/.packages/upkg.tar@STATIC/.upkg/$dep_pkgname"
   done
   assert_all_links_valid "$HOME/.local"
+  rm -rf "$HOME/.local/share" # wget creates ~/.local/share/wget/.wget-hsts on
   assert_snapshot_path "" "$HOME/.local"
   run -0 "$HOME/.local/bin/upkg" --help
 }
@@ -57,7 +58,7 @@ teardown_file() { common_teardown_file; }
   assert_all_links_valid upkg
   assert_snapshot_path compat-bundle upkg
 
-  mkdir "$HOME/.local"
+  mkdir -p "$HOME/.local"
   tar -xf upkg-compat-install.tar.gz -C "$HOME/.local"
   assert_all_links_valid "$HOME/.local"
   run -0 "$HOME/.local/bin/upkg" --help
@@ -80,6 +81,7 @@ teardown_file() { common_teardown_file; }
     ln -sTf ../../$dep_pkgname.tar@STATIC "$HOME/.local/lib/upkg/.upkg/.packages/upkg.tar@STATIC/.upkg/$dep_pkgname"
   done
   assert_all_links_valid "$HOME/.local"
+  rm -rf "$HOME/.local/share" # GNU Wget2 creates ~/.local/share/wget/.wget-hsts
   assert_snapshot_path compat-install "$HOME/.local"
   run -0 "$HOME/.local/bin/upkg" --help
 }
