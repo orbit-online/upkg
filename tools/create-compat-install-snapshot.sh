@@ -13,8 +13,8 @@ main() {
   local upkg_tarball tarball_dest snapshot_dest tmp tmp_pkg tmp_snapshot version upkgjson old_checksum new_checksum
   [[ -n $1 && -n $2 && -n $3 ]] || fatal "Usage: create-compat-package.sh UPKGTARBALL TARBALLDEST SNAPSHOTDEST"
   upkg_tarball=$(realpath "$1")
-  tarball_dest=$(realpath "$2")
-  snapshot_dest=$(realpath "$3")
+  tarball_dest=$(realpath "$(dirname "$2")")/$(basename "$2")
+  snapshot_dest=$(realpath "$(dirname "$3")")/$(basename "$3")
 
   # tmp root for the package creation and also the global install dir structure
   tmp=$(mktemp -d)
