@@ -1,8 +1,8 @@
 ARG BASEIMG
 FROM $BASEIMG
 ARG BASEIMG
-COPY --chmod=0755 tests/lib/container-setup.sh /container-setup.sh
-RUN /container-setup.sh deps $BASEIMG
+COPY --chmod=0755 tests/lib/setup-container.sh /setup-container.sh
+RUN /setup-container.sh deps $BASEIMG
 SHELL ["/bin/bash", "-Eeo", "pipefail", "-c"]
 
 WORKDIR /usr/lib/bats
@@ -21,7 +21,7 @@ RUN /restricted/setup-upkg-path-wrapper.sh /upkg/bin/upkg /restricted
 
 ARG USER
 ARG UID
-RUN /container-setup.sh user $BASEIMG $USER $UID
+RUN /setup-container.sh user $BASEIMG $USER $UID
 RUN mkdir /sshd; chown $UID:$UID /sshd
 ENV SSHD_BASE=/sshd
 USER $USER
