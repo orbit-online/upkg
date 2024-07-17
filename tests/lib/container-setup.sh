@@ -43,6 +43,8 @@ install_deps() {
         bash ca-certificates jq wget curl git perl-utils tar \
         bzip2 xz lzop gzip zstd zip unzip \
         openssh-client-default tree util-linux-misc psmisc shellcheck python3 gettext openssh-server sudo parallel
+      addgroup sudo
+      printf "%%sudo   ALL=(ALL:ALL) ALL\n" >>/etc/sudoers
       ;;
     *) printf "Don't know how to install deps for '%s'" "$baseimg" >&2; return 1 ;;
   esac
@@ -58,7 +60,7 @@ setup_user() {
       useradd --uid "$uid" -G sudo -Md /upkg/tests/user-home "$user"
       ;;
     alpine*)
-      adduser -u "$uid" -h /upkg/tests/user-home "$user"
+      adduser -S -D -s /bin/bash -u "$uid" -h /upkg/tests/user-home "$user"
       adduser "$user" sudo
       ;;
     *) printf "Don't know how to setup user for '%s'" "$baseimg" >&2; return 1 ;;

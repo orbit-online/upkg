@@ -22,7 +22,7 @@ RUN /restricted/setup-upkg-path-wrapper.sh /upkg/bin/upkg /restricted
 ARG USER
 ARG UID
 RUN /container-setup.sh user $BASEIMG $USER $UID
-RUN mkdir /sshd; chown $USER:$USER /sshd
+RUN mkdir /sshd; chown $UID:$UID /sshd
 ENV SSHD_BASE=/sshd
 USER $USER
 ENV USER=$USER
