@@ -3,7 +3,12 @@ set -Eeo pipefail; shopt -s inherit_errexit nullglob
 
 # Setup SSH server to serve git package fixtures
 setup_package_fixtures_sshd() {
-  export SSHD_ROOT=$BATS_TEST_TMPDIR/sshd/root
+  export SSHD_ROOT
+  if [[ -n $SSHD_BASE ]]; then
+    SSHD_ROOT=$SSHD_BASE/${BATS_TEST_TMPDIR#'/'}
+  else
+    SSHD_ROOT=$BATS_TEST_TMPDIR/sshd/root
+  fi
   local sshd_port log_line wait_timeout=1000
   mkdir -p "$SSHD_ROOT"
   sshd_port=$("$PYTHON" -c 'import socket

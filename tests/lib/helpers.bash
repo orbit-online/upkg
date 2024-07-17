@@ -145,7 +145,7 @@ create_file_package() {
   local tpl=$PACKAGE_TEMPLATES/$1 dest=$PACKAGE_FIXTURES/$1
   [[ -z $2 ]] || dest=$TEST_PACKAGE_FIXTURES/$2
   mkdir -p "$(dirname "$dest")"
-  cp -n "$tpl" "$dest" # The -n ("no clobber") is our mutex here. That's it, no locks needed
+  cp -n "$tpl" "$dest" 2>/dev/null || true # The -n ("no clobber") is our mutex here. That's it, no locks needed
   # shellcheck disable=SC2034
   FILE_SHASUM=$(sha256sum "$dest" | cut -d' ' -f1)
 }

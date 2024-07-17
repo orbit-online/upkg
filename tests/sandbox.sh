@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
+# shellcheck source-path=..
 set -Eeo pipefail; shopt -s inherit_errexit
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 
+source "$PKGROOT/tests/lib/build-container.sh"
+
 main() {
-  local shasum
-  shasum=$(docker buildx build -q --file "$PKGROOT/tests/Dockerfile" --build-arg="UID=$UID" --build-arg="USER=$USER" "$PKGROOT")
+  local tag
+  tag=$(build_container)
   mkdir -p "$PKGROOT/tests/user-home"
   if [[ $(docker container inspect -f '{{.State.Running}}' upkg-sandbox 2>/dev/null) = "true" ]]; then
     printf "sandbox.sh: upkg-sandbox already running, using docker exec instead\n" >&2
@@ -17,7 +20,7 @@ main() {
       -eSSH_AUTH_SOCK=/ssh_auth_sock \
       -v"${SSH_AUTH_SOCK}:/ssh_auth_sock" \
       --entrypoint /bin/bash \
-      "$shasum"
+      "$tag"
   fi
 }
 
