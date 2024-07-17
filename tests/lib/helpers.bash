@@ -137,7 +137,7 @@ create_zip_package() {
     fi
   )
   # shellcheck disable=SC2034
-  ZIP_SHASUM=$(shasum -a 256 "$dest" | cut -d' ' -f1)
+  ZIP_SHASUM=$(sha256sum "$dest" | cut -d' ' -f1)
 }
 
 create_file_package() {
