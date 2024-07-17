@@ -133,7 +133,7 @@ upkg_fetch() {
   local url=$1 dest=$2 out
   processing "Downloading %s" "$url"
   if type wget >/dev/null 2>&1; then
-    out=$(wget --server-response -T "${UPKG_TIMEOUT:-10}" -t "${UPKG_FETCH_RETRIES:-2}" -qO "$dest" "$url" 2>&1) || \
+    out=$(wget --server-response -T "${UPKG_TIMEOUT:-10}" -t "${UPKG_FETCH_RETRIES:-2}" -qO "$dest" "$url" 2>&1 && test -e "$dest") || \
       fatal "Error while downloading '%s', server response:\n%s" "$url" "$out"
   elif type curl >/dev/null 2>&1; then
     curl -fsL --connect-timeout "${UPKG_TIMEOUT:-10}" --retry "${UPKG_FETCH_RETRIES:-2}" -o "$dest" "$url" || \
