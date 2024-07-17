@@ -62,11 +62,15 @@ setup_reproducible_vars() {
 check_commands() {
   # Check tar availability and version
   if type tar &>/dev/null; then
-    local tar_actual_version tar_expected_version='tar (GNU tar) 1.34'
+    local tar_actual_version tar_allowed_versions=('1.34' '1.35') tar_allowed_version
     tar_actual_version=$(tar --version | head -n1)
-    if [[ $tar_actual_version != "$tar_expected_version" ]]; then
-      export SKIP_TAR="tar reported version ${tar_actual_version#tar (GNU tar) }. Only ${tar_expected_version#tar (GNU tar) } is supported. Use tests/run.sh to run the tests in a container"
-    fi
+    export SKIP_TAR="tar reported version ${tar_actual_version#tar (GNU tar) }. Only versions ${tar_allowed_versions[*]} are supported. Use tests/run.sh to run the tests in a container"
+    for tar_allowed_version in "${tar_allowed_versions[@]}"; do
+      if [[ $tar_actual_version = *"$tar_allowed_version" ]]; then
+        unset SKIP_TAR
+        break
+      fi
+    done
   else
     export SKIP_TAR='tar is not available. Use tests/run.sh to run the tests in a container.'
   fi
