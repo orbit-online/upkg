@@ -1,4 +1,3 @@
-[drwxr-xr-x]  .
 ├── [drwxr-xr-x]  bin
 │   └── [lrwxrwxrwx]  upkg -> ../lib/upkg/.upkg/.bin/upkg
 └── [drwxr-xr-x]  lib

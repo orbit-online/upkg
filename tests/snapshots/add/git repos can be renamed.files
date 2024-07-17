@@ -1,4 +1,3 @@
-[drwxr-xr-x]  .
 ├── [drwxr-xr-x]  .upkg
 │   ├── [drwxr-xr-x]  .bin
 │   │   └── [lrwxrwxrwx]  acme.bin -> ../.packages/acme-no-metadata.git@b3e404bef10fa4f8503d3fae92431f9c1b594cdc/bin/acme.bin

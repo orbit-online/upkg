@@ -1,4 +1,3 @@
-[drwxr-xr-x]  .
 ├── [drwxr-xr-x]  bin
 │   └── [lrwxrwxrwx]  acme.bin -> ../lib/upkg/.upkg/.bin/acme.bin
 └── [drwxr-xr-x]  lib

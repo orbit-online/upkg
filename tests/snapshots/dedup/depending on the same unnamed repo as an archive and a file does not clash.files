@@ -1,4 +1,3 @@
-[drwxr-xr-x]  .
 ├── [drwxr-xr-x]  .upkg
 │   ├── [drwxr-xr-x]  .bin
 │   │   ├── [lrwxrwxrwx]  acme.bin -> ../.packages/acme-no-metadata.tar@8269ed897058ec43430168b2367ed8d588f2259ce6a373890dd0b1b96fd722c1/bin/acme.bin

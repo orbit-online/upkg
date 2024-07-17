@@ -1,4 +1,3 @@
-[drwxr-xr-x]  .
 ├── [drwxr-xr-x]  .upkg
 │   ├── [drwxr-xr-x]  .bin
 │   │   └── [lrwxrwxrwx]  acme.bin -> ../.packages/acme-renamed.tar@706da78778a7cbdb15e64f4b20b22420ab4847764f03407a83fac2fe3146deff/bin/acme.bin

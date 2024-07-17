@@ -1,4 +1,3 @@
-[drwxr-xr-x]  .
 ├── [drwxr-xr-x]  bin
 │   └── [lrwxrwxrwx]  command\ with\ spaces.bin -> ../lib/upkg/.upkg/.bin/command\ with\ spaces.bin
 └── [drwxr-xr-x]  lib

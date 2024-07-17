@@ -270,8 +270,8 @@ replace_vars() {
 }
 
 get_file_structure() {
-  # tree counts differently depending on the version, so we cut off the summary
-  (cd "${1:?}"; tree -n -p --charset=UTF-8 -a -I .git . | head -n-2) 2>&1
+  # tree counts differently depending on the version, so we cut off the root dir and summary
+  (cd "${1:?}"; tree -n -p --charset=UTF-8 -a -I .git . | head -n-2 | tail -n+2) 2>&1
 }
 
 has_tag() {

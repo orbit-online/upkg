@@ -1,4 +1,3 @@
-[drwxr-xr-x]  .
 ├── [drwxr-xr-x]  bin
 │   └── [-rwxr-xr-x]  bin-exec.sh
 ├── [-rwxr-xr-x]  root-exec.sh

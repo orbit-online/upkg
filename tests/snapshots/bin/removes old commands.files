@@ -1,4 +1,3 @@
-[drwxr-xr-x]  .
 ├── [drwxr-xr-x]  bin
 │   ├── [lrwxrwxrwx]  another-tool -> ../lib/upkg/.upkg/.bin/another-tool
 │   ├── [lrwxrwxrwx]  bin-exec.sh -> ../lib/upkg/.upkg/.bin/bin-exec.sh
