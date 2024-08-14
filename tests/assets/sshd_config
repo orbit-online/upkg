@@ -9,5 +9,6 @@ PidFile "${SSHD_ROOT}/pid"
 PermitRootLogin no
 PasswordAuthentication no
 KbdInteractiveAuthentication no
+${SSHD_USE_PAM}
 PermitTTY no
 PrintMotd no

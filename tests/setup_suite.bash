@@ -3,6 +3,7 @@ set -Eeo pipefail; shopt -s inherit_errexit nullglob
 
 setup_suite() {
   bats_require_minimum_version 1.5.0
+  source_distribution_adjustments
   setup_upkg_path_wrapper
   # Optionally show diff with delta
   export DELTA=cat
@@ -21,6 +22,18 @@ setup_suite() {
 
 teardown_suite() {
   :
+}
+
+source_distribution_adjustments() {
+  # shellcheck disable=SC1090
+  if [[ -n $BASEIMG ]]; then
+    # shellcheck disable=SC1091
+    source "/upkg/tests/assets/dist-adjustments/default.sh"
+    [[ ! -e /upkg/tests/assets/dist-adjustments/${BASEIMG%:*}.sh ]] || \
+      source "/upkg/tests/assets/dist-adjustments/${BASEIMG%:*}.sh"
+    [[ ! -e /upkg/tests/assets/dist-adjustments/$BASEIMG.sh ]] || \
+      source "/upkg/tests/assets/dist-adjustments/$BASEIMG.sh"
+  fi
 }
 
 # Sets up a directory for upkg with only the barest of essentials and creates a upkg wrapper which overwrites PATH with it

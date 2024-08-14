@@ -1,6 +1,7 @@
 ARG BASEIMG
 FROM $BASEIMG
 ARG BASEIMG
+ENV BASEIMG=$BASEIMG
 COPY --chmod=0755 tests/lib/setup-container.sh /setup-container.sh
 RUN /setup-container.sh deps $BASEIMG
 SHELL ["/bin/bash", "-Eeo", "pipefail", "-c"]
