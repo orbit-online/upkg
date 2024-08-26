@@ -116,12 +116,12 @@ upkg_install() {
     local bin_dest new_bins=() unreferenced_bins=()
     # installed bins - current bins = new bins
     # current bins - installed bins = unreferenced bins
-    readarray -t -d $'\n' unreferenced_bins < <(comm -23 <(upkg_resolve_links .upkg/.bin) <(upkg_resolve_links .upkg/.tmp/root/.upkg/.bin))
+    readarray -t -d $'\n' unreferenced_bins < <(comm -23 <(upkg_resolve_links .upkg/.bin | sort) <(upkg_resolve_links .upkg/.tmp/root/.upkg/.bin | sort))
     for bin_dest in "${unreferenced_bins[@]}"; do
       [[ -n $bin_dest ]] || continue # See above
       dry_run_error "'%s' is not linked to right package from .upkg/.bin" "$(basename "$bin_dest")"
     done
-    readarray -t -d $'\n' new_bins < <(comm -13 <(upkg_resolve_links .upkg/.bin) <(upkg_resolve_links .upkg/.tmp/root/.upkg/.bin))
+    readarray -t -d $'\n' new_bins < <(comm -13 <(upkg_resolve_links .upkg/.bin | sort) <(upkg_resolve_links .upkg/.tmp/root/.upkg/.bin | sort))
     for bin_dest in "${new_bins[@]}"; do
       [[ -n $bin_dest ]] || continue # See above
       dry_run_error "'%s' is not linked from .upkg/.bin" "$(basename "$bin_dest")"
