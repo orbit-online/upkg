@@ -267,6 +267,7 @@ TODO
 - Reduce the number of dry-run errors that result in `add -f` or `remove` failures
 - Add container package type to run containerized utilities
 - Don't allow newlines in commands
+- Support removing multiple packages at once (`upkg remove PKGNAME...`)
 
 ## Alternatives
 
