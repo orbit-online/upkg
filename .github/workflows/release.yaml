@@ -69,8 +69,10 @@ jobs:
           exit 1; }; done; tar xzf "$t"; echo "μpkg has been installed and can now be \
           invoked with \"upkg\"" >&2;type jq &>/dev/null||echo "WARNING: \"jq\" was not \
           found in \$PATH. jq is a hard dependency." >&2'
+          ```
 
-          # Short version without overwrite checks for e.g. docker, installs to /usr/local
+          Short version without overwrite checks for e.g. docker, installs to /usr/local
+          ```
           RUN bash -ec 'u=https://github.com/orbit-online/upkg/releases/download/${{ steps.release.outputs.tag }}/upkg-install.tar.gz;\
           t=$(mktemp); trap "rm \"$t\"" EXIT;wget -qO"$t" "$u" || curl -fsLo"$t" "$u";\
           sha256sum -c <(echo "${{ steps.checksums.outputs.upkg-install }}  $t");\
