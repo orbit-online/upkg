@@ -48,9 +48,9 @@ upkg_install() {
       rm -rf .upkg/.bin
       rm -f .upkg/* # "*" works here because we don't have nullglob on and dotglob off, meaning don't match .packages/ and .tmp/
       # Move all command links
-      [[ ! -e .upkg/.tmp/root/.upkg/.bin ]] || mv -nt .upkg/ .upkg/.tmp/root/.upkg/.bin
+      [[ ! -e .upkg/.tmp/root/.upkg/.bin ]] || mv -n .upkg/.tmp/root/.upkg/.bin .upkg/
       # Move all direct package dependencies
-      mv -nt .upkg .upkg/.tmp/root/.upkg/*
+      mv -n .upkg/.tmp/root/.upkg/* .upkg/
 
       local dedup_dir new_dedup_dir
       # Check if there are packages in .upkg/.tmp/root/.upkg/.packages/ that do not exist in .upkg/
@@ -60,7 +60,7 @@ upkg_install() {
         if [[ ! -e $dedup_dir ]]; then
           mkdir -p .upkg/.packages
           # Move the new package
-          mv -nt .upkg/.packages "$new_dedup_dir"
+          mv -n "$new_dedup_dir" .upkg/.packages/
         elif [[ ! -L "$new_dedup_dir" ]]; then
           # This should never happen, it means that upkg_install_dep didn't detect an already dedup'ed package
           fatal "INTERNAL ERROR: '%s' was not dedup'ed"
