@@ -79,7 +79,6 @@ jobs:
       matrix:
         distribution:
         - ubuntu:22.04
-        - ubuntu:23.04
         - ubuntu:24.04
         - debian:bullseye
         - debian:bookworm
