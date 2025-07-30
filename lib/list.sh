@@ -25,7 +25,12 @@ upkg_list() {
   ) | (
     # Allow nice formatting if `column` (from bsdextrautils) is installed
     if type column >/dev/null 2>&1; then
-      column -t -n "Packages" -N "Name,Link name,Version,Checksum" "$@" # Forward any extra options
+      if [[ $# -gt 0 ]]; then
+        column -t -n "Packages" -N "Name,Link name,Version,Checksum" "$@" # Forward any extra options
+      else
+        # Unless custom args were passed, fall back to `cat` (i.e. when `column` is not the coreutils variant)
+        column -t -n "Packages" -N "Name,Link name,Version,Checksum" 2>/dev/null || cat
+      fi
     else
       cat # Not installed, just output the tab/newline separated data
     fi
