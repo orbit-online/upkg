@@ -143,7 +143,7 @@ upkg_install() {
       else
         processing "Linking '%s'" "$cmd"
         mkdir -p "$INSTALL_PREFIX/bin"
-        ln -sT "../lib/upkg/.upkg/.bin/$cmd" "$INSTALL_PREFIX/bin/$cmd"
+        _ln_sT "../lib/upkg/.upkg/.bin/$cmd" "$INSTALL_PREFIX/bin/$cmd"
       fi
     done
 
@@ -263,7 +263,7 @@ upkg_install_dep() {
       mkdir -p .upkg/.tmp/root/.upkg/.packages
       # Place a symlink to the proper physical location of the dedup'ed package in the root package
       # If this fails, some other install process already linked it. Also, I counted the ../'es, they're all there, don't worry
-      ln -sT "../../../../.packages/$dedup_name" ".upkg/.tmp/root/.upkg/.packages/$dedup_name" 2>/dev/null || true
+      _ln_sT "../../../../.packages/$dedup_name" ".upkg/.tmp/root/.upkg/.packages/$dedup_name" 2>/dev/null || true
     fi
   fi
 
@@ -298,7 +298,7 @@ upkg_install_dep() {
   fi
 
   # Atomic operation, if this fails there is a duplicate
-  if ! ln -sT "$packages_path/$dedup_name" "$parent_pkgpath/.upkg/$pkgname" 2>/dev/null; then
+  if ! _ln_sT "$packages_path/$dedup_name" "$parent_pkgpath/.upkg/$pkgname" 2>/dev/null; then
     local otherpkg_dedup_pkgname
     otherpkg_dedup_pkgname=$(basename "$(readlink "$parent_pkgpath/.upkg/$pkgname")")
     otherpkg_dedup_pkgname=${otherpkg_dedup_pkgname%@*}
@@ -367,7 +367,7 @@ upkg_link_cmd() {
   local cmdtarget=$1 cmdpath=$2 other_dedup_path
   mkdir -p "$(dirname "$cmdpath")"
   # Atomic operation. If this fails there is a duplicate command or the same package is depended upon under different names
-  if ! ln -sT "$cmdtarget" "$cmdpath" 2>/dev/null; then
+  if ! _ln_sT "$cmdtarget" "$cmdpath" 2>/dev/null; then
     other_dedup_path=$(readlink "$cmdpath")
     if [[ $cmdtarget = "$other_dedup_path" ]]; then
       # Same package different name, this is fine.

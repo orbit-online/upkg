@@ -1,5 +1,16 @@
 #!/usr/bin/env bash
 
+if (ln --help 2>&1 || true) | grep -q 'GNU coreutils\|BusyBox'; then
+  _ln_sT() {
+    ln -sT "$@"
+  }
+else
+  _ln_sT() {
+    # shellcheck disable=SC2217
+    ln -sFi "$@" <<<'n'
+  }
+fi
+
 # Replace invalid pkgname characters with underscore
 clean_pkgname() {
   local pkgname=$1
