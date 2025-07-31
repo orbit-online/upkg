@@ -7,6 +7,7 @@ bats_load_library bats-file
 load 'lib/httpd'
 load 'lib/sshd'
 load 'lib/close-fds'
+load '../lib/compat.sh'
 
 common_setup_file() {
   export SNAPSHOTS_ROOT SNAPSHOTS
@@ -117,7 +118,7 @@ create_tar_package() {
     fi
   )
   # shellcheck disable=SC2034
-  TAR_SHASUM=$(sha256sum "$dest" | cut -d' ' -f1)
+  TAR_SHASUM=$(sha256 "$dest")
 }
 
 create_zip_package() {
@@ -137,7 +138,7 @@ create_zip_package() {
     fi
   )
   # shellcheck disable=SC2034
-  ZIP_SHASUM=$(sha256sum "$dest" | cut -d' ' -f1)
+  ZIP_SHASUM=$(sha256 "$dest")
 }
 
 create_file_package() {
@@ -147,7 +148,7 @@ create_file_package() {
   mkdir -p "$(dirname "$dest")"
   cp -n "$tpl" "$dest" 2>/dev/null || true # The -n ("no clobber") is our mutex here. That's it, no locks needed
   # shellcheck disable=SC2034
-  FILE_SHASUM=$(sha256sum "$dest" | cut -d' ' -f1)
+  FILE_SHASUM=$(sha256 "$dest")
 }
 
 create_git_package() {

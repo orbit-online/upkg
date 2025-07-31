@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
+# shellcheck source-path=../..
 # shellcheck disable=2059,2064
 set -Eeo pipefail
 shopt -s inherit_errexit nullglob
 
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../..")
+source "$PKGROOT/lib/compat.sh"
 
 # Sets up a directory for upkg with only the barest of essentials and creates a upkg wrapper which overwrites PATH with it
 main() {
@@ -22,7 +24,7 @@ Usage:
           # Don't compare files we already compared the other way around
           [[ $snapshot < "$snapshot_cmp" ]] || continue
           if diff -q "$snapshot" "$snapshot_cmp" >/dev/null; then
-            sha=$(sha256sum "$snapshot" | cut -d ' ' -f1)
+            sha=$(sha256 "$snapshot")
             same[$sha]="${same[$sha]}\n  $snapshot\n  $snapshot_cmp"
           fi
         done

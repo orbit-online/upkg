@@ -64,7 +64,8 @@ jobs:
           u=https://github.com/orbit-online/upkg/releases/download/${{ steps.release.outputs.tag }}/upkg-install.tar.gz;\
           c=${{ steps.checksums.outputs.upkg-install }}; echo>&2;\
           t=$(mktemp); trap "rm \"$t\"" EXIT; wget -qO"$t" "$u" || curl -fsLo"$t" "$u";\
-          sha256sum -c <(echo "$c  $t") >/dev/null; mkdir -p "$P";cd "$P"; for f in $(\
+          SHASUM=sha256sum; type sha256sum &>/dev/null || SHASUM="shasum -a 256";\
+          $SHASUM -c <(echo "$c  $t") >/dev/null; mkdir -p "$P";cd "$P"; for f in $(\
           tar tzf "$t"); do [[ $f != */ && -e $f ]] && { echo "$f already exists">&2;\
           exit 1; }; done; tar xzf "$t"; echo "μpkg has been installed and can now be \
           invoked with \"upkg\"" >&2;type jq &>/dev/null||echo "WARNING: \"jq\" was not \

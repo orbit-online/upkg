@@ -39,29 +39,32 @@ PATH="${RESTRICTED_BIN:-"%s"}" "%s" "$@"
     basename dirname sort comm cut grep # string commands
     mv cp mkdir touch rm ln chmod cat readlink realpath # fs commands
     sleep flock # concurrency commands
-    sha256sum git tar # archive commands
+    git tar # archive commands
   ) optional_commands=(
-    wget curl ssh column shasum zip unzip
+    wget curl ssh column sha256sum shasum zip unzip
     bzip2 xz lzip lzma lzop gzip compress zstd # tar compressions
   )
   if [[ -n $bash_path ]]; then
     [[ -x $bash_path ]] || { printf "Unable to find required command '%s'\n" "$bash_path" >&2; return 1; }
-    ln -sT "$bash_path" "$restricted_bin/bash"
+    ln -s "$bash_path" "$restricted_bin/bash"
   else
     required_commands+=(bash)
   fi
   for cmd in "${required_commands[@]}"; do
     target=$(which "$cmd") || { printf "Unable to find required command '%s'\n" "$cmd" >&2; return 1; }
-    ln -sT "$target" "$restricted_bin/$cmd"
+    ln -s "$target" "$restricted_bin/$cmd"
   done
   for cmd in "${optional_commands[@]}"; do
     target=$(which "$cmd") || { printf "Unable to find optional command '%s'\n" "$cmd" >&2; continue; }
-    ln -sT "$target" "$restricted_bin/$cmd"
+    ln -s "$target" "$restricted_bin/$cmd"
   done
+  if [[ ! -e $restricted_bin/sha256sum && ! -e $restricted_bin/shasum ]]; then
+    fatal "Unable to find sha256sum or shasum"
+  fi
   if [[ ! -e $restricted_bin/wget && ! -e $restricted_bin/curl ]]; then
     fatal "Unable to find wget or curl"
   fi
-  ln -sT "../upkg-wrapper-bin/upkg" "$restricted_bin/upkg"
+  ln -s "../upkg-wrapper-bin/upkg" "$restricted_bin/upkg"
 }
 
 main "$@"

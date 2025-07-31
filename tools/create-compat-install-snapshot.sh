@@ -4,6 +4,7 @@ set -Eeo pipefail; shopt -s inherit_errexit nullglob
 
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 source "$PKGROOT/tools/common.sh"
+source "$PKGROOT/lib/compat.sh"
 setup_reproducible_tar
 
 # Adjust upkg.json of upkg-compat so it includes a dependency on the given UPKGTARBALL
@@ -49,17 +50,17 @@ main() {
   # Extract upkg.json from the bundle where both the URL is adjusted and the version is set
   tar -xOf "$tarball_dest" upkg.json >"$tmp_snapshot/lib/upkg/.upkg/upkg-compat/upkg.json"
   # Adjust the URL and also the checksum for the upkg-compat tarball
-  new_checksum=$(sha256sum "$tarball_dest" | cut -d ' ' -f1)
+  new_checksum=$(sha256 "$tarball_dest" | cut -d ' ' -f1)
   upkgjson=$(cat "$tmp_snapshot/lib/upkg/upkg.json")
   jq --arg version "$version" --arg checksum "$new_checksum" '
     .dependencies[0].tar="https://github.com/orbit-online/upkg/releases/download/\($version)/upkg-compat.tar.gz" |
     .dependencies[0].sha256=$checksum
   ' <<<"$upkgjson" >"$tmp_snapshot/lib/upkg/upkg.json"
   # Fix the checksum paths for upkg-compat so they match the checksum
-  old_checksum=$(sha256sum "$tmp/upkg-compat-global.tar" | cut -d ' ' -f1)
+  old_checksum=$(sha256 "$tmp/upkg-compat-global.tar" | cut -d ' ' -f1)
   mv "$tmp_snapshot/lib/upkg/.upkg/.packages/upkg-compat.tar@$old_checksum" "$tmp_snapshot/lib/upkg/.upkg/.packages/upkg-compat.tar@$new_checksum"
-  ln -sfT "../.packages/upkg-compat.tar@$new_checksum/bin/upkg" "$tmp_snapshot/lib/upkg/.upkg/.bin/upkg"
-  ln -sfT ".packages/upkg-compat.tar@$new_checksum" "$tmp_snapshot/lib/upkg/.upkg/upkg-compat"
+  _ln_sTf "../.packages/upkg-compat.tar@$new_checksum/bin/upkg" "$tmp_snapshot/lib/upkg/.upkg/.bin/upkg"
+  _ln_sTf ".packages/upkg-compat.tar@$new_checksum" "$tmp_snapshot/lib/upkg/.upkg/upkg-compat"
   # Create the snapshot tarball
   tar \
     --sort=name \

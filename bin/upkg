@@ -103,6 +103,7 @@ docopt_i=1;[[ $BASH_VERSION =~ ^4.3 ]] && docopt_i=2;for \
   eval "$(docopt "$@")"
 
   source "$PKGROOT/lib/log.sh"
+  source "$PKGROOT/lib/compat.sh"
   source "$PKGROOT/lib/upkgjson.sh"
   source "$PKGROOT/lib/utils.sh"
   source "$PKGROOT/lib/download.sh"

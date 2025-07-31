@@ -28,13 +28,13 @@ teardown_file() { common_teardown_file; }
   # Links validated, fix the ones with changing shasums before checking snapshot
   mv "$HOME/.local/lib/upkg/.upkg/.packages"/upkg.tar@* \
      "$HOME/.local/lib/upkg/.upkg/.packages"/upkg.tar@STATIC
-  ln -sTf                         .packages/upkg.tar@STATIC          "$HOME/.local/lib/upkg/.upkg/upkg"
-  ln -sTf                      ../.packages/upkg.tar@STATIC/bin/upkg "$HOME/.local/lib/upkg/.upkg/.bin/upkg"
+  _ln_sTf                         .packages/upkg.tar@STATIC          "$HOME/.local/lib/upkg/.upkg/upkg"
+  _ln_sTf                      ../.packages/upkg.tar@STATIC/bin/upkg "$HOME/.local/lib/upkg/.upkg/.bin/upkg"
   local dep_pkgname
   # shellcheck disable=SC2043
   for dep_pkgname in docopt-lib.sh; do
     mv "$HOME/.local/lib/upkg/.upkg/.packages"/$dep_pkgname.tar@* "$HOME/.local/lib/upkg/.upkg/.packages/$dep_pkgname.tar@STATIC"
-    ln -sTf ../../$dep_pkgname.tar@STATIC "$HOME/.local/lib/upkg/.upkg/.packages/upkg.tar@STATIC/.upkg/$dep_pkgname"
+    _ln_sTf ../../$dep_pkgname.tar@STATIC "$HOME/.local/lib/upkg/.upkg/.packages/upkg.tar@STATIC/.upkg/$dep_pkgname"
   done
   assert_all_links_valid "$HOME/.local"
   rm -rf "$HOME/.local/share" # wget creates ~/.local/share/wget/.wget-hsts on
@@ -65,20 +65,20 @@ teardown_file() { common_teardown_file; }
   # Links validated, fix the ones with changing shasums before checking snapshot
   mv "$HOME/.local/lib/upkg/.upkg/.packages"/upkg-compat.tar@* \
       "$HOME/.local/lib/upkg/.upkg/.packages/upkg-compat.tar@STATIC"
-  ln -sTf                          .packages/upkg-compat.tar@STATIC          "$HOME/.local/lib/upkg/.upkg/upkg-compat"
-  ln -sTf                       ../.packages/upkg-compat.tar@STATIC/bin/upkg "$HOME/.local/lib/upkg/.upkg/.bin/upkg"
+  _ln_sTf                          .packages/upkg-compat.tar@STATIC          "$HOME/.local/lib/upkg/.upkg/upkg-compat"
+  _ln_sTf                       ../.packages/upkg-compat.tar@STATIC/bin/upkg "$HOME/.local/lib/upkg/.upkg/.bin/upkg"
   mv "$HOME/.local/lib/upkg/.upkg/.packages"/upkg.tar@* \
      "$HOME/.local/lib/upkg/.upkg/.packages"/upkg.tar@STATIC
-  ln -sTf                              ../../upkg.tar@STATIC "$HOME/.local/lib/upkg/.upkg/.packages/upkg-compat.tar@STATIC/.upkg/upkg-new"
+  _ln_sTf                              ../../upkg.tar@STATIC "$HOME/.local/lib/upkg/.upkg/.packages/upkg-compat.tar@STATIC/.upkg/upkg-new"
   local dep_pkgname
   for dep_pkgname in docopt-lib.sh records.sh; do
     mv "$HOME/.local/lib/upkg/.upkg/.packages"/$dep_pkgname.tar@* \
        "$HOME/.local/lib/upkg/.upkg/.packages"/$dep_pkgname.tar@STATIC
-    ln -sTf                              ../../$dep_pkgname.tar@STATIC "$HOME/.local/lib/upkg/.upkg/.packages/upkg-compat.tar@STATIC/.upkg/$dep_pkgname"
+    _ln_sTf                              ../../$dep_pkgname.tar@STATIC "$HOME/.local/lib/upkg/.upkg/.packages/upkg-compat.tar@STATIC/.upkg/$dep_pkgname"
   done
   # shellcheck disable=SC2043
   for dep_pkgname in docopt-lib.sh; do
-    ln -sTf ../../$dep_pkgname.tar@STATIC "$HOME/.local/lib/upkg/.upkg/.packages/upkg.tar@STATIC/.upkg/$dep_pkgname"
+    _ln_sTf ../../$dep_pkgname.tar@STATIC "$HOME/.local/lib/upkg/.upkg/.packages/upkg.tar@STATIC/.upkg/$dep_pkgname"
   done
   assert_all_links_valid "$HOME/.local"
   rm -rf "$HOME/.local/share" # GNU Wget2 creates ~/.local/share/wget/.wget-hsts

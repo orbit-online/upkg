@@ -5,6 +5,7 @@
 ├── [drwxr-xr-x]  lib
 │   ├── [-rw-r--r--]  add.sh
 │   ├── [-rw-r--r--]  bundle.sh
+│   ├── [-rw-r--r--]  compat.sh
 │   ├── [-rw-r--r--]  download.sh
 │   ├── [-rw-r--r--]  install.sh
 │   ├── [-rw-r--r--]  list.sh

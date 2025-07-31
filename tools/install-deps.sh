@@ -4,6 +4,7 @@ set -Eeo pipefail; shopt -s inherit_errexit nullglob
 
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 source "$PKGROOT/tools/common.sh"
+source "$PKGROOT/lib/compat.sh"
 
 # Run through upkg dependencies and install each one as if μpkg installed them (though in a very limited fashion)
 main() {
@@ -19,7 +20,7 @@ main() {
     checksum=$(jq -re '.sha256' <<<"$dep")
     archive_path=$tmp/$checksum
     wget -qO"$archive_path" "$(jq -r '.tar' <<<"$dep")"
-    sha256sum -c <(printf "%s  %s" "$checksum" "$archive_path") >/dev/null || \
+    sha256 "$archive_path" "$checksum" || \
       fatal "Failed to verify checksum of dependency:\n%s" "$(jq . <<<"$dep")"
 
     # Peek at the archive to get the pkgname

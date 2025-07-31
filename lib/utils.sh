@@ -1,16 +1,5 @@
 #!/usr/bin/env bash
 
-if (ln --help 2>&1 || true) | grep -q 'GNU coreutils\|BusyBox'; then
-  _ln_sT() {
-    ln -sT "$@"
-  }
-else
-  _ln_sT() {
-    # shellcheck disable=SC2217
-    ln -sFi "$@" <<<'n'
-  }
-fi
-
 # Replace invalid pkgname characters with underscore
 clean_pkgname() {
   local pkgname=$1
@@ -18,17 +7,6 @@ clean_pkgname() {
   pkgname=${pkgname//'/'/_} # Replace / with _
   pkgname=${pkgname#'.'/_} # Replace starting '.' with _
   printf "%s\n" "$pkgname"
-}
-
-SHASUM="shasum -a 256"
-type shasum &>/dev/null || SHASUM=sha256sum
-sha256() {
-  local filepath=$1 sha256=$2
-  if [[ -n $sha256 ]]; then
-    $SHASUM -c <(printf "%s  %s" "$sha256" "$filepath") >/dev/null
-  else
-    $SHASUM "$filepath" | cut -d ' ' -f1
-  fi
 }
 
 # List all commands in .upkg/.bin

@@ -61,12 +61,16 @@ trap 'rm "$t"' EXIT
 # https://objects.githubusercontent.com/...
 wget -qO"$t" "$u" || curl -fsLo"$t" "$u"
 
+# coreutils comes with sha256sum, systems without coreutils have `shasum -a 256` instead`
+SHASUM=sha256sum
+type sha256sum &>/dev/null || SHASUM="shasum -a 256"
+
 # Using `echo` output the shasum format of "CHECKSUM  FILE" and redirect
-# it as a file to the `-c` option of `sha256sum`.
+# it as a file to the `-c` option of `$SHASUM`.
 # Redirect the output to /dev/null, which is just an "OK" on success. Errors
 # are output to stderr and will be visible. We rely on the exit code to stop
 # the script (see `bash -e` above) if the check fails.
-sha256sum -c <(echo "$c  $t")>/dev/null
+$SHASUM -c <(echo "$c  $t")>/dev/null
 
 # In the short version we skip the rest and simply run `tar xzC /usr/local -f "$t"``
 # (i.e. extract to /usr/local and overwrite existing files)
