@@ -73,12 +73,12 @@ setup_reproducible_vars() {
 
 # Check availability of various commands and set $SKIP_* vars whose values are skip messages
 check_commands() {
+  export TAR_DOCKER=false
   # Check tar availability and version
   if type tar &>/dev/null; then
     local tar_actual_version tar_allowed_versions=('1.34' '1.35') tar_allowed_version
     tar_actual_version=$(tar --version | head -n1)
-    export SKIP_TAR="tar reported version ${tar_actual_version#tar (GNU tar) }. Only versions ${tar_allowed_versions[*]} are supported. Use tests/run.sh to run the tests in a container"
-    export TAR_DOCKER=false
+    export SKIP_TAR="tar reported version ${tar_actual_version#tar (GNU tar) }. Only versions ${tar_allowed_versions[*]} are supported and docker is not available to containerize this operation."
     for tar_allowed_version in "${tar_allowed_versions[@]}"; do
       if [[ $tar_actual_version = *"$tar_allowed_version" ]]; then
         unset SKIP_TAR
@@ -86,11 +86,13 @@ check_commands() {
       fi
     done
   else
-    export SKIP_TAR='tar is not available. Use tests/run.sh to run the tests in a container.'
+    export SKIP_TAR='tar is not available and neither is docker to containerize this operation.'
   fi
-  if [[ -n $SKIP_TAR ]] && type docker &>/dev/null; then
-    unset SKIP_TAR
-    TAR_DOCKER=true
+  if [[ -n $SKIP_TAR ]]; then
+    if type docker &>/dev/null; then
+      unset SKIP_TAR
+      TAR_DOCKER=true
+    fi
   fi
   local upkg_help
   upkg_help=$("$BATS_TEST_DIRNAME/../bin/upkg" --help 2>&1) || export SKIP_UPKG="Unable to invoke \`upkg --help\`. Make sure to run tools/install-deps.sh first. Output was:\n$upkg_help\n"
