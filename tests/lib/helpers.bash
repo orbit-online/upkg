@@ -81,7 +81,7 @@ common_teardown_file() {
 }
 
 remove_commands() {
-  cp -r "$RESTRICTED_BIN" "$BATS_TEST_TMPDIR/restricted-bin"
+  cp -R "$RESTRICTED_BIN" "$BATS_TEST_TMPDIR/restricted-bin"
   local cmd
   for cmd in "$@"; do
     # Don't fail if the command doesn't exist in the first place (e.g. optional dependency)
@@ -166,7 +166,7 @@ create_git_package() {
       if [[ ! -e $dest ]]; then
         mkdir "$working_copy"
         git init -q  "$working_copy"
-        cp -r "$tpl/." "$working_copy/"
+        cp -R "$tpl/." "$working_copy/"
         git -C "$working_copy" add -A
         git -C "$working_copy" commit -q --no-gpg-sign -m 'Initial import'
         git clone -q --bare "$working_copy" "$dest"

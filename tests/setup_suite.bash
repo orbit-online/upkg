@@ -124,7 +124,7 @@ setup_package_fixture_templates() {
   # Global dirs
   export PACKAGE_TEMPLATES
   PACKAGE_TEMPLATES=$BATS_RUN_TMPDIR/package-templates
-  cp -r "$BATS_TEST_DIRNAME/package-templates" "$PACKAGE_TEMPLATES"
+  cp -R "$BATS_TEST_DIRNAME/package-templates" "$PACKAGE_TEMPLATES"
   local group template upkgjson_path upkgjson
   for group in "$PACKAGE_TEMPLATES"/*; do
     for template in "$group"/*; do

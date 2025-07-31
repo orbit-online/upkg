@@ -25,7 +25,7 @@ main() {
   tmp_snapshot=$tmp/snapshot
   mkdir "$tmp_pkg" "$tmp_snapshot"
 
-  cp -r "$PKGROOT/compat/upkg.json" "$PKGROOT/compat/bin" "$PKGROOT/compat/README.md" "$PKGROOT/LICENSE" "$tmp_pkg"
+  cp -R "$PKGROOT/compat/upkg.json" "$PKGROOT/compat/bin" "$PKGROOT/compat/README.md" "$PKGROOT/LICENSE" "$tmp_pkg"
   # Copy the version from UPKGTARBALL to upkg-compat
   version=$(tar -xOf "$upkg_tarball" upkg.json | jq -re .version)
   (

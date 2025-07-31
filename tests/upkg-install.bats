@@ -11,7 +11,7 @@ teardown() { common_teardown; }
 teardown_file() { common_teardown_file; }
 
 @test "test install package creation and installation" {
-  cp -r \
+  cp -R \
     "$BATS_TEST_DIRNAME/../bin" \
     "$BATS_TEST_DIRNAME/../lib" \
     "$BATS_TEST_DIRNAME/../upkg.json" \
@@ -43,7 +43,7 @@ teardown_file() { common_teardown_file; }
 }
 
 @test "test compat install package creation and installation" {
-  cp -r \
+  cp -R \
     "$BATS_TEST_DIRNAME/../bin" \
     "$BATS_TEST_DIRNAME/../lib" \
     "$BATS_TEST_DIRNAME/../upkg.json" \
