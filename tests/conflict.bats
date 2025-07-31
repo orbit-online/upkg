@@ -211,7 +211,8 @@ teardown_file() { common_teardown_file; }
   run -0 upkg add -u "$PACKAGE_FIXTURES/$name" $FILE_SHASUM
   export UPKG_OS_ARCH=Linux/REPLACEME
   run -0 upkg add -u "$PACKAGE_FIXTURES/$name" $FILE_SHASUM
-  sed -i 's/REPLACEME/\*/g' upkg.json
+  if $TEST_MACOS; then sed -i '' 's/REPLACEME/\*/g' upkg.json
+  else sed -i 's/REPLACEME/\*/g' upkg.json; fi
   assert_snapshot_output "os-arch-conflict.upkg.json" "$(cat upkg.json)"
   rm -rf .upkg
   export UPKG_OS_ARCH=Linux/x86_64

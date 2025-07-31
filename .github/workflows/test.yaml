@@ -109,3 +109,44 @@ jobs:
         paths: upkg/tests/results.tap
         show: "fail, skip"
       if: always()
+  test-macos:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+        - macos-13
+        - macos-14
+        - macos-15
+    steps:
+    - name: Install bash > 3.2, corutils, flock, tree
+      run: brew install bash coreutils flock tree
+    - name: Install bats
+      uses: bats-core/bats-action@3.0.1
+      with:
+        support-path: ${{ github.workspace }}/lib/bats-support
+        assert-path: ${{ github.workspace }}/lib/bats-assert
+        file-path: ${{ github.workspace }}/lib/bats-file
+        detik-install: false
+    - name: Checkout source
+      uses: actions/checkout@v4
+      with:
+        path: upkg
+    - name: Install dependencies
+      run: tools/install-deps.sh
+      working-directory: upkg
+    - name: Run tests
+      # Can't get backgrounded daemons to work, and `column` args are completely different on MacOS, so skip the `upkg list` output check
+      run: bats --formatter tap13 --filter-tags '!shellcheck,!http,!ssh,!list' tests | tee tests/results.tap
+      working-directory: upkg
+      env:
+        BATS_LIB_PATH: ${{ github.workspace }}/lib
+        TMPDIR: ${{ github.workspace }}/upkg/tests/bats-tmp
+    - name: Fail when tests are skipped
+      run: '! grep -q "not ok" tests/results.tap'
+      working-directory: upkg
+    - name: Generate test summary
+      uses: test-summary/action@v2
+      with:
+        paths: upkg/tests/results.tap
+        show: "fail, skip"
+      if: always()

@@ -177,7 +177,8 @@ teardown_file() { common_teardown_file; }
   # shellcheck disable=SC2030,SC2031
   export UPKG_OS_ARCH=Linux/REPLACEME
   run -0 upkg add -u "$PACKAGE_FIXTURES/$name" $FILE_SHASUM
-  sed -i 's/REPLACEME/\*/g' upkg.json
+  if $TEST_MACOS; then sed -i '' 's/REPLACEME/\*/g' upkg.json
+  else sed -i 's/REPLACEME/\*/g' upkg.json; fi
   rm -rf .upkg
   run -0 upkg install
   assert_file_executable .upkg/.bin/executable

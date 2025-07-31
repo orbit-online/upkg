@@ -273,6 +273,7 @@ replace_values() {
   data=${data//"$BATS_TEST_TMPDIR"/\$BATS_TEST_TMPDIR}
   data=${data//"$BATS_RUN_TMPDIR"/\$BATS_RUN_TMPDIR}
   [[ -z $HTTPD_PKG_FIXTURES_ADDR ]] || data=${data//"$HTTPD_PKG_FIXTURES_ADDR"/\$HTTPD_PKG_FIXTURES_ADDR}
+  ! $TEST_MACOS || data=${data//$'\ngtar: '/$'\ntar: '}
   printf "%s\n" "$data"
 }
 
@@ -287,10 +288,18 @@ replace_vars() {
   printf "%s\n" "$data"
 }
 
-get_file_structure() {
-  # tree counts differently depending on the version, so we cut off the root dir and summary
-  (cd "${1:?}"; tree -n -p --charset=UTF-8 -a -I .git . | head -n-2 | tail -n+2) 2>&1
-}
+# tree counts differently depending on the version, so we cut off the root dir and summary with head & tail
+if $TEST_MACOS; then
+  get_file_structure() {
+    # symlinks on MacOS don't have group & other writable, finagle the return structure as if it does
+    (cd "${1:?}"; tree -n -p --charset=UTF-8 -a -I .git . | ghead -n-2 | gtail -n+2 | sed 's/\[lrwxr-xr-x\]\(.* -> .*\)/[lrwxrwxrwx]\1/g') 2>&1
+  }
+else
+  get_file_structure() {
+    # tree counts differently depending on the version, so we cut off the root dir and summary
+    (cd "${1:?}"; tree -n -p --charset=UTF-8 -a -I .git . | head -n-2 | tail -n+2) 2>&1
+  }
+fi
 
 has_tag() {
   contains_element "$1" "${BATS_TEST_TAGS[@]}"

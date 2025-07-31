@@ -5,13 +5,15 @@ load '../lib/compat.sh'
 
 setup_suite() {
   bats_require_minimum_version 1.5.0
+  # Enables MacOS workarounds during testing
+  export TEST_MACOS=true
+  [[ $(uname -s) = Darwin ]] || TEST_MACOS=false
   source_distribution_adjustments
   setup_upkg_path_wrapper
   # Optionally show diff with delta
-  export DELTA=cat
-  if type delta &>/dev/null; then
-    DELTA="delta --hunk-header-style omit"
-  fi
+  export DELTA="delta --hunk-header-style omit"
+  # shellcheck disable=SC2209
+  type delta &>/dev/null || DELTA=cat
   setup_reproducible_vars
   check_commands
   export PACKAGE_FIXTURES
