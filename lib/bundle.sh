@@ -38,7 +38,7 @@ upkg_bundle() {
     --owner=0 --group=0 --numeric-owner \
     --transform="s#\.upkg/\.tmp/upkg\.json#upkg.json#" \
     -cvaf "$dest" "${paths[@]}" .upkg/.tmp/upkg.json 2>&1); then
-    rm "$dest"
+    rm -f "$dest"
     fatal "Failed to bundle. tar output:\n%s" "$tarout"
   fi
 }
