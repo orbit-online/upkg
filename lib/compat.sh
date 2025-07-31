@@ -5,8 +5,8 @@ if (ln --help 2>&1 || true) | grep -q 'GNU coreutils\|BusyBox'; then
   _ln_sTf() { ln -sTf "$@"; }
 else
   # shellcheck disable=SC2217
-  _ln_sT() { ln -sFi "$@" <<<'n'; }
-  _ln_sTf() { ln -sFf "$@"; }
+  _ln_sT() { ln -shFi "$@" <<<'n'; }
+  _ln_sTf() { ln -shFf "$@"; }
 fi
 
 if tar --help 2>&1 | grep -q 'bsdtar'; then
