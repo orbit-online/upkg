@@ -109,12 +109,28 @@ create_tar_package() {
       flock -s 9 # Wait for exclusive lock to be released (and tar to be finished)
     else
       # https://reproducible-builds.org/docs/archives/
-      [[ -e "$dest" ]] || tar \
-        --sort=name \
-        --mode='u+rwX,g-w,o-w' \
-        --mtime="@${SOURCE_DATE_EPOCH}" \
-        --owner=0 --group=0 --numeric-owner \
-        -caf "$dest" -C "$tpl" .
+      if [[ ! -e "$dest" ]]; then
+        if $TAR_DOCKER; then
+          docker run \
+            --rm \
+            -v"$tpl:/tpl" -v"$(dirname "$dest"):/out" \
+            -u"$UID:$GID" \
+            -w /tpl alpine:3.20 \
+            tar \
+              --sort=name \
+              --mode='u+rwX,g-w,o-w' \
+              --mtime="@${SOURCE_DATE_EPOCH}" \
+              --owner=0 --group=0 --numeric-owner \
+              -caf "/out/$(basename "$dest")" -C /tpl .
+        else
+          tar \
+            --sort=name \
+            --mode='u+rwX,g-w,o-w' \
+            --mtime="@${SOURCE_DATE_EPOCH}" \
+            --owner=0 --group=0 --numeric-owner \
+            -caf "$dest" -C "$tpl" .
+        fi
+      fi
     fi
   )
   # shellcheck disable=SC2034
