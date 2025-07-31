@@ -4,6 +4,7 @@ on:
   push:
     branches: ['*']
     tags: ['!v*']
+    paths: [.github/workflows/upload-schema.yaml, upkg.schema.json]
   workflow_call: {}
 
 jobs:
