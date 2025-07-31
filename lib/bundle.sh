@@ -26,21 +26,12 @@ upkg_bundle() {
   # tmpfile for upkg.json so we can set the version without modifying the original
   printf "%s\n" "$upkgjson" >.upkg/.tmp/upkg.json
 
-  local _tar=tar
-  if $_tar --help 2>&1 | grep -q 'bsdtar'; then
-    if type gtar &>/dev/null; then
-      _tar=gtar
-    else
-      fatal "Failed to bundle. \`tar\' is \`bsdtar\', need GNU tar. Install it on MacOS with \`brew install gnu-tar\'" "$tarout"
-    fi
-  fi
-
   # LC_ALL=C: Ensure stable file sorting
   # POSIXLY_CORRECT: Don't include atime & ctime in tar archives
   local source_date_epoch=1704067200 # Fixed timestamp for reproducible builds. 2024-01-01T00:00:00Z
   # Create the archive
   # Set the version in upkg.json by redirecting jq output
-  if ! tarout=$(unset POSIXLY_CORRECT; LC_ALL=C $_tar \
+  if ! tarout=$(unset POSIXLY_CORRECT; LC_ALL=C _tar \
     --sort=name \
     --mode='u+rwX,g-w,o-w' \
     --mtime="@${source_date_epoch}" \

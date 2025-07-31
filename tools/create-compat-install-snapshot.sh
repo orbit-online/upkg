@@ -62,7 +62,7 @@ main() {
   _ln_sTf "../.packages/upkg-compat.tar@$new_checksum/bin/upkg" "$tmp_snapshot/lib/upkg/.upkg/.bin/upkg"
   _ln_sTf ".packages/upkg-compat.tar@$new_checksum" "$tmp_snapshot/lib/upkg/.upkg/upkg-compat"
   # Create the snapshot tarball
-  tar \
+  _tar \
     --sort=name \
     --mode='u+rwX,g-w,o-w' \
     --mtime="@${SOURCE_DATE_EPOCH}" \

@@ -123,7 +123,7 @@ create_tar_package() {
               --owner=0 --group=0 --numeric-owner \
               -caf "/out/$(basename "$dest")" -C /tpl .
         else
-          tar \
+          _tar \
             --sort=name \
             --mode='u+rwX,g-w,o-w' \
             --mtime="@${SOURCE_DATE_EPOCH}" \
@@ -204,6 +204,7 @@ assert_equals_diff() {
 
 assert_snapshot_output() {
   local actual=${2:-$output} snapshot_path
+! $TEST_MACOS || actual=${actual//$'\ngtar: '/$'\ntar: '}
   if [[ $1 = */* ]]; then
     snapshot_path=$SNAPSHOTS_ROOT/$1.out
   elif [[ -n $1 ]]; then

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -Eeo pipefail; shopt -s inherit_errexit nullglob
 
+load '../lib/compat.sh'
+
 setup_suite() {
   bats_require_minimum_version 1.5.0
   source_distribution_adjustments
@@ -77,7 +79,7 @@ check_commands() {
   # Check tar availability and version
   if type tar &>/dev/null; then
     local tar_actual_version tar_allowed_versions=('1.34' '1.35') tar_allowed_version
-    tar_actual_version=$(tar --version | head -n1)
+    tar_actual_version=$(_tar --version | head -n1)
     export SKIP_TAR="tar reported version ${tar_actual_version#tar (GNU tar) }. Only versions ${tar_allowed_versions[*]} are supported and docker is not available to containerize this operation."
     for tar_allowed_version in "${tar_allowed_versions[@]}"; do
       if [[ $tar_actual_version = *"$tar_allowed_version" ]]; then

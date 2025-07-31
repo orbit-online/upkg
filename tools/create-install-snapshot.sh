@@ -4,6 +4,7 @@ set -Eeo pipefail; shopt -s inherit_errexit nullglob
 
 PKGROOT=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 source "$PKGROOT/tools/common.sh"
+source "$PKGROOT/lib/compat.sh"
 setup_reproducible_tar
 
 # Install the μpkg tarball globally into a tmp folder using μpkg and adjust the
@@ -26,7 +27,7 @@ main() {
     .dependencies[0].tar="https://github.com/orbit-online/upkg/releases/download/\($version)/upkg.tar.gz"
   ' <<<"$upkgjson" >"$tmp/lib/upkg/upkg.json"
   # Create the snapshot tarball
-  tar \
+  _tar \
     --sort=name \
     --mode='u+rwX,g-w,o-w' \
     --mtime="@${SOURCE_DATE_EPOCH}" \
