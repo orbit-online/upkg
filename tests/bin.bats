@@ -29,7 +29,7 @@ teardown_file() { common_teardown_file; }
 }
 
 # bats test_tags=tar
-@test "-b is respected" {
+@test "small -b is respected" {
   local name=default/scattered-executables
   create_tar_package $name
   run -0 upkg add -b bin/not-default-linked.sh "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
@@ -38,7 +38,7 @@ teardown_file() { common_teardown_file; }
 }
 
 # bats test_tags=tar
-@test "-B is respected" {
+@test "big -B is respected" {
   local name=default/scattered-executables
   create_tar_package $name
   run -0 upkg add -B "$PACKAGE_FIXTURES/$name.tar" $TAR_SHASUM
