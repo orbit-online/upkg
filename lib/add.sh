@@ -54,8 +54,9 @@ upkg_add() {
   else dep=$(jq --arg sha256 "$checksum" '.sha256=$sha256' <<<"$dep"); fi
   [[ -z $pkgname ]] || dep=$(jq --arg pkgname "$pkgname" '.name=$pkgname' <<<"$dep")
   ! $no_exec || dep=$(jq '.exec=false' <<<"$dep")
-  if $no_bin || [[ ${#binpaths[@]} -gt 0 ]]; then
+  if $no_bin; then
     dep=$(jq '.bin=[]' <<<"$dep")
+  else
     local binpath
     for binpath in "${binpaths[@]}"; do
       dep=$(jq --arg binpath "$binpath" '.bin+=[$binpath]' <<<"$dep")
