@@ -5,7 +5,7 @@ set -Eeo pipefail; shopt -s inherit_errexit nullglob
 setup_package_fixtures_httpd() {
   export HTTPD_ROOT=$BATS_TEST_TMPDIR/httpd/root
   mkdir -p "$HTTPD_ROOT"
-  (cd "$PACKAGE_FIXTURES"; close_non_std_fds; exec "$PYTHON" -u -m http.server -b '127.0.0.1' 0 >"$HTTPD_ROOT/log" 2>&1) &
+  (cd "$PACKAGE_FIXTURES"; close_non_std_fds; exec "$PYTHON" -u -m http.server -b '127.0.0.1' 0 &>"$HTTPD_ROOT/log") &
   printf "%d" "$!" >"$HTTPD_ROOT/pid"
 
   local log_line wait_timeout=1000

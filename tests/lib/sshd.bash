@@ -21,7 +21,7 @@ s.close()')
   ssh-keygen -q -N '' -t ed25519 -f "$SSHD_ROOT/ssh_host_ed25519"
   ssh-keygen -q -N '' -t ed25519 -f "$SSHD_ROOT/ssh_client_ed25519"
   # shellcheck disable=SC2094
-  (cd "$SSHD_ROOT"; close_non_std_fds; exec $SSHD -D -E "$SSHD_ROOT/log" -f "$SSHD_ROOT/sshd_config" >"$SSHD_ROOT/log" 2>&1) &
+  (cd "$SSHD_ROOT"; close_non_std_fds; exec $SSHD -D -E "$SSHD_ROOT/log" -f "$SSHD_ROOT/sshd_config" &>"$SSHD_ROOT/log") &
   # shellcheck disable=SC2094
   while ((wait_timeout-- > 0)); do
     sleep .01
