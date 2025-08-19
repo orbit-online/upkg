@@ -9,13 +9,29 @@
       "$ref": "#/definitions/name"
     },
     "bin": { "$ref": "#/definitions/bin" },
-    "version": { "type": "string" },
+    "version": {
+      "type": "string",
+      "examples": ["v0.0.1", "v1.0.0", "ft-refactor"]
+    },
     "dependencies": {
       "description": "List of dependencies for this package. An array of objects.",
       "type": "array",
       "items": {
         "$ref": "#/definitions/dependency"
-      }
+      },
+      "examples": [
+        [
+          {
+            "tar": "https://github.com/orbit-online/records.sh/releases/download/v1.0.2/records.sh.tar.gz",
+            "sha256": "201977ecc5fc9069d8eff12ba6adc9ce1286ba66c9aeee19184e26185cc6ef63"
+          },
+          {
+            "name": "docopt-lib-v2.0.2",
+            "tar": "https://github.com/andsens/docopt.sh/releases/download/v2.0.2/docopt-lib.sh.tar.gz",
+            "sha256": "d6997858e7f2470aa602fdd1e443d89b4e2084245b485e4b7924b0f388ec401e"
+          }
+        ]
+      ]
     }
   },
   "definitions": {
@@ -41,12 +57,14 @@
       "type": "array",
       "items": {
         "$ref": "#/definitions/relpath"
-      }
+      },
+      "examples": [["dist/", "tools/my-tool"]]
     },
     "os_arch": {
       "description": "Operating system and CPU architecture filter. Uses `uname -s`/`uname -m` for matching (case sensitive). Machines that do not match the specified filter will not have the dependency installed. Supports globbing.",
       "type": "string",
-      "pattern": "^[0-9A-Za-z_-]+/[0-9A-Za-z_-]+$"
+      "pattern": "^[0-9A-Za-z_-]+/[0-9A-Za-z_-]+$",
+      "examples": ["Linux/amd64", "Linux/arm64", "Darwin/amd64", "Darwin/arm64"]
     },
     "dependency": {
       "anyOf": [
