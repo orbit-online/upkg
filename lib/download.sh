@@ -34,8 +34,10 @@ upkg_download() {
   esac
 
   local dedup_pkgname
-  if [[ -e .upkg/.tmp/root/.upkg/.packages ]] && dedup_pkgname=$(compgen -G ".upkg/.tmp/root/.upkg/.packages/*$dedup_pkgname_suffix@$checksum"); then
-    dedup_pkgname=${dedup_pkgname%%$'\n'*} # Get the first result if compgen returns multiple, should never happen
+  if [[ -e .upkg/.tmp/root/.upkg/.packages ]] && \
+    dedup_pkgname=$(printf "%s\n" .upkg/.tmp/root/.upkg/.packages/*"$dedup_pkgname_suffix@$checksum") &&
+    [[ -n $dedup_pkgname ]]; then
+    dedup_pkgname=${dedup_pkgname%%$'\n'*}
     # The package has already been deduped
     processing "Already downloaded '%s'" "$pkgurl"
     # Get the dedup_pkgname from the dedup dir, output it, and exit early

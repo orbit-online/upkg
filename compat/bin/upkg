@@ -29,7 +29,7 @@ upkg() {
       local pkgdir
       if [[ -e .upkg/.packages ]]; then
         is_legacy_pkgdir=false
-      elif pkgdir=$(compgen -G ".upkg/*"); then
+      elif pkgdir=$(printf "%s\n" .upkg/*) && [[ -n $pkgdir ]]; then
         pkgdir=${pkgdir%%$'\n'*}
         if [[ -L "$pkgdir" ]]; then
           is_legacy_pkgdir=false

@@ -244,17 +244,18 @@ upkg_install_dep() {
   local dedup_name dedup_glob is_dedup=false
   if [[ -e .upkg/.packages ]]; then
     case "$pkgtype" in
-    tar)  dedup_glob=".upkg/.packages/*.tar@$checksum" ;;
-    zip)  dedup_glob=".upkg/.packages/*.zip@$checksum" ;;
-    upkg) dedup_glob=".upkg/.packages/*.upkg.json@$checksum" ;;
-    file) if dep_is_exec "$dep"; then dedup_glob=".upkg/.packages/*+x@$checksum"
-          else                        dedup_glob=".upkg/.packages/*-x@$checksum"
+    tar)  dedup_glob=".upkg/.packages/*.tar@" ;;
+    zip)  dedup_glob=".upkg/.packages/*.zip@" ;;
+    upkg) dedup_glob=".upkg/.packages/*.upkg.json@" ;;
+    file) if dep_is_exec "$dep"; then dedup_glob=".upkg/.packages/*+x@"
+          else                        dedup_glob=".upkg/.packages/*-x@"
           fi ;;
-    git)  dedup_glob=".upkg/.packages/*.git@$checksum" ;;
+    git)  dedup_glob=".upkg/.packages/*.git@" ;;
     esac
 
-    if dedup_name=$(compgen -G "$dedup_glob"); then
-      dedup_name=${dedup_name%%$'\n'*} # Get the first result if compgen returns multiple, should never happen
+    # shellcheck disable=SC2086
+    if dedup_name=$(printf "%s\n" $dedup_glob"$checksum") && [[ -n $dedup_name ]]; then
+      dedup_name=${dedup_name%%$'\n'*}
       dedup_name=$(basename "$dedup_name")
       # Package already exists in the destination, symlink it
       $DRY_RUN || verbose "Skipping download of '%s'" "$pkgurl"
