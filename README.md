@@ -45,7 +45,7 @@ additionally need `tar` and a decompresser that understands whichever
 compression method is used for an archive (often `gzip`).
 Zipfiles are decompressed with `unzip`.
 
-To install plain files from the local filesystem no additional are needed.
+To install plain files from the local filesystem no additional dependencies are needed.
 
 ## Installation
 
@@ -133,12 +133,12 @@ upkg -gp k9s -b k9s https://github.com/derailed/k9s/releases/download/v0.50.6/k9
 
 This installs the package `-g`lobally for your user (no `sudo` used, so
 installed to `~/.local/bin` instead of `/usr/local/bin`), sets the
-`-p`ackagename to `k9s` and specifies the `-b`inary to link as `k9` in the
-archive. If binary in the archive was located at `k9s_v0.50.6/bin/k9s` you would
-change `-b k9s` to `-b k9s_v0.50.6/bin/k9s`.
+`-p`ackagename to `k9s` and specifies the `-b`inary to link as `k9s` in the
+archive. If the binary in the archive was located at `k9s_v0.50.6/bin/k9s` you
+would change `-b k9s` to `-b k9s_v0.50.6/bin/k9s`.
 
-Note that with the exception of plain files you cannot alias the names of the
-executables.
+Note that with the exception of direct file dependencies you cannot alias the
+names of the executables.
 
 ### Available packages
 
@@ -297,12 +297,12 @@ of `PATH=$pkgroot/.upkg/.bin:$PATH`.
 - ~~Add uname regex filter for packages~~
 - Warn when GIT_SSH_COMMAND is set but BatchMode!=yes
 - ~~Simulate `ln -T` with `ln -Fi <<<'n'` on BSD~~
-- Streamline package names are reported in log messages
+- Streamline package names reported in log messages
 - Depend on records.sh rather than running our own logging
 - ~~Use sha256sum as fallback for shasum -a 256~~
 - Add -g switch to install. Allowing upkg.json in $HOME/.local to be tracked by dotfiles trackers
 - ~~Depend on upkg.json as a file as a metadata package~~
-- Make install script immune to indentation
+- ~~Make install script immune to indentation~~
 - Document command promotion by specifying binpaths in .upkg/bin
 - Reduce the number of dry-run errors that result in `add -f` or `remove` failures
 - Add container package type to run containerized utilities
