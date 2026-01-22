@@ -64,7 +64,14 @@
       "description": "Operating system and CPU architecture filter. Uses `uname -s`/`uname -m` for matching (case sensitive). Machines that do not match the specified filter will not have the dependency installed. Supports globbing.",
       "type": "string",
       "pattern": "^[0-9A-Za-z_-]+/[0-9A-Za-z_-]+$",
-      "examples": ["Linux/amd64", "Linux/arm64", "Darwin/amd64", "Darwin/arm64"]
+      "examples": [
+        "Linux/i686",
+        "Linux/x86_64",
+        "Linux/aarch64",
+        "FreeBSD/amd64",
+        "Darwin/x86_64",
+        "Darwin/arm64"
+      ]
     },
     "dependency": {
       "anyOf": [
