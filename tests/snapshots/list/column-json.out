@@ -1,0 +1,11 @@
+upkg: Usage of COLUMNOPTS is deprecated, use the --json option and pipe it to `jq -r '.packages[] | join("\t")' | column` instead
+{
+   "packages": [
+      {
+         "name": "acme",
+         "link name": "acme",
+         "version": "v1.0.2",
+         "checksum": "2fc13e1819bc3ed22ee1526d4f44ec20cd8748575e52a28e137f74fec2dd1160"
+      }
+   ]
+}

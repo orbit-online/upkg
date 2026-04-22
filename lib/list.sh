@@ -2,37 +2,44 @@
 
 # List all top-level installed packages. Not based on upkg.json, but the actually installed packages
 upkg_list() {
+  local json=$1
+  shift
   (
     if [[ ! -e .upkg ]]; then
       processing "No packages are installed in '%s'" "$PWD"
       return 0
     fi
-    local pkgpath dedup_path dedup_dirname pkgname checksum version link_pkgname upkgjsonpath version
+    local pkgpath dedup_dirname upkgjson
     for pkgpath in .upkg/*; do # Don't descend into .packages, we only want the top-level
       dedup_path=$(readlink "$pkgpath")
       dedup_dirname=$(basename "$dedup_path")
-      pkgname=${dedup_dirname%@*}
-      checksum=${dedup_dirname#*@}
-      link_pkgname=$(basename "$pkgpath")
-      version='no-version'
-      upkgjsonpath=.upkg/$dedup_path/upkg.json
-      if [[ -e "$upkgjsonpath" ]]; then
-        pkgname=$(jq -r --arg pkgname "$pkgname" '.name // $pkgname' "$upkgjsonpath")
-        version=$(jq -r --arg version "$version" '.version // $version' "$upkgjsonpath")
-      fi
-      printf "%s\t%s\t%s\t%s\n" "$pkgname" "$link_pkgname" "$version" "$checksum"
+      upkgjson=$(cat ".upkg/$dedup_path/upkg.json" 2>/dev/null || printf '{}')
+      jq \
+        --arg pkgname "${dedup_dirname%@*}" \
+        --arg linkPkgName "$(basename "$pkgpath")" \
+        --arg checksum "${dedup_dirname#*@}" \
+       '{
+        "Name": (.name // $pkgname),
+        "Link name": $linkPkgName,
+        "Version": (.version // "no-version"),
+        "Checksum": $checksum,
+      }' <<<"$upkgjson"
     done
   ) | (
-    # Allow nice formatting if `column` (from bsdextrautils) is installed
-    if type column >/dev/null 2>&1; then
-      if [[ $# -gt 0 ]]; then
-        column -t -n "Packages" -N "Name,Link name,Version,Checksum" "$@" # Forward any extra options
-      else
-        # Unless custom args were passed, fall back to `cat` (i.e. when `column` is not the coreutils variant)
-        column -t -n "Packages" -N "Name,Link name,Version,Checksum" 2>/dev/null || cat
-      fi
+    if $json; then
+      jq -s '{"Packages": .}'
     else
-      cat # Not installed, just output the tab/newline separated data
+      if [[ $# -gt 0 ]]; then
+        type column &>/dev/null || fatal "\`column\` is not installed, unable to forward options"
+        warning "Usage of COLUMNOPTS is deprecated, use the --json option and pipe it to \`jq -r '.packages[] | join(\"\\\\t\")' | column\` instead"
+        jq -rs '.[] | join("\t")' | column -t -n "Packages" -N "Name,Link name,Version,Checksum" "$@" # Forward any extra options
+      else
+        jq -rs '.[] | join("\t")' | (
+          column -t -n "Packages" -N "Name,Link name,Version,Checksum" 2>/dev/null || {
+            printf "Name\tLink name\tVersion\tChecksum\n"; cat;
+          }
+        )
+      fi
     fi
   )
 }

@@ -3,7 +3,8 @@ Usage:
   upkg install [-nqv]
   upkg add [-qvgufXB -b PATH... -p PKGNAME -t PKGTYPE] (URL|PATH) [SHA]
   upkg remove [-qnvg] PKGNAME
-  upkg list [-qvg] [-- COLUMNOPTS...]
+  upkg list [-qvgJ]
+  upkg list [-qvg] -- COLUMNOPTS...
   upkg bundle [-qv -d PATH -p PKGNAME -V VERSION] [PATHS...]
 
 Options:
@@ -21,4 +22,5 @@ Options:
   -p --pkgname=NAME    Override the package name link in .upkg/
                        (or name property in upkg.json when bundling)
   -d --dest=PATH       Package tarball destination (default: $pkgname.tar.gz)
-  -V --pkgver=VERSION  Version of the package that is being bundle
+  -V --pkgver=VERSION  Version of the package that is being bundled
+  -J --json            Output data as JSO
