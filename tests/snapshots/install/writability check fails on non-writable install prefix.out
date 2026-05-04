@@ -1,0 +1,1 @@
+upkg: '$BATS_TEST_TMPDIR/home/.local' is not writable, will not be able to create $BATS_TEST_TMPDIR/home/.local/bin

@@ -5,17 +5,8 @@ set -Eeo pipefail; shopt -s inherit_errexit nullglob
 # Install all packages referenced upkg.json, remove existing ones that aren't, then do the same for their command symlinks
 upkg_install() {
   # writability of .upkg/ itself has already been established by upkg_mktemp
-  [[ ! -e .upkg/.packages || -w .upkg/.packages  ]] || fatal "'%s' is not writeable" "$INSTALL_PREFIX/bin"
-  if $is_global; then
-    if [[ -e $INSTALL_PREFIX/bin ]]; then
-      [[ -w $INSTALL_PREFIX ]] || \
-        fatal "'%s' is not writeable by the current user, will not be able to create %s/bin" "$INSTALL_PREFIX" "$INSTALL_PREFIX"
-    elif [[ -w $INSTALL_PREFIX/bin ]]; then
-        fatal "'%s' is not writeable by the current user, will not be able to remove/symlink executables" "$INSTALL_PREFIX/bin"
-    fi
-  fi
+  [[ ! -e .upkg/.packages || -w .upkg/.packages  ]] || fatal "'%s' is not writable" "$INSTALL_PREFIX/bin"
 
-  upkg_install_deps .upkg/.tmp/root
   local is_global=false
   if [[ $PWD = "$INSTALL_PREFIX/lib/upkg" ]]; then
     is_global=true
@@ -26,6 +17,17 @@ upkg_install() {
       removed_links=() \
       cmd
   fi
+
+  if $is_global; then
+    if [[ ! -e $INSTALL_PREFIX/bin ]]; then
+      [[ -w $INSTALL_PREFIX ]] || \
+        fatal "'%s' is not writable, will not be able to create %s/bin" "$INSTALL_PREFIX" "$INSTALL_PREFIX"
+    elif [[ ! -w $INSTALL_PREFIX/bin ]]; then
+        fatal "'%s' is not writable, will not be able to remove/symlink executables" "$INSTALL_PREFIX/bin"
+    fi
+  fi
+
+  upkg_install_deps .upkg/.tmp/root
 
   # All deps installed, pre-flight check command symlinks
   if $is_global; then
