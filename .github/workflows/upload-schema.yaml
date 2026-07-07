@@ -15,7 +15,7 @@ jobs:
     - id: program_version
       uses: orbit-online/program-version@v1.0.0
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
     - name: Upload schema to S3
       uses: docker://amazon/aws-cli:2.4.24
       env:
