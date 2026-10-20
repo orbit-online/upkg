@@ -76,7 +76,7 @@ jobs:
       run: '! grep -q "not ok" tests/results.tap'
       working-directory: upkg
     - name: Generate test summary
-      uses: test-summary/action@v2
+      uses: test-summary/action@v2.6
       with:
         paths: upkg/tests/results.tap
         show: "fail, skip"
@@ -113,7 +113,7 @@ jobs:
       run: '! grep -q "not ok" tests/results.tap'
       working-directory: upkg
     - name: Generate test summary
-      uses: test-summary/action@v2
+      uses: test-summary/action@v2.6
       with:
         paths: upkg/tests/results.tap
         show: "fail, skip"
@@ -154,7 +154,7 @@ jobs:
       run: '! grep -q "not ok" tests/results.tap'
       working-directory: upkg
     - name: Generate test summary
-      uses: test-summary/action@v2
+      uses: test-summary/action@v2.6
       with:
         paths: upkg/tests/results.tap
         show: "fail, skip"
