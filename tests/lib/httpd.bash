@@ -24,7 +24,7 @@ setup_package_fixtures_httpd() {
       fail "The HTTP server crashed during startup (use \"--filter-tags '!http'\" to skip HTTP tests): $(cat "$HTTPD_ROOT/log")."
     fi
   done
-  kill -INT "$(cat "$HTTPD_ROOT/pid")" 2>/dev/null
+  kill -TERM "$(cat "$HTTPD_ROOT/pid")" 2>/dev/null
   fail "Timed out waiting for the HTTP server to output listening port log lines (use \"--filter-tags '!http'\" to skip HTTP tests): %s." "$(cat "$HTTPD_ROOT/log")"
 }
 
@@ -34,6 +34,6 @@ teardown_package_fixtures_httpd() {
   printf -- "-- httpd logs --\n" >&2
   cat "$HTTPD_ROOT/log" >&2
   printf -- "-- httpd logs --\n" >&2
-  kill -INT "$httpd_pid" 2>/dev/null
+  kill -TERM "$httpd_pid" 2>/dev/null
   wait "$httpd_pid" || printf "HTTP server exited with status code %d\n" "$?" >&2
 }

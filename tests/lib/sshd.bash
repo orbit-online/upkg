@@ -41,7 +41,7 @@ s.close()')
       fi
     done <"$SSHD_ROOT/log"
   done
-  kill -INT "$(cat "$SSHD_ROOT/pid")" 2>/dev/null
+  kill -TERM "$(cat "$SSHD_ROOT/pid")" 2>/dev/null
   fail "Timed out waiting for the SSH server to output listening port log lines (use \"--filter-tags '!ssh'\" to skip SSH tests): %s." "$(cat "$SSHD_ROOT/log")"
 }
 
@@ -51,6 +51,6 @@ teardown_package_fixtures_sshd() {
   printf -- "-- sshd logs --\n" >&2
   cat "$SSHD_ROOT/log" >&2
   printf -- "-- sshd logs --\n" >&2
-  kill -INT "$sshd_pid" 2>/dev/null
+  kill -TERM "$sshd_pid" 2>/dev/null
   wait "$sshd_pid" || printf "SSH server exited with status code %d\n" "$?" >&2
 }
