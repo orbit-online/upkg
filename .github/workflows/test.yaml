@@ -67,6 +67,7 @@ jobs:
         key: ${{ env.cache-name }}-${{ matrix.bash-version }}
     - name: Run tests
       run: bats --formatter tap13 --filter-tags '!shellcheck' --jobs 4 tests | tee tests/results.tap
+      shell: bash # pipefail, so a failing test runner fails the step
       working-directory: upkg
       env:
         BATS_LIB_PATH: ${{ github.workspace }}/lib
@@ -105,6 +106,7 @@ jobs:
       working-directory: upkg
     - name: Run tests
       run: tests/run.sh --formatter tap13 --filter-tags '!shellcheck' --jobs 4 tests | tee tests/results.tap
+      shell: bash # pipefail, so a failing test runner fails the step
       working-directory: upkg
       env:
         BASEIMG: ${{ matrix.distribution }}
@@ -145,6 +147,7 @@ jobs:
     - name: Run tests
       # Can't get backgrounded daemons to work, and `column` args are completely different on MacOS, so skip the `upkg list` output check
       run: bats --formatter tap13 --filter-tags '!shellcheck,!http,!ssh,!list' tests | tee tests/results.tap
+      shell: bash # pipefail, so a failing test runner fails the step
       working-directory: upkg
       env:
         BATS_LIB_PATH: ${{ github.workspace }}/lib
