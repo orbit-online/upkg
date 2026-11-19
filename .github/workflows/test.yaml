@@ -21,7 +21,8 @@ jobs:
           .upkg
           compat/.upkg
   test-bash-versions:
-    runs-on: ubuntu-latest
+    # ubuntu-26.04 ships uutils coreutils, older releases GNU coreutils
+    runs-on: ${{ matrix.coreutils == 'uutils' && 'ubuntu-26.04' || 'ubuntu-24.04' }}
     strategy:
       matrix:
         bash-version:
@@ -35,6 +36,10 @@ jobs:
         - '5.2.9'
         - '5.2.15'
         - '5.2.21'
+        coreutils: [gnu]
+        include:
+        - bash-version: system
+          coreutils: uutils
     steps:
     - name: Install bats
       uses: bats-core/bats-action@2.0.0
@@ -50,7 +55,10 @@ jobs:
     - name: Install dependencies
       run: tools/install-deps.sh
       working-directory: upkg
+    - name: Check coreutils implementation
+      run: ln --version | head -1 | grep ${{ matrix.coreutils == 'uutils' && 'uutils' || 'GNU' }}
     - name: Cache bash versions
+      if: matrix.bash-version != 'system'
       uses: actions/cache@v6
       env:
         cache-name: bash-version
@@ -62,7 +70,7 @@ jobs:
       working-directory: upkg
       env:
         BATS_LIB_PATH: ${{ github.workspace }}/lib
-        TEST_BASH_VERSION: ${{ matrix.bash-version }}
+        TEST_BASH_VERSION: ${{ matrix.bash-version != 'system' && matrix.bash-version || '' }}
         TMPDIR: ${{ github.workspace }}/upkg/tests/bats-tmp
     - name: Fail when tests are skipped
       run: '! grep -q "not ok" tests/results.tap'
