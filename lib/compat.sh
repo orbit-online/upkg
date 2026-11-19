@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if (ln --help 2>&1 || true) | grep -q 'GNU coreutils\|BusyBox'; then
+if (ln --help 2>&1 || true) | grep -q 'GNU coreutils\|BusyBox\|no-target-directory'; then
   _ln_sT() { ln -sT "$@"; }
   _ln_sTf() { ln -sTf "$@"; }
 else
